@@ -1,0 +1,23 @@
+{
+  "name": "qoutes_app",
+  "version": "1.0.0",
+  "description": "",
+  "keywords": [
+    "MEAN",
+    "Express",
+    "Angular",
+    "Mongo",
+    "Nodejs"
+  ],
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js"
+  },
+  "dependencies": {
+    "bootstrap": "^5.3.8",
+    "express": "^4.18.2"
+  }
+}
