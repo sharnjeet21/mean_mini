@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | Travel Itinerary Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #e8f0ff 0%, #f9fbff 60%);
+      min-height: 100vh;
+    }
+    .auth-card {
+      border: none;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Travel Itinerary Planner</a>
+      <div class="ms-auto">
+        <a class="btn btn-outline-light" href="/register">Register</a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container d-flex align-items-center justify-content-center" style="min-height: 85vh;">
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="card auth-card p-4">
+        <div class="card-body">
+          <h3 class="card-title fw-bold mb-3 text-center">Welcome Back</h3>
+          <p class="text-muted text-center mb-4">Login to manage your travel itineraries</p>
+
+          <form action="/login" method="POST">
+            <div class="mb-3">
+              <label for="email" class="form-label">Email</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Login</button>
+          </form>
+
+          <div class="text-center mt-3">
+            <span class="text-muted">No account?</span>
+            <a href="/register" class="ms-1">Register here</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
