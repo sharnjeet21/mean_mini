@@ -11,12 +11,24 @@ router.post("/register", async (req, res) => {
       return res.status(400).send("All fields are required.");
     }
 
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
+    const cleanName = String(name).trim();
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password).trim();
+
+    if (!cleanName || !cleanEmail || !cleanPassword) {
+      return res.status(400).send("All fields are required.");
+    }
+
+    const existingUser = await User.findOne({ email: cleanEmail });
     if (existingUser) {
       return res.status(400).send("User already exists. Please login.");
     }
 
-    const user = new User({ name, email, password });
+    const user = new User({
+      name: cleanName,
+      email: cleanEmail,
+      password: cleanPassword,
+    });
     await user.save();
 
     return res.redirect("/login");
@@ -34,12 +46,12 @@ router.post("/login", async (req, res) => {
       return res.status(400).send("Email and password are required.");
     }
 
-    const user = await User.findOne({
-      email: email.toLowerCase(),
-      password,
-    });
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanPassword = String(password).trim();
 
-    if (!user) {
+    const user = await User.findOne({ email: cleanEmail });
+
+    if (!user || user.password !== cleanPassword) {
       return res.status(401).send("Invalid email or password.");
     }
 
