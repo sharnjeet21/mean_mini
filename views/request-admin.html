@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Request Admin Access | Travel Itinerary Planner</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 60%);
+      min-height: 100vh;
+    }
+    .request-card {
+      border: none;
+      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
+      border-radius: 16px;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">Travel Itinerary Planner</a>
+      <div class="ms-auto d-flex gap-2">
+        <span class="navbar-text text-light me-3" id="userInfo">Loading...</span>
+        <a class="btn btn-outline-light" href="/dashboard">Dashboard</a>
+        <button class="btn btn-outline-light" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container d-flex align-items-center justify-content-center" style="min-height: 85vh;">
+    <div class="col-12 col-md-8 col-lg-6">
+      <div class="card request-card p-4">
+        <div class="card-body">
+          <h3 class="card-title fw-bold mb-3 text-center">Request Admin Access</h3>
+          <p class="text-muted text-center mb-4">Submit a request to become an admin and create travel itineraries</p>
+
+          <div id="requestStatus" class="d-none mb-4">
+            <!-- Status will be shown here -->
+          </div>
+
+          <form id="requestForm">
+            <div class="mb-3">
+              <label for="reason" class="form-label">Why do you want admin access?</label>
+              <textarea 
+                class="form-control" 
+                id="reason" 
+                name="reason" 
+                rows="4" 
+                required
+                placeholder="Please explain why you need admin access to create and manage travel itineraries..."
+              ></textarea>
+              <div class="form-text">
+                <small class="text-muted">
+                  Provide a detailed explanation of your qualifications and reasons for requesting admin access.
+                </small>
+              </div>
+            </div>
+            
+            <div class="alert alert-info">
+              <h6 class="alert-heading">Admin Privileges Include:</h6>
+              <ul class="mb-0">
+                <li>Create detailed travel itineraries</li>
+                <li>Manage existing itineraries</li>
+                <li>View booking information</li>
+                <li>Update itinerary details and pricing</li>
+              </ul>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-100" id="requestBtn">
+              <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+              Submit Request
+            </button>
+          </form>
+
+          <div class="text-center mt-3">
+            <small class="text-muted">
+              Your request will be reviewed by a superadmin. You'll be notified of the decision.
+            </small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success/Error Toast -->
+  <div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="messageToast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+      <div class="toast-header">
+        <strong class="me-auto" id="toastTitle">Notification</strong>
+        <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+      <div class="toast-body" id="toastMessage">
+        <!-- Message will be inserted here -->
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  
+  <script>
+    let currentUser = null;
+    let sessionId = null;
+
+    // Check authentication on page load
+    document.addEventListener('DOMContentLoaded', async function() {
+      sessionId = localStorage.getItem('sessionId');
+      const userData = localStorage.getItem('user');
+      
+      if (!sessionId || !userData) {
+        redirectToLogin();
+        return;
+      }
+      
+      try {
+        currentUser = JSON.parse(userData);
+        await loadUserProfile();
+        checkExistingRequest();
+      } catch (error) {
+        console.error('Auth error:', error);
+        redirectToLogin();
+      }
+    });
+
+    async function loadUserProfile() {
+      try {
+        const response = await fetch('/api/auth/profile', {
+          headers: {
+            'x-session-id': sessionId
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error('Session expired');
+        }
+        
+        const result = await response.json();
+        currentUser = result.user;
+        
+        // Update UI
+        document.getElementById('userInfo').textContent = `${currentUser.name} (${currentUser.role})`;
+        
+        // Check if user is already admin or superadmin
+        if (currentUser.role === 'admin' || currentUser.role === 'superadmin') {
+          showStatus('info', 'You already have admin access or higher privileges.');
+          document.getElementById('requestForm').style.display = 'none';
+        }
+      } catch (error) {
+        console.error('Profile load error:', error);
+        redirectToLogin();
+      }
+    }
+
+    async function checkExistingRequest() {
+      try {
+        const response = await fetch('/api/role-requests/my-request', {
+          headers: { 'x-session-id': sessionId }
+        });
+        
+        if (response.ok) {
+          const request = await response.json();
+          if (request) {
+            showExistingRequest(request);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking existing request:', error);
+      }
+    }
+
+    function showExistingRequest(request) {
+      const statusColors = {
+        pending: 'warning',
+        approved: 'success',
+        rejected: 'danger'
+      };
+      
+      const statusText = {
+        pending: 'Your admin access request is pending review.',
+        approved: 'Your admin access request has been approved!',
+        rejected: 'Your admin access request was rejected.'
+      };
+
+      showStatus(statusColors[request.status], statusText[request.status]);
+      
+      if (request.status === 'pending') {
+        document.getElementById('requestForm').style.display = 'none';
+      } else if (request.status === 'approved') {
+        document.getElementById('requestForm').style.display = 'none';
+        // Refresh user data
+        setTimeout(() => {
+          window.location.href = '/dashboard';
+        }, 2000);
+      }
+    }
+
+    function showStatus(type, message) {
+      const statusDiv = document.getElementById('requestStatus');
+      statusDiv.className = `alert alert-${type}`;
+      statusDiv.textContent = message;
+      statusDiv.classList.remove('d-none');
+    }
+
+    document.getElementById('requestForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+      
+      const requestBtn = document.getElementById('requestBtn');
+      const spinner = requestBtn.querySelector('.spinner-border');
+      const btnText = requestBtn.childNodes[requestBtn.childNodes.length - 1];
+      
+      // Show loading state
+      spinner.classList.remove('d-none');
+      btnText.textContent = ' Submitting...';
+      requestBtn.disabled = true;
+      
+      const formData = new FormData(this);
+      const data = Object.fromEntries(formData);
+      
+      try {
+        const response = await fetch('/api/role-requests', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-session-id': sessionId
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          showToast('Success', result.message, 'success');
+          this.reset();
+          showStatus('warning', 'Your request has been submitted and is pending review.');
+          this.style.display = 'none';
+        } else {
+          showToast('Request Failed', result.message, 'error');
+        }
+      } catch (error) {
+        console.error('Request error:', error);
+        showToast('Error', 'Network error. Please try again.', 'error');
+      } finally {
+        // Reset button state
+        spinner.classList.add('d-none');
+        btnText.textContent = ' Submit Request';
+        requestBtn.disabled = false;
+      }
+    });
+
+    // Logout functionality
+    document.getElementById('logoutBtn').addEventListener('click', async function() {
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: { 'x-session-id': sessionId }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      } finally {
+        localStorage.removeItem('sessionId');
+        localStorage.removeItem('user');
+        redirectToLogin();
+      }
+    });
+
+    function redirectToLogin() {
+      window.location.href = '/login';
+    }
+
+    function showToast(title, message, type) {
+      const toast = document.getElementById('messageToast');
+      const toastTitle = document.getElementById('toastTitle');
+      const toastMessage = document.getElementById('toastMessage');
+      const toastHeader = toast.querySelector('.toast-header');
+      
+      // Set content
+      toastTitle.textContent = title;
+      toastMessage.textContent = message;
+      
+      // Set styling based on type
+      toastHeader.className = 'toast-header';
+      if (type === 'success') {
+        toastHeader.classList.add('bg-success', 'text-white');
+      } else if (type === 'error') {
+        toastHeader.classList.add('bg-danger', 'text-white');
+      }
+      
+      // Show toast
+      const bsToast = new bootstrap.Toast(toast);
+      bsToast.show();
+    }
+  </script>
+</body>
+</html>

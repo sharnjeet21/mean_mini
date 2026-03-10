@@ -14,7 +14,9 @@
   "type": "commonjs",
   "main": "server/server.js",
   "scripts": {
-    "start": "node server/server.js"
+    "start": "node server/server.js",
+    "init-db": "node server/scripts/initializeDB.js",
+    "dev": "node server/server.js"
   },
   "dependencies": {
     "bootstrap": "^5.3.8",

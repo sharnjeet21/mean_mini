@@ -5,6 +5,8 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const itineraryRoutes = require("./routes/itineraryRoutes");
+const userRoutes = require("./routes/userRoutes");
+const roleRequestRoutes = require("./routes/roleRequestRoutes");
 
 dotenv.config();
 
@@ -33,8 +35,14 @@ app.get("/dashboard", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "views", "dashboard.html"));
 });
 
-app.use(authRoutes);
+app.get("/request-admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "views", "request-admin.html"));
+});
+
+app.use("/api/auth", authRoutes);
 app.use("/api/itinerary", itineraryRoutes);
+app.use("/api/users", userRoutes);
+app.use("/api/role-requests", roleRequestRoutes);
 
 const PORT = process.env.PORT || 5000;
 
