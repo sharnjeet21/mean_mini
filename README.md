@@ -53,8 +53,8 @@ A full-stack web application for managing travel itineraries built with Node.js,
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
-   cd qoutes_app
+   git clone https://github.com/sharnjeet21/mean_mini.git
+   cd mean_mini
    ```
 
 2. **Install dependencies**
@@ -168,4 +168,4 @@ ISC License
 
 ## Support
 
-For issues and questions, please create an issue in the repository or contact the development team.
+For issues and questions, please create an issue in the repository or contact the development team.qoutes_app
