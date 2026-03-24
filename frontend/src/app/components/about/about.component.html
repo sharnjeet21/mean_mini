@@ -1,0 +1,77 @@
+<div class="min-h-screen bg-surface pt-24 pb-16">
+  <div class="max-w-7xl mx-auto px-6 lg:px-12">
+
+    <!-- Hero -->
+    <div class="signature-gradient rounded-2xl p-12 text-white text-center mb-16 relative overflow-hidden">
+      <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+      <div class="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
+      <span class="material-symbols-outlined text-6xl mb-4 block relative z-10">info</span>
+      <h1 class="text-4xl font-extrabold mb-3 relative z-10 font-headline">About This Project</h1>
+      <p class="text-white/80 text-lg relative z-10">A full MEAN Stack application built task by task</p>
+    </div>
+
+    <!-- Tasks Grid -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-on-surface mb-8 font-headline">Implementation Tasks</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div *ngFor="let task of tasks"
+             class="bg-surface-container-lowest rounded-xl p-6 border border-outline-variant/20
+                    hover:-translate-y-1 hover:shadow-xl hover:shadow-on-surface/5 transition-all duration-300">
+          <div class="flex items-center gap-4 mb-4">
+            <!-- Number badge -->
+            <div class="w-9 h-9 rounded-full signature-gradient flex items-center justify-center
+                        text-white text-sm font-bold flex-shrink-0">
+              {{ task.number }}
+            </div>
+            <span class="material-symbols-outlined text-primary text-2xl">{{ task.icon }}</span>
+          </div>
+          <h3 class="font-bold text-on-surface mb-2 font-headline">{{ task.title }}</h3>
+          <p class="text-on-surface-variant text-sm mb-4 leading-relaxed">{{ task.description }}</p>
+          <div class="flex flex-wrap gap-2">
+            <span *ngFor="let tech of task.techs"
+                  class="px-2 py-0.5 rounded-full text-xs font-semibold bg-primary-fixed text-on-primary-fixed">
+              {{ tech }}
+            </span>
+          </div>
+          <div class="mt-4 pt-3 border-t border-outline-variant/10">
+            <span class="inline-flex items-center gap-1 text-xs font-bold text-on-surface-variant">
+              <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1; color:#4ade80">check_circle</span>
+              Implemented
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="mb-16">
+      <h2 class="text-3xl font-bold text-on-surface mb-8 font-headline">Tech Stack</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+        <div *ngFor="let tech of stack"
+             class="bg-surface-container-lowest rounded-xl p-6 text-center border border-outline-variant/20
+                    hover:shadow-lg hover:shadow-on-surface/5 transition-all duration-300">
+          <span class="material-symbols-outlined text-5xl mb-3 block" [style.color]="tech.color">{{ tech.icon }}</span>
+          <h4 class="font-bold text-on-surface font-headline">{{ tech.name }}</h4>
+          <p class="text-on-surface-variant text-xs mt-1">{{ tech.role }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- CTA -->
+    <div class="text-center py-8">
+      <a routerLink="/"
+         class="inline-flex items-center gap-2 signature-gradient text-white px-8 py-4 rounded-xl
+                font-bold mr-4 hover:opacity-90 active:scale-95 transition-all shadow-lg font-headline">
+        <span class="material-symbols-outlined">home</span>
+        Back to Home
+      </a>
+      <a routerLink="/dashboard"
+         class="inline-flex items-center gap-2 bg-surface-container-highest text-on-surface-variant
+                px-8 py-4 rounded-xl font-bold hover:bg-surface-container-high transition-colors font-headline">
+        <span class="material-symbols-outlined">dashboard</span>
+        View Dashboard
+      </a>
+    </div>
+
+  </div>
+</div>

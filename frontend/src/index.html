@@ -2,14 +2,100 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Travel Itinerary Planner</title>
+  <title>The Elevated Navigator | Travel Itinerary Planner</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Material Symbols -->
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN with full config -->
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'surface': '#f8f9fa',
+            'surface-bright': '#f8f9fa',
+            'surface-dim': '#d9dadb',
+            'surface-container-lowest': '#ffffff',
+            'surface-container-low': '#f3f4f5',
+            'surface-container': '#edeeef',
+            'surface-container-high': '#e7e8e9',
+            'surface-container-highest': '#e1e3e4',
+            'surface-variant': '#e1e3e4',
+            'on-surface': '#191c1d',
+            'on-surface-variant': '#444653',
+            'on-background': '#191c1d',
+            'background': '#f8f9fa',
+            'inverse-surface': '#2e3132',
+            'inverse-on-surface': '#f0f1f2',
+            'primary': '#3953bd',
+            'on-primary': '#ffffff',
+            'primary-container': '#546cd7',
+            'on-primary-container': '#fffbff',
+            'primary-fixed': '#dde1ff',
+            'primary-fixed-dim': '#b9c3ff',
+            'on-primary-fixed': '#001356',
+            'on-primary-fixed-variant': '#1f3ba6',
+            'inverse-primary': '#b9c3ff',
+            'secondary': '#754aa1',
+            'on-secondary': '#ffffff',
+            'secondary-container': '#ce9ffd',
+            'on-secondary-container': '#5a3086',
+            'secondary-fixed': '#f0dbff',
+            'secondary-fixed-dim': '#dcb8ff',
+            'on-secondary-fixed': '#2c0051',
+            'on-secondary-fixed-variant': '#5c3187',
+            'tertiary': '#835100',
+            'on-tertiary': '#ffffff',
+            'tertiary-container': '#a56600',
+            'on-tertiary-container': '#fffbff',
+            'tertiary-fixed': '#ffddb9',
+            'tertiary-fixed-dim': '#ffb964',
+            'on-tertiary-fixed': '#2b1700',
+            'on-tertiary-fixed-variant': '#663e00',
+            'error': '#ba1a1a',
+            'on-error': '#ffffff',
+            'error-container': '#ffdad6',
+            'on-error-container': '#93000a',
+            'outline': '#757684',
+            'outline-variant': '#c5c5d5',
+            'surface-tint': '#3c55bf',
+          },
+          fontFamily: {
+            'headline': ['Manrope', 'sans-serif'],
+            'body': ['Inter', 'sans-serif'],
+            'label': ['Inter', 'sans-serif'],
+          },
+          borderRadius: {
+            'DEFAULT': '0.25rem',
+            'lg': '0.5rem',
+            'xl': '0.75rem',
+            'full': '9999px',
+          },
+        },
+      },
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; background-color: #f8f9fa; color: #191c1d; }
+    h1, h2, h3, h4, h5, h6 { font-family: 'Manrope', sans-serif; }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      vertical-align: middle;
+    }
+    .signature-gradient { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #f1f1f1; }
+    ::-webkit-scrollbar-thumb { background: #667eea; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #764ba2; }
+  </style>
 </head>
-<body>
+<body class="bg-surface text-on-surface antialiased">
   <app-root></app-root>
 </body>
 </html>

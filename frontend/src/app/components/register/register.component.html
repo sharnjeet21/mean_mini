@@ -1,0 +1,89 @@
+<div class="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-6 relative overflow-hidden">
+  <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#3953bd]/5 blur-[120px]"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#754aa1]/5 blur-[120px]"></div>
+
+  <div class="w-full max-w-[480px] z-10">
+    <div class="text-center mb-10">
+      <div class="inline-flex items-center justify-center mb-4">
+        <span class="material-symbols-outlined text-4xl text-[#3953bd]" style="font-variation-settings:'FILL' 1">explore</span>
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent" style="font-family:Manrope,sans-serif">
+        Create Your Account
+      </h1>
+      <p class="text-[#444653] mt-2 font-medium">Start planning your next great adventure.</p>
+    </div>
+
+    <div class="bg-white rounded-xl p-8 lg:p-10 shadow-[0_12px_32px_-4px_rgba(25,28,29,0.06)] border border-[#c5c5d5]/20">
+      <form (ngSubmit)="onRegister()" class="space-y-5">
+        <div *ngIf="error" class="flex items-center gap-2 p-3 rounded-lg bg-[#ffdad6] text-[#93000a] text-sm">
+          <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">error</span>
+          {{ error }}
+        </div>
+
+        <!-- Name -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Full Name</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span class="material-symbols-outlined text-[#757684]">person</span>
+            </div>
+            <input [(ngModel)]="name" name="name" type="text" placeholder="Your full name" required
+              class="block w-full pl-10 pr-3 py-3 border-0 border-b-2 border-[#c5c5d5] bg-transparent focus:ring-0 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Email Address</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span class="material-symbols-outlined text-[#757684]">mail</span>
+            </div>
+            <input [(ngModel)]="email" name="email" type="email" placeholder="you@example.com" required
+              class="block w-full pl-10 pr-3 py-3 border-0 border-b-2 border-[#c5c5d5] bg-transparent focus:ring-0 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Password</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span class="material-symbols-outlined text-[#757684]">lock</span>
+            </div>
+            <input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" placeholder="Min. 6 characters" required minlength="6"
+              class="block w-full pl-10 pr-10 py-3 border-0 border-b border-[#c5c5d5]/40 bg-transparent focus:ring-0 focus:border-b-2 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
+            <button type="button" (click)="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#757684]">
+              <span class="material-symbols-outlined text-[20px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="space-y-2">
+          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Confirm Password</label>
+          <div class="relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <span class="material-symbols-outlined text-[#757684]">lock_reset</span>
+            </div>
+            <input [(ngModel)]="confirmPassword" name="confirmPassword" type="password" placeholder="Repeat your password" required
+              class="block w-full pl-10 pr-3 py-3 border-0 border-b border-[#c5c5d5]/40 bg-transparent focus:ring-0 focus:border-b-2 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none"
+              [class.border-[#ba1a1a]]="confirmPassword && password !== confirmPassword">
+          </div>
+          <p *ngIf="confirmPassword && password !== confirmPassword" class="text-[11px] text-[#ba1a1a] ml-1 font-medium">Passwords do not match</p>
+        </div>
+
+        <button type="submit" [disabled]="loading || (!!confirmPassword && password !== confirmPassword)"
+          class="signature-gradient w-full flex justify-center py-4 px-4 rounded-xl text-white font-bold text-sm tracking-wide shadow-lg shadow-[#3953bd]/20 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-60"
+          style="font-family:Manrope,sans-serif">
+          {{ loading ? 'Creating account...' : 'Create Account' }}
+        </button>
+      </form>
+    </div>
+
+    <p class="mt-8 text-center text-sm font-medium text-[#444653]">
+      Already have an account?
+      <a routerLink="/login" class="text-[#3953bd] font-bold hover:underline decoration-2 underline-offset-4 ml-1">Sign in here</a>
+    </p>
+  </div>
+</div>

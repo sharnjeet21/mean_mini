@@ -1,0 +1,66 @@
+<nav class="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md shadow-sm">
+  <div class="flex justify-between items-center h-16 px-6 lg:px-12 w-full mx-auto">
+
+    <!-- Brand -->
+    <div class="flex items-center gap-8">
+      <a routerLink="/"
+         class="text-xl font-bold tracking-tight bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent font-headline">
+        The Elevated Navigator
+      </a>
+
+      <!-- Desktop Nav Links -->
+      <div class="hidden md:flex gap-6 items-center text-sm font-medium font-headline">
+        <a routerLink="/home"
+           routerLinkActive="!text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1"
+           [routerLinkActiveOptions]="{exact:true}"
+           class="text-slate-600 hover:text-indigo-500 transition-colors">Home</a>
+        <a routerLink="/dashboard"
+           routerLinkActive="!text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1"
+           class="text-slate-600 hover:text-indigo-500 transition-colors">Dashboard</a>
+        <a routerLink="/about"
+           routerLinkActive="!text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1"
+           class="text-slate-600 hover:text-indigo-500 transition-colors">About</a>
+        <a *ngIf="auth.isAdmin"
+           routerLink="/admin"
+           routerLinkActive="!text-indigo-600 font-semibold border-b-2 border-indigo-600 pb-1"
+           class="text-slate-600 hover:text-indigo-500 transition-colors">Admin</a>
+      </div>
+    </div>
+
+    <!-- Right Side -->
+    <div class="flex items-center gap-4">
+
+      <!-- Not logged in -->
+      <ng-container *ngIf="!auth.isLoggedIn">
+        <a routerLink="/login"
+           class="text-slate-600 font-medium text-sm hover:text-indigo-500 transition-colors cursor-pointer">
+          Login
+        </a>
+        <a routerLink="/register"
+           class="signature-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold
+                  active:scale-95 transform transition-transform shadow-lg cursor-pointer">
+          Register
+        </a>
+      </ng-container>
+
+      <!-- Logged in -->
+      <ng-container *ngIf="auth.isLoggedIn">
+        <div class="hidden sm:flex items-center gap-3 pl-4 border-l border-slate-200">
+          <span class="text-sm font-medium text-slate-600">{{ auth.currentUser()?.name }}</span>
+          <span class="px-2 py-0.5 rounded-full text-xs font-bold bg-primary-fixed text-on-primary-fixed">
+            {{ auth.currentUser()?.role }}
+          </span>
+        </div>
+        <button (click)="auth.logout()"
+                class="w-8 h-8 rounded-full bg-primary-fixed flex items-center justify-center
+                       text-on-primary-fixed text-xs font-bold cursor-pointer hover:opacity-80 transition-opacity"
+                title="Logout">
+          {{ initials }}
+        </button>
+      </ng-container>
+
+    </div>
+  </div>
+  <!-- Bottom border line -->
+  <div class="bg-slate-100/50 h-px w-full absolute bottom-0"></div>
+</nav>
