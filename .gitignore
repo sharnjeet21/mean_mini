@@ -1,2 +1,28 @@
+# Dependencies
 node_modules/
+frontend/node_modules/
+
+# Environment
 .env
+.env.*
+!.env.example
+
+# Angular build output
+frontend/dist/
+frontend/.angular/cache/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/settings.json
+.idea/
+
+# Coverage
+coverage/
+frontend/coverage/

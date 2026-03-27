@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-itinerary-detail',
@@ -12,18 +12,48 @@ import { HttpClient } from '@angular/common/http';
 export class ItineraryDetailComponent implements OnInit {
   itinerary: any = null;
   openDay: number | null = 0;
+  booking = false;
+  bookingSuccess = false;
+  bookingError = '';
 
-  constructor(private route: ActivatedRoute, private http: HttpClient) {}
+  constructor(private route: ActivatedRoute, private api: ApiService) {}
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    this.http.get<any>(`http://localhost:5000/api/itineraries/${id}`).subscribe({
-      next: (res) => { this.itinerary = res.data || res; },
+    if (!id) return;
+
+    // Mock IDs don't need API call
+    if (id.startsWith('m')) {
+      this.itinerary = this.mockItinerary;
+      return;
+    }
+
+    this.api.getItinerary(id).subscribe({
+      next: (res: any) => { this.itinerary = res?.data || res; },
       error: () => { this.itinerary = this.mockItinerary; }
     });
   }
 
   toggleDay(i: number) { this.openDay = this.openDay === i ? null : i; }
+
+  bookItinerary() {
+    if (!this.itinerary?._id || this.itinerary._id.startsWith('m')) {
+      this.bookingError = 'Cannot book a demo itinerary. Please create a real one first.';
+      return;
+    }
+    this.booking = true;
+    this.bookingError = '';
+    this.api.bookItinerary(this.itinerary._id).subscribe({
+      next: () => {
+        this.booking = false;
+        this.bookingSuccess = true;
+      },
+      error: (err: any) => {
+        this.booking = false;
+        this.bookingError = err?.error?.message || 'Booking failed. Please try again.';
+      }
+    });
+  }
 
   mockItinerary = {
     title: 'Amalfi Coast Escape',
@@ -31,7 +61,7 @@ export class ItineraryDetailComponent implements OnInit {
     duration: 10,
     budget: 4200,
     description: 'Experience the quintessence of Italian luxury and coastal charm. This meticulously curated 10-day itinerary balances adventurous cliffside hikes with leisurely afternoon aperitivos overlooking the Tyrrhenian Sea.',
-    createdBy: 'Elena Rossi',
+    createdBy: 'Wanderer Team',
     days: [
       { title: 'Arrival & Sorrento Sunset', summary: 'Arrival at Naples Airport, private transfer to Sorrento hotel.' },
       { title: 'Positano Vertical Exploration', summary: 'Scenic drive to Positano followed by a private walking tour.' },

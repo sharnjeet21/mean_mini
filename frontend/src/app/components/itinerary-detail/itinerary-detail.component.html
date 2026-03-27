@@ -1,22 +1,26 @@
-<div *ngIf="itinerary" class="min-h-screen bg-[#f8f9fa]">
+<div *ngIf="itinerary" class="min-h-screen bg-surface">
   <!-- Breadcrumbs -->
-  <nav class="px-6 lg:px-12 py-4 max-w-7xl mx-auto flex items-center gap-2 text-xs text-[#757684] font-medium pt-20">
-    <a routerLink="/" class="hover:text-[#3953bd] transition-colors">Home</a>
+  <nav class="px-6 lg:px-12 py-4 max-w-7xl mx-auto flex items-center gap-2 text-xs text-on-surface-variant font-medium">
+    <a routerLink="/" class="hover:text-primary transition-colors">Home</a>
     <span class="material-symbols-outlined text-xs">chevron_right</span>
-    <a routerLink="/dashboard" class="hover:text-[#3953bd] transition-colors">Dashboard</a>
+    <a routerLink="/dashboard" class="hover:text-primary transition-colors">Dashboard</a>
     <span class="material-symbols-outlined text-xs">chevron_right</span>
-    <span class="text-[#191c1d]">{{ itinerary.title }}</span>
+    <span class="text-on-surface">{{ itinerary.title }}</span>
   </nav>
 
   <!-- Hero -->
-  <section class="relative h-[400px] w-full overflow-hidden bg-gradient-to-br from-[#667eea] to-[#764ba2]">
-    <div class="absolute inset-0 bg-slate-900/40 z-10"></div>
+  <section class="relative h-[420px] w-full overflow-hidden signature-gradient">
+    <div class="absolute inset-0 bg-on-surface/30 z-10"></div>
     <div class="absolute inset-0 z-20 flex flex-col justify-end px-6 lg:px-12 pb-12 max-w-7xl mx-auto w-full">
       <div class="flex flex-wrap items-center gap-3 mb-4">
-        <span class="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/30">{{ itinerary.duration }} Days</span>
-        <span class="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/30">${{ itinerary.budget | number }} Budget</span>
+        <span class="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/30">
+          {{ itinerary.duration }} Days
+        </span>
+        <span class="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/30">
+          ${{ itinerary.budget | number }} Budget
+        </span>
       </div>
-      <h1 class="text-5xl lg:text-6xl font-bold text-white tracking-tight mb-2" style="font-family:Manrope,sans-serif">{{ itinerary.title }}</h1>
+      <h1 class="text-5xl lg:text-6xl font-bold text-white font-headline tracking-tight mb-2">{{ itinerary.title }}</h1>
       <p class="text-white/90 text-lg max-w-2xl font-medium">{{ itinerary.destination }}</p>
     </div>
   </section>
@@ -25,40 +29,52 @@
     <!-- Overview -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-12 items-start mb-16">
       <div class="lg:col-span-2 space-y-6">
-        <h2 class="text-2xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Itinerary Overview</h2>
-        <p class="text-[#444653] leading-relaxed">{{ itinerary.description }}</p>
+        <h2 class="text-2xl font-bold text-on-surface font-headline">Itinerary Overview</h2>
+        <p class="text-on-surface-variant leading-relaxed">{{ itinerary.description }}</p>
+
+        <!-- Success message -->
+        <div *ngIf="bookingSuccess" class="px-4 py-3 rounded-xl bg-primary-fixed text-on-primary-fixed text-sm font-medium flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">check_circle</span>
+          Itinerary booked successfully!
+        </div>
+        <div *ngIf="bookingError" class="px-4 py-3 rounded-xl bg-error-container text-on-error-container text-sm font-medium flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">error</span>
+          {{ bookingError }}
+        </div>
+
         <div class="flex items-center gap-4 pt-4">
-          <button class="signature-gradient text-white px-8 py-3.5 rounded-xl font-bold tracking-wide active:scale-95 transition-transform shadow-lg shadow-indigo-500/20" style="font-family:Manrope,sans-serif">
-            Book This Itinerary
-          </button>
-          <button class="bg-[#e1e3e4] text-[#444653] px-6 py-3.5 rounded-xl font-semibold hover:bg-[#e7e8e9] transition-colors">
-            Save for Later
+          <button (click)="bookItinerary()"
+                  [disabled]="booking || bookingSuccess"
+                  class="signature-gradient text-white px-8 py-3.5 rounded-xl font-bold font-headline active:scale-95 transition-transform shadow-lg shadow-primary/20 disabled:opacity-60 flex items-center gap-2">
+            <span *ngIf="booking" class="material-symbols-outlined animate-spin text-lg">progress_activity</span>
+            <span *ngIf="!booking">{{ bookingSuccess ? 'Booked ✓' : 'Book This Itinerary' }}</span>
           </button>
         </div>
       </div>
-      <!-- Sidebar -->
-      <div class="bg-[#f3f4f5] p-8 rounded-2xl space-y-8">
-        <h3 class="font-bold text-lg" style="font-family:Manrope,sans-serif">Trip Details</h3>
+
+      <!-- Sidebar Trip Details -->
+      <div class="bg-surface-container-low p-8 rounded-2xl space-y-8 border border-outline-variant/20">
+        <h3 class="font-bold text-lg text-on-surface font-headline">Trip Details</h3>
         <div class="space-y-6">
           <div class="flex items-start gap-4">
-            <span class="material-symbols-outlined text-[#3953bd] p-2 bg-[#dde1ff] rounded-lg">payments</span>
+            <span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-lg">payments</span>
             <div>
-              <p class="text-xs text-[#757684] uppercase font-bold tracking-wider">Estimated Budget</p>
-              <p class="font-semibold text-[#191c1d]">${{ itinerary.budget | number }} pp</p>
+              <p class="text-xs text-on-surface-variant uppercase font-bold tracking-wider">Estimated Budget</p>
+              <p class="font-semibold text-on-surface">${{ itinerary.budget | number }} pp</p>
             </div>
           </div>
           <div class="flex items-start gap-4">
-            <span class="material-symbols-outlined text-[#3953bd] p-2 bg-[#dde1ff] rounded-lg">calendar_today</span>
+            <span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-lg">calendar_today</span>
             <div>
-              <p class="text-xs text-[#757684] uppercase font-bold tracking-wider">Duration</p>
-              <p class="font-semibold text-[#191c1d]">{{ itinerary.duration }} Days</p>
+              <p class="text-xs text-on-surface-variant uppercase font-bold tracking-wider">Duration</p>
+              <p class="font-semibold text-on-surface">{{ itinerary.duration }} Days</p>
             </div>
           </div>
           <div class="flex items-start gap-4">
-            <span class="material-symbols-outlined text-[#3953bd] p-2 bg-[#dde1ff] rounded-lg">person_edit</span>
+            <span class="material-symbols-outlined text-primary p-2 bg-primary-fixed rounded-lg">person_edit</span>
             <div>
-              <p class="text-xs text-[#757684] uppercase font-bold tracking-wider">Created By</p>
-              <p class="font-semibold text-[#191c1d]">{{ itinerary.createdBy }}</p>
+              <p class="text-xs text-on-surface-variant uppercase font-bold tracking-wider">Created By</p>
+              <p class="font-semibold text-on-surface">{{ itinerary.createdBy?.name || itinerary.createdBy || 'Wanderer Team' }}</p>
             </div>
           </div>
         </div>
@@ -67,25 +83,27 @@
 
     <!-- Daily Plan -->
     <div class="space-y-8 mb-16" *ngIf="itinerary.days?.length">
-      <h2 class="text-3xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Daily Itinerary</h2>
+      <h2 class="text-3xl font-bold text-on-surface font-headline">Daily Itinerary</h2>
       <div class="space-y-4">
         <div *ngFor="let day of itinerary.days; let i = index"
-          class="bg-white rounded-2xl overflow-hidden shadow-sm"
-          [class.border-l-4]="openDay === i" [class.border-[#3953bd]]="openDay === i">
-          <div class="p-6 flex justify-between items-center cursor-pointer hover:bg-[#f3f4f5] transition-colors" (click)="toggleDay(i)">
+             class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/10"
+             [class.border-l-4]="openDay === i" [class.!border-primary]="openDay === i">
+          <div class="p-6 flex justify-between items-center cursor-pointer hover:bg-surface-container transition-colors" (click)="toggleDay(i)">
             <div class="flex items-center gap-6">
-              <span class="font-bold text-2xl" [class.text-[#3953bd]]="openDay === i" [class.text-[#757684]]="openDay !== i" style="font-family:Manrope,sans-serif">
+              <span class="font-bold text-2xl font-headline"
+                    [class.text-primary]="openDay === i"
+                    [class.text-on-surface-variant]="openDay !== i">
                 {{ (i + 1).toString().padStart(2, '0') }}
               </span>
               <div>
-                <h4 class="font-bold text-xl text-[#191c1d]" style="font-family:Manrope,sans-serif">{{ day.title }}</h4>
-                <p class="text-sm text-[#444653]">{{ day.summary }}</p>
+                <h4 class="font-bold text-xl text-on-surface font-headline">{{ day.title }}</h4>
+                <p class="text-sm text-on-surface-variant">{{ day.summary }}</p>
               </div>
             </div>
-            <span class="material-symbols-outlined text-[#757684] transition-transform" [class.rotate-180]="openDay === i">expand_more</span>
+            <span class="material-symbols-outlined text-on-surface-variant transition-transform" [class.rotate-180]="openDay === i">expand_more</span>
           </div>
           <div *ngIf="openDay === i" class="px-6 pb-6 pl-20">
-            <p class="text-[#444653] text-sm">{{ day.details || day.summary }}</p>
+            <p class="text-on-surface-variant text-sm">{{ day.details || day.summary }}</p>
           </div>
         </div>
       </div>
@@ -93,25 +111,26 @@
 
     <!-- Tips & Highlights -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-      <div class="bg-[#f0dbff]/20 p-8 rounded-3xl border border-[#ce9ffd]/30" *ngIf="itinerary.tips?.length">
+      <div class="bg-primary-fixed/20 p-8 rounded-3xl border border-primary-fixed/30" *ngIf="itinerary.tips?.length">
         <div class="flex items-center gap-3 mb-6">
-          <span class="material-symbols-outlined text-[#754aa1] text-3xl">lightbulb</span>
-          <h3 class="font-bold text-2xl text-[#5a3086]" style="font-family:Manrope,sans-serif">Pro Traveler Tips</h3>
+          <span class="material-symbols-outlined text-primary text-3xl">lightbulb</span>
+          <h3 class="font-bold text-2xl text-on-surface font-headline">Pro Traveler Tips</h3>
         </div>
         <ul class="space-y-4">
           <li *ngFor="let tip of itinerary.tips" class="flex gap-3">
-            <span class="material-symbols-outlined text-[#754aa1] text-sm mt-1">check_circle</span>
-            <p class="text-[#5a3086]/80 text-sm">{{ tip }}</p>
+            <span class="material-symbols-outlined text-primary text-sm mt-1">check_circle</span>
+            <p class="text-on-surface-variant text-sm">{{ tip }}</p>
           </li>
         </ul>
       </div>
-      <div class="bg-[#dde1ff]/10 p-8 rounded-3xl border border-[#dde1ff]/20" *ngIf="itinerary.highlights?.length">
+      <div class="bg-secondary-container/20 p-8 rounded-3xl border border-secondary-container/30" *ngIf="itinerary.highlights?.length">
         <div class="flex items-center gap-3 mb-6">
-          <span class="material-symbols-outlined text-[#3953bd] text-3xl">stars</span>
-          <h3 class="font-bold text-2xl text-[#001356]" style="font-family:Manrope,sans-serif">Itinerary Highlights</h3>
+          <span class="material-symbols-outlined text-secondary text-3xl">stars</span>
+          <h3 class="font-bold text-2xl text-on-surface font-headline">Itinerary Highlights</h3>
         </div>
         <div class="flex flex-wrap gap-2">
-          <span *ngFor="let h of itinerary.highlights" class="bg-white px-4 py-2 rounded-full text-xs font-bold text-[#3953bd] shadow-sm">{{ h }}</span>
+          <span *ngFor="let h of itinerary.highlights"
+                class="bg-white px-4 py-2 rounded-full text-xs font-bold text-on-secondary-container shadow-sm">{{ h }}</span>
         </div>
       </div>
     </div>
@@ -119,9 +138,9 @@
 </div>
 
 <!-- Loading state -->
-<div *ngIf="!itinerary" class="min-h-screen flex items-center justify-center pt-16">
+<div *ngIf="!itinerary" class="min-h-screen flex items-center justify-center">
   <div class="text-center">
-    <span class="material-symbols-outlined text-[80px] text-[#c5c5d5] animate-spin">travel_explore</span>
-    <p class="text-[#444653] mt-4">Loading itinerary...</p>
+    <span class="material-symbols-outlined text-[80px] text-on-surface-variant/30 animate-spin">progress_activity</span>
+    <p class="text-on-surface-variant mt-4 font-medium">Loading itinerary...</p>
   </div>
 </div>
