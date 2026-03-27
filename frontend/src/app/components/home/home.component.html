@@ -1,151 +1,151 @@
-<!-- Hero Section -->
-<section class="relative min-h-[870px] flex items-center overflow-hidden bg-[#f8f9fa]">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 items-center relative z-10 pt-16">
-    <div class="space-y-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dde1ff] text-[#001356] text-[10px] uppercase tracking-widest font-bold">
-        <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
-        Next-Gen Planning
+<main class="max-w-screen-2xl mx-auto px-8">
+  <!-- Hero Section -->
+  <section class="flex flex-col md:flex-row items-center justify-between py-16 md:py-24 gap-12">
+    <div class="flex-1 space-y-8 text-left max-w-2xl">
+      <div class="space-y-4">
+        <span class="inline-block px-4 py-1.5 rounded-full bg-secondary-container text-on-secondary-container text-xs font-bold tracking-widest uppercase">Your journey starts here</span>
+        <h1 class="text-6xl md:text-8xl font-headline font-extrabold text-on-surface leading-[1.05] tracking-tighter">
+          Plan Your <span class="text-primary italic">Perfect</span> Journey
+        </h1>
+        <p class="text-xl text-on-surface-variant leading-relaxed max-w-lg">
+          Curate breathtaking itineraries with our digital journal. From hidden alleys to mountain peaks, capture every moment of your adventure.
+        </p>
       </div>
-      <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight text-[#191c1d] leading-[1.1]" style="font-family:Manrope,sans-serif">
-        Discover Your Next <span class="bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent">Great Adventure</span>
-      </h1>
-      <p class="text-lg text-[#444653] max-w-xl leading-relaxed">
-        Precision-crafted itineraries for the modern explorer. We blend editorial aesthetics with high-performance logistics to curate your perfect journey.
-      </p>
-      <div class="flex flex-wrap gap-4 pt-4">
-        <button routerLink="/register" class="signature-gradient text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-all shadow-xl shadow-indigo-100" style="font-family:Manrope,sans-serif">
-          Start Planning
+      <div class="flex flex-wrap gap-4">
+        <!-- If logged in, go to dashboard; otherwise go to register -->
+        <a *ngIf="auth.isLoggedIn" routerLink="/dashboard"
+           class="px-10 py-4 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-lg shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 inline-block">
+          My Dashboard
+        </a>
+        <a *ngIf="!auth.isLoggedIn" routerLink="/register"
+           class="px-10 py-4 rounded-full bg-gradient-to-r from-primary to-primary-container text-on-primary font-bold text-lg shadow-lg shadow-primary/20 transition-transform hover:scale-105 active:scale-95 inline-block">
+          Get Started
+        </a>
+        <a *ngIf="!auth.isLoggedIn" routerLink="/login"
+           class="px-10 py-4 rounded-full bg-surface-container-high text-on-surface font-bold text-lg hover:bg-surface-container-highest transition-all flex items-center gap-2">
+          Login
           <span class="material-symbols-outlined">arrow_forward</span>
-        </button>
-        <button routerLink="/dashboard" class="bg-[#e1e3e4] text-[#444653] px-8 py-4 rounded-xl font-bold hover:bg-[#e7e8e9] transition-colors" style="font-family:Manrope,sans-serif">
-          View Dashboard
-        </button>
+        </a>
       </div>
     </div>
-    <div class="relative hidden lg:block">
-      <div class="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl rotate-2 relative z-20 bg-[#edeeef] flex items-center justify-center">
-        <span class="material-symbols-outlined text-[120px] text-[#c5c5d5]">travel_explore</span>
-      </div>
-      <div class="absolute top-20 -right-4 w-20 h-20 signature-gradient rounded-full blur-3xl opacity-30"></div>
-    </div>
-  </div>
-</section>
-
-<!-- Curated Collections -->
-<section class="py-24 bg-[#f3f4f5]">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12">
-    <div class="flex justify-between items-end mb-12">
-      <div class="space-y-2">
-        <h2 class="text-3xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Curated Collections</h2>
-        <p class="text-[#444653]">Hand-picked experiences by our elite travel architects.</p>
-      </div>
-      <button routerLink="/dashboard" class="text-[#3953bd] font-semibold flex items-center gap-1 hover:underline text-sm">
-        Explore all <span class="material-symbols-outlined text-sm">arrow_outward</span>
-      </button>
-    </div>
-    <div class="grid md:grid-cols-3 gap-8">
-      <div *ngFor="let card of featuredCards" class="group bg-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2">
-        <div class="aspect-[16/10] overflow-hidden relative bg-[#edeeef] flex items-center justify-center">
-          <span class="material-symbols-outlined text-[64px] text-[#c5c5d5]">{{ card.icon }}</span>
-          <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">
-            {{ card.duration }}
+    <div class="flex-1 w-full relative">
+      <div class="relative aspect-square md:aspect-auto md:h-[600px] w-full bg-surface-container-low rounded-xl overflow-hidden shadow-2xl">
+        <img alt="Editorial travel photography" class="w-full h-full object-cover"
+             src="https://lh3.googleusercontent.com/aida-public/AB6AXuBq8Xx567EDwq0wn8gVamJXI7lAieJ-gHrqzFJXfKNLRXcRkmpEITTMe8ZTtu1gbafGM3yLpIR9orBdPX5WtS_IONywZOQsfyGbVwi5pjuUTgAZSGYXkbV1tebcqskDZnjv9QVFgSFQoLvWV1foK7TsXgTuMKfv77_SWi-lk-Um27Ur7_pBpkfLzuUrja_F8XYOCKpO2gPxyC6CK2peGLFfL0Vk7RVgxKd2CUjTTRhgNUx-koOpLOFYBfU0uQlmrz6CzWCHb1gNQVRq"/>
+        <!-- Detail Card -->
+        <div class="absolute bottom-8 -left-8 md:-left-12 bg-white/90 backdrop-blur-md p-6 rounded-lg shadow-xl max-w-xs hidden sm:block">
+          <div class="flex gap-4 items-center mb-3">
+            <div class="w-12 h-12 rounded-full bg-tertiary-fixed flex items-center justify-center">
+              <span class="material-symbols-outlined text-tertiary">explore</span>
+            </div>
+            <div>
+              <p class="text-xs font-bold text-tertiary uppercase tracking-tighter">Current Trending</p>
+              <p class="text-lg font-headline font-bold text-on-surface">Amalfi Coast, Italy</p>
+            </div>
           </div>
-        </div>
-        <div class="p-6 relative">
-          <div class="absolute left-0 top-0 w-1 h-full bg-[#3953bd] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <h3 class="text-xl font-bold mb-1" style="font-family:Manrope,sans-serif">{{ card.title }}</h3>
-          <p class="text-[#444653] text-sm mb-4">{{ card.subtitle }}</p>
-          <div class="flex justify-between items-center pt-4 border-t border-[#c5c5d5]/20">
-            <span class="text-[#3953bd] font-bold">{{ card.price }} <span class="text-[#444653] font-normal text-xs">/ person</span></span>
-            <span class="material-symbols-outlined text-[#757684]">favorite</span>
-          </div>
+          <p class="text-sm text-on-surface-variant">"The most curated trip of the season. Discover the hidden coves of Positano."</p>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Features Section -->
-<section class="py-24 bg-[#f8f9fa]">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 text-center mb-16">
-    <span class="text-[#754aa1] font-bold text-xs uppercase tracking-[0.2em] mb-4 block">The Ecosystem</span>
-    <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Designed for the Discerning Traveler</h2>
-  </div>
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 grid md:grid-cols-3 gap-12">
-    <div *ngFor="let f of features" class="p-8 rounded-2xl bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 border border-[#c5c5d5]/10">
-      <div class="w-14 h-14 rounded-xl signature-gradient flex items-center justify-center text-white mb-6">
-        <span class="material-symbols-outlined text-3xl">{{ f.icon }}</span>
+  <!-- Features Bento Grid -->
+  <section class="py-24 space-y-16">
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6">
+      <div class="space-y-4">
+        <h2 class="text-4xl md:text-5xl font-headline font-extrabold text-on-surface tracking-tight">Elevate Your Travel Experience</h2>
+        <p class="text-lg text-on-surface-variant max-w-xl">Everything you need to orchestrate the perfect getaway, from initial inspiration to the final flight home.</p>
       </div>
-      <h3 class="text-xl font-bold mb-4" style="font-family:Manrope,sans-serif">{{ f.title }}</h3>
-      <p class="text-[#444653] leading-relaxed">{{ f.desc }}</p>
     </div>
-  </div>
-</section>
-
-<!-- Testimonials -->
-<section class="py-24 bg-[#e7e8e9] overflow-hidden">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center gap-16">
-    <div class="lg:w-1/3 space-y-6">
-      <h2 class="text-4xl font-bold leading-tight" style="font-family:Manrope,sans-serif">Trusted by World Travelers</h2>
-      <p class="text-[#444653]">Join over 50,000+ adventurers who have elevated their travel game with our platform.</p>
-    </div>
-    <div class="lg:w-2/3 grid md:grid-cols-2 gap-6">
-      <div class="p-8 bg-white rounded-2xl shadow-sm italic text-[#444653] relative">
-        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 -left-2 opacity-50">format_quote</span>
-        "The Elevated Navigator changed how I travel. No more messy spreadsheets—just pure editorial joy and perfect timing on every leg of my trip."
-        <div class="mt-6 flex items-center gap-3 not-italic">
-          <div class="w-10 h-10 rounded-full bg-[#e1e3e4]"></div>
-          <div>
-            <p class="text-sm font-bold text-[#191c1d]">Eleanor Vance</p>
-            <p class="text-xs">Solo Luxury Traveler</p>
-          </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div *ngFor="let f of features"
+           class="bg-surface-container-low rounded-xl p-8 flex flex-col gap-4 hover:shadow-xl transition-all duration-300">
+        <div class="w-14 h-14 rounded-full bg-white flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-primary text-3xl">{{ f.icon }}</span>
         </div>
+        <h3 class="text-2xl font-headline font-bold text-on-surface">{{ f.title }}</h3>
+        <p class="text-on-surface-variant leading-relaxed">{{ f.desc }}</p>
       </div>
-      <div class="p-8 bg-white rounded-2xl shadow-sm italic text-[#444653] relative mt-8 md:mt-12">
-        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 -left-2 opacity-50">format_quote</span>
-        "The management tools are a godsend for my travel agency. We can deliver high-end itineraries in half the time it used to take."
-        <div class="mt-6 flex items-center gap-3 not-italic">
-          <div class="w-10 h-10 rounded-full bg-[#e1e3e4]"></div>
-          <div>
-            <p class="text-sm font-bold text-[#191c1d]">Marcus Thorne</p>
-            <p class="text-xs">Lead Agent, Thorne Travel</p>
-          </div>
+    </div>
+  </section>
+
+  <!-- Featured Trips Preview -->
+  <section class="py-16 space-y-10">
+    <h2 class="text-4xl font-headline font-extrabold text-on-surface tracking-tight">Featured Journeys</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div *ngFor="let card of featuredCards"
+           class="group bg-surface-container-lowest rounded-xl p-8 border border-outline-variant/20 hover:-translate-y-2 hover:shadow-2xl transition-all duration-500">
+        <div class="w-14 h-14 rounded-full bg-secondary-container flex items-center justify-center mb-6">
+          <span class="material-symbols-outlined text-secondary text-3xl">{{ card.icon }}</span>
+        </div>
+        <h3 class="text-xl font-headline font-bold text-on-surface mb-2">{{ card.title }}</h3>
+        <p class="text-on-surface-variant text-sm mb-6">{{ card.subtitle }}</p>
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold text-on-surface-variant uppercase tracking-wider">{{ card.duration }}</span>
+          <span class="text-primary font-bold">{{ card.price }}</span>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<!-- Final CTA -->
-<section class="py-24">
-  <div class="max-w-5xl mx-auto px-6 lg:px-12">
-    <div class="signature-gradient rounded-[2.5rem] p-12 lg:p-20 text-center text-white space-y-8 relative overflow-hidden shadow-2xl shadow-indigo-200">
-      <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-      <div class="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
-      <h2 class="text-4xl lg:text-5xl font-extrabold relative z-10" style="font-family:Manrope,sans-serif">Ready to Elevate Your Journey?</h2>
-      <p class="text-white/80 text-lg max-w-2xl mx-auto relative z-10">
-        Join the community of explorers who don't just visit places, they experience them through perfectly planned stories.
-      </p>
-      <div class="flex justify-center relative z-10">
-        <button routerLink="/register" class="bg-white text-[#3953bd] px-10 py-5 rounded-xl font-bold text-lg active:scale-95 transition-all shadow-xl shadow-black/10" style="font-family:Manrope,sans-serif">
-          Get Started Now
-        </button>
+  <!-- CTA Section -->
+  <section class="py-24 mb-24 rounded-xl bg-surface-container flex flex-col items-center text-center p-12 md:p-24 relative overflow-hidden">
+    <div class="relative z-10 max-w-2xl space-y-8">
+      <h2 class="text-4xl md:text-5xl font-headline font-extrabold text-on-surface tracking-tight leading-tight">
+        Start Planning Your<br/>Dream Journey Today
+      </h2>
+      <p class="text-lg text-on-surface-variant">Join thousands of curators building their perfect travel stories.</p>
+      <div class="flex flex-wrap gap-4 justify-center">
+        <a *ngIf="!auth.isLoggedIn" routerLink="/register"
+           class="bg-primary text-on-primary px-10 py-4 rounded-full font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all inline-block">
+          Create Free Account
+        </a>
+        <a *ngIf="auth.isLoggedIn" routerLink="/dashboard"
+           class="bg-primary text-on-primary px-10 py-4 rounded-full font-bold shadow-lg shadow-primary/20 hover:opacity-90 transition-all inline-block">
+          Go to Dashboard
+        </a>
+        <a routerLink="/about"
+           class="bg-surface-container-highest text-on-surface px-10 py-4 rounded-full font-bold hover:bg-surface-container-high transition-all inline-block">
+          Learn More
+        </a>
       </div>
     </div>
-  </div>
-</section>
+    <div class="absolute top-0 left-0 w-64 h-64 bg-primary/5 rounded-full blur-[100px]"></div>
+    <div class="absolute bottom-0 right-0 w-64 h-64 bg-tertiary/5 rounded-full blur-[100px]"></div>
+  </section>
+</main>
 
 <!-- Footer -->
-<footer class="w-full border-t border-slate-100 bg-white">
-  <div class="flex flex-col md:flex-row justify-between items-center py-8 px-6 lg:px-12 max-w-7xl mx-auto">
-    <div class="text-xs text-slate-500 order-2 md:order-1 mt-6 md:mt-0">
-      <span class="font-bold text-slate-900 mr-2">The Elevated Navigator</span>
-      © 2024 The Elevated Navigator. All rights reserved.
+<footer class="bg-white py-16 px-8 border-t border-surface-container-low">
+  <div class="max-w-screen-2xl mx-auto flex flex-col md:flex-row justify-between gap-12">
+    <div class="space-y-6 max-w-xs">
+      <span class="text-3xl font-extrabold tracking-tighter text-[#FF6B6B] font-headline">Wanderer</span>
+      <p class="text-on-surface-variant text-sm leading-relaxed">The digital journal for the modern explorer. Redefining how we plan, experience, and remember our journeys.</p>
     </div>
-    <div class="flex gap-8 text-xs text-slate-500 order-1 md:order-2">
-      <a href="#" class="hover:text-slate-900 transition-colors">Privacy Policy</a>
-      <a href="#" class="hover:text-slate-900 transition-colors">Terms of Service</a>
-      <a href="#" class="hover:text-slate-900 transition-colors">Contact Us</a>
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-12">
+      <div class="space-y-4">
+        <p class="font-bold text-on-surface font-headline uppercase text-xs tracking-widest">Navigate</p>
+        <ul class="space-y-3 text-sm text-on-surface-variant">
+          <li><a routerLink="/home" class="hover:text-primary transition-colors">Home</a></li>
+          <li><a routerLink="/about" class="hover:text-primary transition-colors">About</a></li>
+          <li><a *ngIf="auth.isLoggedIn" routerLink="/dashboard" class="hover:text-primary transition-colors">Dashboard</a></li>
+        </ul>
+      </div>
+      <div class="space-y-4">
+        <p class="font-bold text-on-surface font-headline uppercase text-xs tracking-widest">Account</p>
+        <ul class="space-y-3 text-sm text-on-surface-variant">
+          <li><a *ngIf="!auth.isLoggedIn" routerLink="/login" class="hover:text-primary transition-colors">Login</a></li>
+          <li><a *ngIf="!auth.isLoggedIn" routerLink="/register" class="hover:text-primary transition-colors">Register</a></li>
+          <li><a *ngIf="auth.isAdmin" routerLink="/admin" class="hover:text-primary transition-colors">Admin</a></li>
+        </ul>
+      </div>
     </div>
+  </div>
+  <div class="max-w-screen-2xl mx-auto mt-16 pt-8 border-t border-surface-container flex justify-between items-center text-xs text-on-surface-variant font-medium">
+    <p>© 2024 Wanderer Digital Curator. All rights reserved.</p>
+    <span class="flex items-center gap-1">
+      <span class="material-symbols-outlined text-[12px] text-primary" style="font-variation-settings: 'FILL' 1;">favorite</span>
+      Made for travelers.
+    </span>
   </div>
 </footer>

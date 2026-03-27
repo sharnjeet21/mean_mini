@@ -1,89 +1,107 @@
-<div class="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-6 relative overflow-hidden">
-  <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#3953bd]/5 blur-[120px]"></div>
-  <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#754aa1]/5 blur-[120px]"></div>
+<div class="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center relative px-4 py-12">
+<!-- Background Decorative Elements -->
+<div class="fixed inset-0 pointer-events-none overflow-hidden">
+  <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary-container/5 blur-[120px]"></div>
+  <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-tertiary-container/5 blur-[120px]"></div>
+</div>
 
-  <div class="w-full max-w-[480px] z-10">
+<!-- Registration Card -->
+<main class="relative w-full max-w-md z-10">
+  <div class="bg-surface-container-lowest rounded-xl editorial-shadow p-8 md:p-12 transition-all duration-500 hover:shadow-[0_20px_50px_rgba(31,27,16,0.08)]">
+    <!-- Brand & Header -->
     <div class="text-center mb-10">
-      <div class="inline-flex items-center justify-center mb-4">
-        <span class="material-symbols-outlined text-4xl text-[#3953bd]" style="font-variation-settings:'FILL' 1">explore</span>
+      <span class="text-3xl font-extrabold tracking-tighter text-primary font-headline">Wanderer</span>
+      <h1 class="text-3xl font-extrabold text-on-surface font-headline tracking-tight mb-2 mt-2">Begin your story</h1>
+      <p class="text-on-surface-variant font-body text-sm">Join our community of digital curators and start planning your next escape.</p>
+    </div>
+
+    <!-- Error alert -->
+    <div *ngIf="error" class="mb-6 px-4 py-3 rounded-xl bg-error-container text-on-error-container text-sm font-medium flex items-center gap-2">
+      <span class="material-symbols-outlined text-lg">error</span>
+      {{ error }}
+    </div>
+
+    <!-- Form -->
+    <form (ngSubmit)="onRegister()" #regForm="ngForm" class="space-y-6">
+      <!-- Name Field -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label ml-1" for="name">Full Name</label>
+        <div class="relative group">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] transition-colors group-focus-within:text-primary">person</span>
+          <input id="name" name="name" type="text" required
+                 [(ngModel)]="name"
+                 placeholder="John Doe"
+                 class="w-full pl-12 pr-4 py-4 bg-surface-container-highest/50 border-none rounded-full font-body text-on-surface placeholder:text-outline/60 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all"/>
+        </div>
       </div>
-      <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent" style="font-family:Manrope,sans-serif">
-        Create Your Account
-      </h1>
-      <p class="text-[#444653] mt-2 font-medium">Start planning your next great adventure.</p>
-    </div>
 
-    <div class="bg-white rounded-xl p-8 lg:p-10 shadow-[0_12px_32px_-4px_rgba(25,28,29,0.06)] border border-[#c5c5d5]/20">
-      <form (ngSubmit)="onRegister()" class="space-y-5">
-        <div *ngIf="error" class="flex items-center gap-2 p-3 rounded-lg bg-[#ffdad6] text-[#93000a] text-sm">
-          <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">error</span>
-          {{ error }}
+      <!-- Email Field -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label ml-1" for="email">Email Address</label>
+        <div class="relative group">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] transition-colors group-focus-within:text-primary">mail</span>
+          <input id="email" name="email" type="email" required
+                 [(ngModel)]="email"
+                 placeholder="hello@wanderer.com"
+                 class="w-full pl-12 pr-4 py-4 bg-surface-container-highest/50 border-none rounded-full font-body text-on-surface placeholder:text-outline/60 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all"/>
         </div>
+      </div>
 
-        <!-- Name -->
-        <div class="space-y-2">
-          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Full Name</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="material-symbols-outlined text-[#757684]">person</span>
-            </div>
-            <input [(ngModel)]="name" name="name" type="text" placeholder="Your full name" required
-              class="block w-full pl-10 pr-3 py-3 border-0 border-b-2 border-[#c5c5d5] bg-transparent focus:ring-0 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
-          </div>
+      <!-- Password Field -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label ml-1" for="password">Password</label>
+        <div class="relative group">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] transition-colors group-focus-within:text-primary">lock</span>
+          <input id="password" name="password"
+                 [type]="showPassword ? 'text' : 'password'"
+                 required
+                 [(ngModel)]="password"
+                 placeholder="••••••••"
+                 class="w-full pl-12 pr-12 py-4 bg-surface-container-highest/50 border-none rounded-full font-body text-on-surface placeholder:text-outline/60 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all"/>
+          <button type="button" (click)="showPassword = !showPassword"
+                  class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-xl">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+          </button>
         </div>
+      </div>
 
-        <!-- Email -->
-        <div class="space-y-2">
-          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Email Address</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="material-symbols-outlined text-[#757684]">mail</span>
-            </div>
-            <input [(ngModel)]="email" name="email" type="email" placeholder="you@example.com" required
-              class="block w-full pl-10 pr-3 py-3 border-0 border-b-2 border-[#c5c5d5] bg-transparent focus:ring-0 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
-          </div>
+      <!-- Confirm Password Field -->
+      <div class="space-y-1.5">
+        <label class="block text-xs font-semibold uppercase tracking-widest text-on-surface-variant font-label ml-1" for="confirmPassword">Confirm Password</label>
+        <div class="relative group">
+          <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px] transition-colors group-focus-within:text-primary">lock_reset</span>
+          <input id="confirmPassword" name="confirmPassword"
+                 [type]="showPassword ? 'text' : 'password'"
+                 required
+                 [(ngModel)]="confirmPassword"
+                 placeholder="••••••••"
+                 class="w-full pl-12 pr-4 py-4 bg-surface-container-highest/50 border-none rounded-full font-body text-on-surface placeholder:text-outline/60 focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest transition-all"/>
         </div>
+      </div>
 
-        <!-- Password -->
-        <div class="space-y-2">
-          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Password</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="material-symbols-outlined text-[#757684]">lock</span>
-            </div>
-            <input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" placeholder="Min. 6 characters" required minlength="6"
-              class="block w-full pl-10 pr-10 py-3 border-0 border-b border-[#c5c5d5]/40 bg-transparent focus:ring-0 focus:border-b-2 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
-            <button type="button" (click)="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#757684]">
-              <span class="material-symbols-outlined text-[20px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Confirm Password -->
-        <div class="space-y-2">
-          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Confirm Password</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="material-symbols-outlined text-[#757684]">lock_reset</span>
-            </div>
-            <input [(ngModel)]="confirmPassword" name="confirmPassword" type="password" placeholder="Repeat your password" required
-              class="block w-full pl-10 pr-3 py-3 border-0 border-b border-[#c5c5d5]/40 bg-transparent focus:ring-0 focus:border-b-2 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none"
-              [class.border-[#ba1a1a]]="confirmPassword && password !== confirmPassword">
-          </div>
-          <p *ngIf="confirmPassword && password !== confirmPassword" class="text-[11px] text-[#ba1a1a] ml-1 font-medium">Passwords do not match</p>
-        </div>
-
-        <button type="submit" [disabled]="loading || (!!confirmPassword && password !== confirmPassword)"
-          class="signature-gradient w-full flex justify-center py-4 px-4 rounded-xl text-white font-bold text-sm tracking-wide shadow-lg shadow-[#3953bd]/20 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-60"
-          style="font-family:Manrope,sans-serif">
-          {{ loading ? 'Creating account...' : 'Create Account' }}
+      <!-- CTA -->
+      <div class="pt-2">
+        <button type="submit"
+                [disabled]="loading"
+                class="w-full py-4 px-6 signature-gradient text-on-primary font-headline font-bold rounded-full shadow-lg shadow-primary/20 hover:shadow-xl hover:shadow-primary/30 active:scale-[0.98] transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-60">
+          <span *ngIf="loading" class="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+          <span *ngIf="!loading">Create Account</span>
         </button>
-      </form>
-    </div>
+      </div>
+    </form>
 
-    <p class="mt-8 text-center text-sm font-medium text-[#444653]">
-      Already have an account?
-      <a routerLink="/login" class="text-[#3953bd] font-bold hover:underline decoration-2 underline-offset-4 ml-1">Sign in here</a>
+    <!-- Footer Link -->
+    <p class="mt-10 text-center font-body text-sm text-on-surface-variant">
+      Already have a journal?
+      <a routerLink="/login" class="text-primary font-bold hover:underline underline-offset-4 decoration-primary/30 transition-all">Login</a>
     </p>
   </div>
+
+  <!-- Decorative quote -->
+  <div class="mt-12 text-center px-4">
+    <p class="italic text-on-surface-variant/60 font-body text-sm leading-relaxed">
+      "The world is a book and those who do not travel read only one page."
+    </p>
+  </div>
+</main>
 </div>

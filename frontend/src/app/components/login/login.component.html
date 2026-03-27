@@ -1,97 +1,102 @@
-<div class="min-h-screen bg-[#f8f9fa] flex items-center justify-center p-6 relative overflow-hidden">
-  <!-- Ambient blobs -->
-  <div class="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-[#3953bd]/5 blur-[120px]"></div>
-  <div class="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-[#754aa1]/5 blur-[120px]"></div>
+<div class="min-h-[calc(100vh-4rem)] flex flex-col items-center justify-center relative px-4 py-12">
+<!-- Background Decor -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+  <div class="absolute -top-[10%] -left-[5%] w-[40%] h-[50%] bg-primary-container opacity-5 blur-[120px] rounded-full"></div>
+  <div class="absolute -bottom-[10%] -right-[5%] w-[40%] h-[50%] bg-tertiary-container opacity-5 blur-[120px] rounded-full"></div>
+</div>
 
-  <div class="w-full max-w-[480px] z-10">
-    <!-- Brand -->
-    <div class="text-center mb-10">
-      <div class="inline-flex items-center justify-center mb-4">
-        <span class="material-symbols-outlined text-4xl text-[#3953bd]" style="font-variation-settings:'FILL' 1">explore</span>
+<main class="relative z-10 w-full max-w-4xl flex flex-col items-center">
+  <!-- Brand Header -->
+  <div class="mb-12 text-center">
+    <h1 class="font-headline text-5xl font-extrabold tracking-tighter text-primary mb-2">Wanderer</h1>
+    <p class="font-label text-on-surface-variant uppercase tracking-[0.2em] text-xs font-semibold">The Digital Curator</p>
+  </div>
+
+  <!-- Login Container -->
+  <div class="grid grid-cols-1 md:grid-cols-12 w-full bg-surface-container-lowest rounded-xl editorial-shadow overflow-hidden max-w-4xl">
+    <!-- Visual Section -->
+    <div class="hidden md:block md:col-span-5 relative min-h-[500px]">
+      <img alt="Travel Aesthetic"
+           class="absolute inset-0 w-full h-full object-cover"
+           src="https://lh3.googleusercontent.com/aida-public/AB6AXuCCx3cqQOxEM3XgIJ2KpJqWRzM0N3I1oxfSXLLasSFyAXQWG3v2WfaBvW77gY-7DxVu5eCGzKM9hxX2dO7lYjw2afl5mxYgOIXjhYR8vaZhpIfHNMs6Z0Z2Ji8e3eMoIN0zLbn3K5XtfKvth3iXrhVlKdUCXM-TWszfUtQR5guWyB_Ari23U9dfa5yE-moAqfujpadRqMPq1RxavyreUIYrYLO2QST5C8tYNkhvKQRO-XjOEjA9sAOLNEqZedyZPpt3e1bhHijGWimN"/>
+      <div class="absolute inset-0 bg-gradient-to-t from-on-surface/60 to-transparent"></div>
+      <div class="absolute bottom-8 left-8 right-8 text-white">
+        <p class="font-headline text-2xl font-bold leading-tight mb-2">Curate your next great story.</p>
+        <p class="font-body text-sm opacity-90 leading-relaxed">Join our community of modern explorers and digital nomads.</p>
       </div>
-      <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent" style="font-family:Manrope,sans-serif">
-        The Elevated Navigator
-      </h1>
-      <p class="text-[#444653] mt-2 font-medium">Welcome back to your next adventure.</p>
     </div>
 
-    <!-- Card -->
-    <div class="bg-white rounded-xl p-8 lg:p-10 shadow-[0_12px_32px_-4px_rgba(25,28,29,0.06)] border border-[#c5c5d5]/20">
-      <form (ngSubmit)="onSubmit()" class="space-y-6">
-        <!-- Error -->
-        <div *ngIf="error" class="flex items-center gap-2 p-3 rounded-lg bg-[#ffdad6] text-[#93000a] text-sm">
-          <span class="material-symbols-outlined text-sm" style="font-variation-settings:'FILL' 1">error</span>
+    <!-- Form Section -->
+    <div class="md:col-span-7 p-8 md:p-12 lg:p-16 flex flex-col justify-center">
+      <div class="max-w-sm mx-auto w-full">
+        <header class="mb-10">
+          <h2 class="font-headline text-3xl font-bold text-on-surface tracking-tight mb-2">Welcome Back</h2>
+          <p class="text-on-surface-variant text-base leading-relaxed">Sign in to access your curated travel itineraries.</p>
+        </header>
+
+        <!-- Error alert -->
+        <div *ngIf="error" class="mb-6 px-4 py-3 rounded-xl bg-error-container text-on-error-container text-sm font-medium flex items-center gap-2">
+          <span class="material-symbols-outlined text-lg">error</span>
           {{ error }}
         </div>
 
-        <!-- Email -->
-        <div class="space-y-2">
-          <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Email Address</label>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="material-symbols-outlined text-[#444653]">mail</span>
+        <form (ngSubmit)="onSubmit()" #loginForm="ngForm" class="space-y-6">
+          <!-- Email Field -->
+          <div class="space-y-2">
+            <label class="block font-label font-semibold text-sm text-on-surface-variant ml-1" for="email">Email address</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">mail</span>
+              <input
+                id="email" name="email" type="email" required
+                [(ngModel)]="email"
+                placeholder="explorer@journal.com"
+                class="w-full pl-12 pr-4 py-4 bg-surface-container-highest border-none rounded-full text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all font-body"/>
             </div>
-            <input [(ngModel)]="email" name="email" type="email" placeholder="you@example.com" required
-              class="block w-full pl-10 pr-3 py-3 border-0 border-b-2 border-[#c5c5d5] bg-transparent focus:ring-0 focus:border-[#3953bd] transition-all duration-300 placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
           </div>
-        </div>
 
-        <!-- Password -->
-        <div class="space-y-2">
-          <div class="flex justify-between items-center">
-            <label class="block text-sm font-semibold text-[#191c1d] ml-1" style="font-family:Manrope,sans-serif">Password</label>
-            <a href="#" class="text-xs font-semibold text-[#754aa1] hover:text-[#3953bd] transition-colors">Forgot password?</a>
-          </div>
-          <div class="relative">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span class="material-symbols-outlined text-[#757684]">lock</span>
+          <!-- Password Field -->
+          <div class="space-y-2">
+            <label class="block font-label font-semibold text-sm text-on-surface-variant ml-1" for="password">Password</label>
+            <div class="relative">
+              <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant text-xl">lock</span>
+              <input
+                id="password" name="password"
+                [type]="showPassword ? 'text' : 'password'"
+                required
+                [(ngModel)]="password"
+                placeholder="••••••••"
+                class="w-full pl-12 pr-12 py-4 bg-surface-container-highest border-none rounded-full text-on-surface placeholder:text-outline focus:ring-2 focus:ring-primary/20 transition-all font-body"/>
+              <button type="button" (click)="showPassword = !showPassword"
+                      class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors">
+                <span class="material-symbols-outlined text-xl">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
+              </button>
             </div>
-            <input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" placeholder="••••••••" required
-              class="block w-full pl-10 pr-10 py-3 border-0 border-b border-[#c5c5d5]/40 bg-transparent focus:ring-0 focus:border-b-2 focus:border-[#3953bd] transition-all duration-300 placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
-            <button type="button" (click)="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#757684] hover:text-[#444653]">
-              <span class="material-symbols-outlined text-[20px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
-            </button>
           </div>
-        </div>
 
-        <!-- Submit -->
-        <button type="submit" [disabled]="loading"
-          class="signature-gradient w-full flex justify-center py-4 px-4 rounded-xl text-white font-bold text-sm tracking-wide shadow-lg shadow-[#3953bd]/20 hover:scale-[1.01] active:scale-[0.98] transition-all duration-200 disabled:opacity-60"
-          style="font-family:Manrope,sans-serif">
-          {{ loading ? 'Signing in...' : 'Login to Dashboard' }}
-        </button>
-      </form>
+          <!-- Login Button -->
+          <button type="submit"
+                  [disabled]="loading"
+                  class="w-full py-4 px-6 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-lg rounded-full editorial-shadow hover:opacity-90 active:scale-[0.98] transition-all flex justify-center items-center gap-2 disabled:opacity-60">
+            <span *ngIf="loading" class="material-symbols-outlined animate-spin text-xl">progress_activity</span>
+            <span *ngIf="!loading">Login</span>
+            <span *ngIf="!loading" class="material-symbols-outlined text-xl">arrow_forward</span>
+          </button>
+        </form>
 
-      <!-- Divider -->
-      <div class="mt-8 relative">
-        <div class="absolute inset-0 flex items-center">
-          <div class="w-full border-t border-[#c5c5d5]/30"></div>
-        </div>
-        <div class="relative flex justify-center text-xs">
-          <span class="px-3 bg-white text-[#c5c5d5] uppercase tracking-[0.2em] font-bold">Or continue with</span>
-        </div>
+        <!-- Register Link -->
+        <footer class="mt-10 text-center">
+          <div class="flex items-center gap-4 mb-8">
+            <div class="h-px flex-1 bg-surface-container-highest"></div>
+            <span class="text-xs font-bold text-outline uppercase tracking-widest">new here?</span>
+            <div class="h-px flex-1 bg-surface-container-highest"></div>
+          </div>
+          <p class="text-on-surface-variant font-medium">
+            New to Wanderer?
+            <a routerLink="/register" class="text-primary font-bold ml-1 hover:underline underline-offset-4 decoration-2 transition-all">Register</a>
+          </p>
+        </footer>
       </div>
-
-      <!-- Social -->
-      <div class="mt-6 grid grid-cols-2 gap-4">
-        <button class="flex items-center justify-center py-3 px-4 rounded-xl bg-[#f3f4f5] border border-[#c5c5d5]/10 hover:bg-[#e7e8e9] transition-colors text-sm font-semibold text-[#444653]">
-          <span class="material-symbols-outlined mr-2 text-[#3953bd]">mail</span> Google
-        </button>
-        <button class="flex items-center justify-center py-3 px-4 rounded-xl bg-[#f3f4f5] border border-[#c5c5d5]/10 hover:bg-[#e7e8e9] transition-colors text-sm font-semibold text-[#444653]">
-          <span class="material-symbols-outlined mr-2">travel_explore</span> Passport
-        </button>
-      </div>
-    </div>
-
-    <p class="mt-8 text-center text-sm font-medium text-[#444653]">
-      Don't have an account?
-      <a routerLink="/register" class="text-[#3953bd] font-bold hover:underline decoration-2 underline-offset-4 ml-1">Register for early access</a>
-    </p>
-
-    <div class="mt-8 flex justify-center gap-6 text-[10px] font-bold text-[#c5c5d5] uppercase tracking-widest">
-      <a href="#" class="hover:text-[#3953bd] transition-colors">Privacy Policy</a>
-      <a href="#" class="hover:text-[#3953bd] transition-colors">Terms of Service</a>
-      <a href="#" class="hover:text-[#3953bd] transition-colors">Contact Support</a>
     </div>
   </div>
+</main>
 </div>

@@ -92,7 +92,9 @@
           <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
           <input class="w-full pl-10 pr-4 py-2 bg-transparent border-0 border-b border-outline-variant/40
                         focus:ring-0 focus:border-primary transition-all placeholder:text-outline/60 text-sm outline-none"
-                 placeholder="Search itineraries...">
+                 placeholder="Search itineraries..."
+                 name="searchQuery"
+                 [(ngModel)]="searchQuery">
         </div>
         <div class="flex items-center bg-surface-container rounded-lg p-1 gap-1">
           <button *ngFor="let t of tabs"
