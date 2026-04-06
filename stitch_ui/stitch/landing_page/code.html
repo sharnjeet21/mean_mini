@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>The Elevated Navigator | Travel Itinerary Planner</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-error": "#ffffff",
+              "surface-container-highest": "#e1e3e4",
+              "surface-tint": "#3c55bf",
+              "tertiary-container": "#a56600",
+              "primary-fixed-dim": "#b9c3ff",
+              "on-tertiary": "#ffffff",
+              "surface-container-low": "#f3f4f5",
+              "tertiary-fixed-dim": "#ffb964",
+              "primary-container": "#546cd7",
+              "inverse-on-surface": "#f0f1f2",
+              "tertiary": "#835100",
+              "surface-container-lowest": "#ffffff",
+              "on-background": "#191c1d",
+              "on-error-container": "#93000a",
+              "on-surface": "#191c1d",
+              "surface-variant": "#e1e3e4",
+              "on-surface-variant": "#444653",
+              "surface": "#f8f9fa",
+              "on-secondary-fixed-variant": "#5c3187",
+              "outline-variant": "#c5c5d5",
+              "on-primary-container": "#fffbff",
+              "inverse-primary": "#b9c3ff",
+              "on-secondary-container": "#5a3086",
+              "on-tertiary-fixed-variant": "#663e00",
+              "primary": "#3953bd",
+              "tertiary-fixed": "#ffddb9",
+              "on-tertiary-container": "#fffbff",
+              "secondary-fixed-dim": "#dcb8ff",
+              "error-container": "#ffdad6",
+              "surface-container-high": "#e7e8e9",
+              "surface-container": "#edeeef",
+              "on-tertiary-fixed": "#2b1700",
+              "secondary-fixed": "#f0dbff",
+              "on-primary-fixed-variant": "#1f3ba6",
+              "on-secondary-fixed": "#2c0051",
+              "outline": "#757684",
+              "surface-bright": "#f8f9fa",
+              "on-primary-fixed": "#001356",
+              "on-secondary": "#ffffff",
+              "background": "#f8f9fa",
+              "inverse-surface": "#2e3132",
+              "primary-fixed": "#dde1ff",
+              "secondary-container": "#ce9ffd",
+              "surface-dim": "#d9dadb",
+              "secondary": "#754aa1",
+              "on-primary": "#ffffff",
+              "error": "#ba1a1a"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      body { font-family: 'Inter', sans-serif; }
+      h1, h2, h3 { font-family: 'Manrope', sans-serif; }
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .signature-gradient {
+        background: linear-gradient(to right, #667eea, #764ba2);
+      }
+      .glass-card {
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+      }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- TopNavBar -->
+<nav class="fixed top-0 w-full z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center h-16 px-6 lg:px-12 w-full mx-auto">
+<div class="text-xl font-bold tracking-tight bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent">
+                The Elevated Navigator
+            </div>
+<div class="hidden md:flex items-center gap-8 font-['Manrope'] antialiased text-sm font-medium">
+<a class="text-indigo-600 dark:text-indigo-400 font-semibold border-b-2 border-indigo-600 dark:border-indigo-400 pb-1" href="#">Home</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-colors" href="#">Dashboard</a>
+<a class="text-slate-600 dark:text-slate-400 hover:text-indigo-500 transition-colors" href="#">Explore</a>
+</div>
+<div class="flex items-center gap-4">
+<button class="active:scale-95 transform transition-transform text-slate-600 font-medium text-sm">Login</button>
+<button class="signature-gradient text-white px-5 py-2 rounded-xl text-sm font-semibold active:scale-95 transform transition-transform shadow-lg shadow-indigo-200">
+                    Register
+                </button>
+</div>
+</div>
+<div class="bg-slate-100/50 dark:bg-slate-800/50 h-[1px] w-full absolute bottom-0"></div>
+</nav>
+<main class="pt-16">
+<!-- Hero Section -->
+<section class="relative min-h-[870px] flex items-center overflow-hidden bg-surface-bright">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 items-center relative z-10">
+<div class="space-y-8">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-fixed text-on-primary-fixed text-[10px] uppercase tracking-widest font-bold">
+<span class="material-symbols-outlined text-[14px]">auto_awesome</span>
+                        Next-Gen Planning
+                    </div>
+<h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight text-on-surface leading-[1.1]">
+                        Discover Your Next <span class="bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent">Great Adventure</span>
+</h1>
+<p class="text-lg text-on-surface-variant max-w-xl leading-relaxed">
+                        Precision-crafted itineraries for the modern explorer. We blend editorial aesthetics with high-performance logistics to curate your perfect journey.
+                    </p>
+<div class="flex flex-wrap gap-4 pt-4">
+<button class="signature-gradient text-on-primary-container px-8 py-4 rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-all shadow-xl shadow-indigo-100">
+                            Start Planning
+                            <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<button class="bg-surface-container-highest text-on-surface-variant px-8 py-4 rounded-xl font-bold hover:bg-surface-container-high transition-colors">
+                            View Explore
+                        </button>
+</div>
+</div>
+<div class="relative hidden lg:block">
+<div class="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl rotate-2 relative z-20">
+<img alt="Luxury Coastal Escape" class="w-full h-full object-cover" data-alt="Stunning aerial view of a luxury coastal villa with crystal clear turquoise water and white sand beach in the Mediterranean" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHrGeftllULnRoDYV0pEB8pDGhqrvSOltKONRpV2kCuAJgHyd-F84f5Wxy_8zTFxxG7ShhVduJhmeK4qCPg-cC05EcMSRClvGDneK0t_8l67sR2MlVLgWBDhWWcZ_vt60f0ift2l_D27S2nmKkbQJO7BmGBed_aQuDrzMtkt0Mj7E7X8s23o5tG0KsQCW4NgTX6qQPVPD8nCTIANyhv5t_xzTFH6BsHCapUOAe8U0anuk41QoGVqag8d4XKmQm3K2WB8xhoiBApLU"/>
+</div>
+<div class="absolute -bottom-10 -left-10 w-64 aspect-square rounded-3xl overflow-hidden shadow-xl -rotate-6 z-30 glass-card p-4">
+<img alt="Amalfi Coast" class="w-full h-full object-cover rounded-2xl" data-alt="Colorful houses on the cliffs of Amalfi Coast Italy during sunset with soft orange light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8c3OG1ZyWA7aYQmPZ-R1eLMQ8SuHjDtzsgvQChaAqwoWmMmcgKn5IhM3ls0j7y2nbxrqckI5eX3FkfG8aE6Kb2wkzVHE95mUQgxWzXBiP2omHveX7Ee7Alk6eiXBs8mC5h0jLiHQfy6PvwhGTgS7qI6olrZPx37a_gbHsvwWcU_tSI2XNWll1PIs48_Ci83mvwt_nYnrQwsjzSlYOjNPZnYwIvxHXlnhuMYEJPjwKsJOhHJbaDsB3Qol3TLO5hp42cMD-V0oOodw"/>
+</div>
+<div class="absolute top-20 -right-4 w-20 h-20 signature-gradient rounded-full blur-3xl opacity-30"></div>
+</div>
+</div>
+</section>
+<!-- Featured Itineraries -->
+<section class="py-24 bg-surface-container-low">
+<div class="max-w-7xl mx-auto px-6 lg:px-12">
+<div class="flex justify-between items-end mb-12">
+<div class="space-y-2">
+<h2 class="text-3xl font-bold text-on-surface">Curated Collections</h2>
+<p class="text-on-surface-variant">Hand-picked experiences by our elite travel architects.</p>
+</div>
+<button class="text-primary font-semibold flex items-center gap-1 hover:underline">
+                        Explore all <span class="material-symbols-outlined text-sm">arrow_outward</span>
+</button>
+</div>
+<div class="grid md:grid-cols-3 gap-8">
+<!-- Card 1 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Kyoto Japan" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Traditional wooden temples in Kyoto Japan surrounded by cherry blossoms in soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCE5ts_tDOgmzWfxwpYEjVAz7BKVA5Js99UgBtOObBhgnqtUkiU66IBBtlIcHCK3J-oYKx2BMabcuU3uSaM4gRloodOqoLeKXQ0qdbc8d72Xd1PFI3QcDgQEYXJVwMSyg3bdXnZLEuB9uAdxdlPBCFMqAcC1JfHJuKVAvY70vpW4O1ZG7jGybdwh9wsNMOSV49tDp0_y58h5amSBFN2QLzyRCKyVJ6Ancad9I4vfeNkuN3pUeexez6qnz2uL71obnLCPhHLderlzg0"/>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">
+                                12 Days
+                            </div>
+</div>
+<div class="p-6 relative">
+<div class="absolute left-0 top-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<h3 class="text-xl font-bold mb-1">The Zen of Kyoto</h3>
+<p class="text-on-surface-variant text-sm mb-4">Culture, Cuisine &amp; Traditions</p>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<span class="text-primary font-bold">$3,200 <span class="text-on-surface-variant font-normal text-xs">/ person</span></span>
+<span class="material-symbols-outlined text-outline">favorite</span>
+</div>
+</div>
+</div>
+<!-- Card 2 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Santorini Greece" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Iconic blue domed churches of Santorini Greece overlooking the deep blue Aegean sea at dusk" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8MW6AXv2JHcc-aMHe5ggAtaVVgie7bRRdkW8RtBiofNhICNesWwoZkS4zqUHyAUBYXSbesGzrIn2-_wFQTYOxcztpXsl1YuYODrCq1ftuwGdaXHtdpB5XUixauqyDEuG6-gzqKYIdVLz4DoitW_BG5ueu9tMnqtPdGXQ-Y1BEWzP30RoC67O7rQt-QqZSvxu0LjIpakGaU67DnxIHGcs986RrcO_9XC45Rv0oG7BKRyCrCJdLimnPyOo6f30ELDqWciU8Gb-_n4A"/>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">
+                                7 Days
+                            </div>
+</div>
+<div class="p-6 relative border-l-4 border-primary">
+<h3 class="text-xl font-bold mb-1">Cyclades Serenity</h3>
+<p class="text-on-surface-variant text-sm mb-4">Luxury Yachting &amp; Island Hopping</p>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<span class="text-primary font-bold">$4,850 <span class="text-on-surface-variant font-normal text-xs">/ person</span></span>
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+</div>
+</div>
+<!-- Card 3 -->
+<div class="group bg-surface-container-lowest rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2">
+<div class="aspect-[16/10] overflow-hidden relative">
+<img alt="Swiss Alps" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="Snow capped peaks of the Swiss Alps with a red train winding through pine forests on a sunny day" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuSuOSR2oT-0anljLyFQurnWcrRgSaJnqzoKFjcLM_xswctvhWskDzSF9PGm1yoGc8fWUd8i4RxGNnoGNYZ99KYlpqZbPYVSQqKQxQZ47MZAyPS5buPkM8h_ib5jTpuPQ7rlSckepb5v5mHPUW3VWaMDPTPRWyaeAhih58ZFBygZUMJ4YmWE4vuSQi6ZzrPS5jzEQg1Ignc5SSzhaOmKbPvaWeAR0NATfhYPNKbW70U454ZCB88Ms0lynR7etFkTfse_ViYbCRXwc"/>
+<div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">
+                                9 Days
+                            </div>
+</div>
+<div class="p-6 relative">
+<div class="absolute left-0 top-0 w-1 h-full bg-primary opacity-0 group-hover:opacity-100 transition-opacity"></div>
+<h3 class="text-xl font-bold mb-1">Alpine Elevation</h3>
+<p class="text-on-surface-variant text-sm mb-4">Luxury Lodges &amp; Peak Adventures</p>
+<div class="flex justify-between items-center pt-4 border-t border-outline-variant/20">
+<span class="text-primary font-bold">$5,100 <span class="text-on-surface-variant font-normal text-xs">/ person</span></span>
+<span class="material-symbols-outlined text-outline">favorite</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Features Section -->
+<section class="py-24 bg-surface">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 text-center mb-16">
+<span class="text-secondary font-bold text-xs uppercase tracking-[0.2em] mb-4 block">The Ecosystem</span>
+<h2 class="text-4xl font-bold text-on-surface">Designed for the Discerning Traveler</h2>
+</div>
+<div class="max-w-7xl mx-auto px-6 lg:px-12 grid md:grid-cols-3 gap-12">
+<div class="p-8 rounded-2xl surface-container-lowest hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 border border-outline-variant/10">
+<div class="w-14 h-14 rounded-xl signature-gradient flex items-center justify-center text-white mb-6">
+<span class="material-symbols-outlined text-3xl">map</span>
+</div>
+<h3 class="text-xl font-bold mb-4">Professional Itineraries</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                        Access expert-level route mapping and time-management schedules tailored to your pace and style.
+                    </p>
+</div>
+<div class="p-8 rounded-2xl surface-container-lowest hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 border border-outline-variant/10">
+<div class="w-14 h-14 rounded-xl signature-gradient flex items-center justify-center text-white mb-6">
+<span class="material-symbols-outlined text-3xl">bolt</span>
+</div>
+<h3 class="text-xl font-bold mb-4">One-Click Booking</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                        Seamlessly transition from planning to reality. Book flights, stays, and activities in a single, unified flow.
+                    </p>
+</div>
+<div class="p-8 rounded-2xl surface-container-lowest hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 border border-outline-variant/10">
+<div class="w-14 h-14 rounded-xl signature-gradient flex items-center justify-center text-white mb-6">
+<span class="material-symbols-outlined text-3xl">admin_panel_settings</span>
+</div>
+<h3 class="text-xl font-bold mb-4">Admin Management</h3>
+<p class="text-on-surface-variant leading-relaxed">
+                        Full-suite controls for agents and group leaders. Manage multiple trips with enterprise-grade visibility.
+                    </p>
+</div>
+</div>
+</section>
+<!-- Social Proof / Testimonials -->
+<section class="py-24 bg-surface-container-high overflow-hidden">
+<div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center gap-16">
+<div class="lg:w-1/3 space-y-6">
+<h2 class="text-4xl font-bold leading-tight">Trusted by World Travelers</h2>
+<p class="text-on-surface-variant">Join over 50,000+ adventurers who have elevated their travel game with our platform.</p>
+<div class="flex gap-4">
+<div class="flex -space-x-3">
+<img alt="user" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="Headshot of a smiling young woman with natural lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuARS-08_OzvHOJXpx_cjNICE-dW3P2xWwcn2C_mSKI5q1RR34RBwtnx67B4lSb_FpL0IKdBMerzoRWV9uvi2YG1rFCxCkCGHRl7uhjzCCegb1nted6LZk4G0guYLsI4Ka9luoqG4GA7goCK1CXXGUsw4m7B1ywrWXpcGkexaP3uG9S6FfHlMv8qccwOFW_GC7pWrrFpa1kw1n-bHPWDDTPjJw8zgmMnw0lbIzDP0ckm8cnETomFGuvtrr6cxAJ9AWlbpF_Zr8VtJVw"/>
+<img alt="user" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="Close up portrait of a man in his 30s with short beard and cinematic lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA-TomJI6OsMm5PheVYC9u2Q9Rs-vS8VDAz07JXWr8mrPnnGatWmiB_Kg9XQFj26JUpLpYlk38Pjd-BpK1jyttu9rE1P4N-xMvLfHcjWh9Wi0CR80oaeNraDpbO-nI6GABAfgY-gdVYn5MLqS08M5cQz2Bwt3gkunvQ3ySdHntuSAsuHKKQSmenJ4diG_yWRmq2LP8aV__AV4-HsV2Rha03gmhZijBHEGXRjZ_aj_zLmpCEXOAiZm6oYD__fxIFmQCnXFGLTShjIas"/>
+<img alt="user" class="w-10 h-10 rounded-full border-2 border-white object-cover" data-alt="Portrait of a smiling mature man with glasses in an outdoor urban setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuASMUaRY35-dt6HN5AoTu6WiyXuuATrgyvvFDnm1oLEfPZYENzqbxfdrNtJPb7t7LNEHQOnmb0Pr3Dg3XM8h7WIxuOrKz7E2tBe6Wwkpux6iFV2r7u1r0Q_UNe_9u1XKJBHY4cS1havCttABzXzotsPur8NuIbY7lqpFUf9g3xSZ8FglTSRIq9W_xmQ421HJHy2zF4nQTZOCYSbOtQeqBkjJURWThkHLx9dMumk1k0EIgcYF5idoEhj2EZxVBgmK8wpgU77k_7_vsY"/>
+</div>
+<div class="text-sm font-bold text-on-surface">
+                            4.9/5 Rating <br/> <span class="text-on-surface-variant font-normal">on Trustpilot</span>
+</div>
+</div>
+</div>
+<div class="lg:w-2/3 grid md:grid-cols-2 gap-6">
+<div class="p-8 bg-surface-container-lowest rounded-2xl shadow-sm italic text-on-surface-variant relative">
+<span class="material-symbols-outlined text-5xl text-primary-fixed-dim absolute -top-4 -left-2 opacity-50">format_quote</span>
+                        "The Elevated Navigator changed how I travel. No more messy spreadsheets—just pure editorial joy and perfect timing on every leg of my trip."
+                        <div class="mt-6 flex items-center gap-3 not-italic">
+<div class="w-10 h-10 rounded-full bg-slate-200"></div>
+<div>
+<p class="text-sm font-bold text-on-surface">Eleanor Vance</p>
+<p class="text-xs">Solo Luxury Traveler</p>
+</div>
+</div>
+</div>
+<div class="p-8 bg-surface-container-lowest rounded-2xl shadow-sm italic text-on-surface-variant relative mt-8 md:mt-12">
+<span class="material-symbols-outlined text-5xl text-primary-fixed-dim absolute -top-4 -left-2 opacity-50">format_quote</span>
+                        "The management tools are a godsend for my travel agency. We can deliver high-end itineraries in half the time it used to take."
+                        <div class="mt-6 flex items-center gap-3 not-italic">
+<div class="w-10 h-10 rounded-full bg-slate-200"></div>
+<div>
+<p class="text-sm font-bold text-on-surface">Marcus Thorne</p>
+<p class="text-xs">Lead Agent, Thorne Travel</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="py-24">
+<div class="max-w-5xl mx-auto px-6 lg:px-12">
+<div class="signature-gradient rounded-[2.5rem] p-12 lg:p-20 text-center text-white space-y-8 relative overflow-hidden shadow-2xl shadow-indigo-200">
+<div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
+<h2 class="text-4xl lg:text-5xl font-extrabold relative z-10">Ready to Elevate Your Journey?</h2>
+<p class="text-white/80 text-lg max-w-2xl mx-auto relative z-10">
+                        Join the community of explorers who don't just visit places, they experience them through perfectly planned stories.
+                    </p>
+<div class="flex justify-center relative z-10">
+<button class="bg-white text-primary px-10 py-5 rounded-xl font-bold text-lg active:scale-95 transition-all shadow-xl shadow-black/10">
+                            Get Started Now
+                        </button>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full border-t border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900">
+<div class="flex flex-col md:flex-row justify-between items-center py-8 px-6 lg:px-12 max-w-7xl mx-auto">
+<div class="font-['Inter'] text-xs text-slate-500 dark:text-slate-400 order-2 md:order-1 mt-6 md:mt-0">
+<span class="font-bold text-slate-900 dark:text-slate-100 mr-2">The Elevated Navigator</span>
+                © 2024 The Elevated Navigator. All rights reserved.
+            </div>
+<div class="flex gap-8 font-['Inter'] text-xs text-slate-500 dark:text-slate-400 order-1 md:order-2">
+<a class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Contact Us</a>
+<a class="hover:text-slate-900 dark:hover:text-slate-100 transition-colors" href="#">Global Destinations</a>
+</div>
+</div>
+</footer>
+</body></html>

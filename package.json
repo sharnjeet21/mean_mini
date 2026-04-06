@@ -22,10 +22,12 @@
     "dev:full": "concurrently \"npm run dev\" \"npm run frontend\""
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "bootstrap": "^5.3.8",
     "concurrently": "^8.2.2",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.1.0",
     "mongoose": "^8.23.0"
   },

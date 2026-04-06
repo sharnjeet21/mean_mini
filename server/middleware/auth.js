@@ -1,58 +1,66 @@
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-// Simple session simulation (in production, use proper session management)
-const sessions = new Map();
+const JWT_SECRET = process.env.JWT_SECRET || 'mean_mini_secret_key';
 
+// Task 9: JWT-based authentication middleware
 const authenticate = async (req, res, next) => {
   try {
-    const sessionId = req.headers['x-session-id'] || req.body.sessionId;
-    
-    if (!sessionId || !sessions.has(sessionId)) {
-      return res.status(401).json({ message: 'Authentication required' });
+    const authHeader = req.headers['authorization'];
+    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+
+    if (!token) {
+      return res.status(401).json({ message: 'Access token required' });
     }
 
-    const userId = sessions.get(sessionId);
-    const user = await User.findById(userId);
-    
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.id).select('-password');
+
     if (!user || !user.isActive) {
-      sessions.delete(sessionId);
-      return res.status(401).json({ message: 'Invalid session' });
+      return res.status(401).json({ message: 'Invalid or expired token' });
     }
 
     req.user = user;
     next();
   } catch (error) {
-    return res.status(500).json({ message: 'Authentication error' });
+    return res.status(401).json({ message: 'Invalid or expired token' });
   }
 };
 
+// Role-based authorization
 const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({ message: 'Authentication required' });
     }
-
     if (!roles.includes(req.user.role)) {
       return res.status(403).json({ message: 'Insufficient permissions' });
     }
-
     next();
   };
 };
 
-const createSession = (userId) => {
-  const sessionId = Math.random().toString(36).substring(2) + Date.now().toString(36);
-  sessions.set(sessionId, userId);
-  return sessionId;
+// Generate JWT token
+const generateToken = (userId) => {
+  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
 };
 
-const destroySession = (sessionId) => {
-  sessions.delete(sessionId);
+// Hash password (Task 9 - bcrypt)
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
+
+// Compare password
+const comparePassword = async (plain, hashed) => {
+  return bcrypt.compare(plain, hashed);
 };
 
 module.exports = {
   authenticate,
   authorize,
-  createSession,
-  destroySession,
+  generateToken,
+  hashPassword,
+  comparePassword,
 };

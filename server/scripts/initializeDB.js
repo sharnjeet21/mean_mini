@@ -1,66 +1,69 @@
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Itinerary = require('../models/Itinerary');
 const sampleItinerary = require('../data/sampleItinerary');
 
 dotenv.config();
 
+// Task 9: Hash passwords with bcrypt before seeding
+const hashPassword = async (plain) => {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(plain, salt);
+};
+
 const initializeDB = async () => {
   try {
-    await mongoose.connect(process.env.MONGO_URI);
+    // Task 6: Connect using Mongoose with options
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+    });
     console.log('Connected to MongoDB');
 
-    // Create superadmin user if doesn't exist
+    // Superadmin
     const superadminExists = await User.findOne({ role: 'superadmin' });
-    
     if (!superadminExists) {
-      const superadmin = new User({
+      await User.create({
         name: 'Super Admin',
         email: 'superadmin@travel.com',
-        password: 'superadmin123', // Change this in production
-        role: 'superadmin'
+        password: await hashPassword('superadmin123'),
+        role: 'superadmin',
       });
-      await superadmin.save();
-      console.log('Superadmin user created');
+      console.log('Superadmin created: superadmin@travel.com / superadmin123');
     }
 
-    // Create sample admin user
+    // Admin
     const adminExists = await User.findOne({ email: 'admin@travel.com' });
     if (!adminExists) {
-      const admin = new User({
+      await User.create({
         name: 'Travel Admin',
         email: 'admin@travel.com',
-        password: 'admin123', // Change this in production
-        role: 'admin'
+        password: await hashPassword('admin123'),
+        role: 'admin',
       });
-      await admin.save();
-      console.log('Admin user created');
+      console.log('Admin created: admin@travel.com / admin123');
     }
 
-    // Create sample regular user
+    // Regular user
     const userExists = await User.findOne({ email: 'user@travel.com' });
     if (!userExists) {
-      const user = new User({
+      await User.create({
         name: 'Travel User',
         email: 'user@travel.com',
-        password: 'user123', // Change this in production
-        role: 'user'
+        password: await hashPassword('user123'),
+        role: 'user',
       });
-      await user.save();
-      console.log('Regular user created');
+      console.log('User created: user@travel.com / user123');
     }
 
-    // Create sample itinerary
+    // Sample itinerary
     const itineraryExists = await Itinerary.findOne({ title: sampleItinerary.title });
     if (!itineraryExists) {
       const admin = await User.findOne({ role: 'admin' });
       if (admin) {
-        const itinerary = new Itinerary({
-          ...sampleItinerary,
-          createdBy: admin._id
-        });
-        await itinerary.save();
+        await Itinerary.create({ ...sampleItinerary, createdBy: admin._id });
         console.log('Sample itinerary created');
       }
     }
