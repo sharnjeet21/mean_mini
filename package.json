@@ -15,7 +15,7 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
-    "build": "cd frontend && npm install && npm run build",
+    "build": "cd frontend && npm install && npx ng build --configuration production",
     "init-db": "node server/scripts/initializeDB.js",
     "dev": "node server/server.js",
     "dev:full": "concurrently \"npm run dev\" \"cd frontend && npm start\""
