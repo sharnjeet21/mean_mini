@@ -15,11 +15,10 @@
   "main": "server/server.js",
   "scripts": {
     "start": "node server/server.js",
+    "build": "cd frontend && npm install && npm run build",
     "init-db": "node server/scripts/initializeDB.js",
     "dev": "node server/server.js",
-    "frontend": "cd frontend && npm start",
-    "frontend:build": "cd frontend && npm run build",
-    "dev:full": "concurrently \"npm run dev\" \"npm run frontend\""
+    "dev:full": "concurrently \"npm run dev\" \"cd frontend && npm start\""
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
