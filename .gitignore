@@ -24,6 +24,15 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
+# ── Project docs / assignment files ───────────────────────────────────────────
+*.tex
+DEMO.md
+TASKS_IMPLEMENTATION.md
+
+# ── Screenshots ───────────────────────────────────────────────────────────────
+screenshot*.png
+screenshot*.jpg
+
 # ── Editor ────────────────────────────────────────────────────────────────────
 .vscode/*
 !.vscode/settings.json
