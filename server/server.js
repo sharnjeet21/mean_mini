@@ -1,5 +1,6 @@
 const express = require("express");
 const path    = require("path");
+const fs      = require("fs");
 const dotenv  = require("dotenv");
 const cors    = require("cors");
 
@@ -17,17 +18,11 @@ const app = express();
 connectDB();
 
 // ── CORS ──────────────────────────────────────────────────────────────────────
-// In production Angular is served by this same Express server (same origin),
-// so CORS is only needed for local development (localhost:4200).
-const allowedOrigins = [
-  "http://localhost:4200",
-  "http://localhost:3000",
-].filter(Boolean);
-
 app.use(cors({
   origin: (origin, callback) => {
-    // No origin = Postman / curl / same-origin requests — always allow
-    if (!origin || allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow same-origin, Postman, curl, and localhost dev
+    const allowed = ["http://localhost:4200", "http://localhost:3000"];
+    if (!origin || allowed.includes(origin)) return callback(null, true);
     callback(new Error("Not allowed by CORS"));
   },
   credentials: true,
@@ -37,21 +32,38 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// ── API routes (must come BEFORE static file serving) ────────────────────────
+// ── API routes ────────────────────────────────────────────────────────────────
 app.use("/api/auth",          authRoutes);
 app.use("/api/itinerary",     itineraryRoutes);
 app.use("/api/users",         userRoutes);
 app.use("/api/role-requests", roleRequestRoutes);
 
-// ── Serve Angular production build ────────────────────────────────────────────
+// ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");
+const indexHtml   = path.join(angularDist, "index.html");
+
+// Log on startup so we can confirm the path in Render logs
+console.log("Angular dist path:", angularDist);
+console.log("index.html exists:", fs.existsSync(indexHtml));
 
 app.use(express.static(angularDist));
 
-// ── SPA fallback — send index.html for any non-API route ─────────────────────
-// This lets Angular's client-side router handle /dashboard, /login, etc.
-app.get("*", (req, res) => {
-  res.sendFile(path.join(angularDist, "index.html"));
+// SPA fallback — all non-API GET requests return index.html
+app.get(/^(?!\/api).*$/, (req, res) => {
+  if (fs.existsSync(indexHtml)) {
+    res.sendFile(indexHtml);
+  } else {
+    res.status(500).json({
+      error: "Angular build not found",
+      path: angularDist,
+    });
+  }
+});
+
+// ── Global error handler ──────────────────────────────────────────────────────
+app.use((err, req, res, next) => {
+  console.error("Express error:", err.message);
+  res.status(500).json({ error: err.message });
 });
 
 // ── Start server ──────────────────────────────────────────────────────────────
