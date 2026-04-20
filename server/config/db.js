@@ -16,7 +16,8 @@ const connectDB = async () => {
     console.log('MongoDB connected');
   } catch (error) {
     console.error('MongoDB connection error:', error.message);
-    process.exit(1);
+    console.warn('Warning: Running without MongoDB. Static pages will still be served.');
+    // process.exit(1); // Temporarily disabled so static HTML pages can be served for demo
   }
 };
 
