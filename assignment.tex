@@ -1,0 +1,721 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{mdframed}
+\usepackage{booktabs}
+\geometry{margin=1in}
+
+\titleformat{\section}
+  {\normalfont\Large\bfseries}{\thesection.}{0.5em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries}{\thesubsection.}{0.5em}{}
+
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  backgroundcolor=\color{gray!10},
+  keywordstyle=\color{blue},
+  commentstyle=\color{green!60!black},
+  stringstyle=\color{red},
+  numbers=left,
+  numberstyle=\tiny\color{gray},
+  numbersep=8pt,
+  showstringspaces=false,
+  tabsize=2
+}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  urlcolor=blue
+}
+
+\begin{document}
+
+%% ── Title Page ──────────────────────────────────────────────────────────────
+\begin{titlepage}
+\begin{center}
+\vspace*{1cm}
+
+{\Large \bfseries MEAN STACK \\[0.2cm] \large \normalfont(LPEIT-109)} \\[0.3cm]
+{\large ASSIGNMENT}
+
+\vspace{0.3cm}
+
+{\large \bfseries GURU NANAK DEV ENGINEERING COLLEGE}
+
+\vspace{0.5cm}
+
+{\normalsize SUBMITTED IN THE PARTIAL FULFILLMENT OF THE REQUIREMENTS \\
+FOR THE AWARD OF THE DEGREE OF \\[0.3cm]
+{\large \bfseries BACHELORS OF TECHNOLOGY} \\[0.2cm]
+(INFORMATION TECHNOLOGY)}}
+
+\vspace{0.8cm}
+
+\includegraphics[width=3in,height=3in]{assets/gnelogo.png}
+
+\vspace{0.5cm}
+
+{\large SUBMITTED BY: \\[0.3cm]
+SHARNJEET SINGH (2303059)}
+
+\vspace{1cm}
+
+{\normalsize DEPARTMENT OF INFORMATION TECHNOLOGY \\[0.2cm]
+GURU NANAK DEV ENGINEERING COLLEGE LUDHIANA \\[0.2cm]
+(An Autonomous College Under UGC ACT)}
+\end{center}
+\end{titlepage}
+
+\newpage
+
+%% ── Q1 ───────────────────────────────────────────────────────────────────────
+\section{Q1: Login Page Web Application Using MEAN Stack Authentication}
+
+\subsection{Aim}
+To construct a simple login page web application that authenticates users using the
+complete MEAN stack — MongoDB, Express.js, Angular, and Node.js — with
+\textbf{bcryptjs} for password hashing and \textbf{JSON Web Tokens (JWT)} for
+stateless session management.
+
+\subsection{Introduction}
+Authentication is the process of verifying who a user is before granting access to
+protected resources. In this project (\textit{The Elevated Navigator} — a Travel
+Itinerary Planner), the login system is built across all four layers of the MEAN stack:
+
+\begin{itemize}
+  \item \textbf{MongoDB} stores user documents with bcrypt-hashed passwords.
+  \item \textbf{Express.js} exposes \texttt{POST /api/auth/login} and
+        \texttt{POST /api/auth/register} REST endpoints.
+  \item \textbf{Angular} renders the login form, calls the API, stores the JWT,
+        and guards protected routes.
+  \item \textbf{Node.js} is the runtime that ties everything together.
+\end{itemize}
+
+\subsection{Packages Used}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{Package} & \textbf{Layer} & \textbf{Purpose} \\
+\midrule
+bcryptjs        & Backend  & Hash passwords before saving to MongoDB \\
+jsonwebtoken    & Backend  & Sign and verify JWT tokens \\
+dotenv          & Backend  & Load \texttt{JWT\_SECRET} from \texttt{.env} \\
+mongoose        & Backend  & User schema and database queries \\
+@angular/common & Frontend & \texttt{HttpClient}, \texttt{isPlatformBrowser} \\
+rxjs            & Frontend & Reactive \texttt{Observable} / \texttt{tap} operator \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Backend — Auth Middleware (\texttt{server/middleware/auth.js})}
+
+\begin{lstlisting}[language=JavaScript, caption={JWT helpers and protect middleware}]
+const jwt     = require('jsonwebtoken');
+const bcrypt  = require('bcryptjs');
+const User    = require('../models/User');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'mean_mini_secret_key';
+
+// Middleware: verify JWT on every protected route
+const authenticate = async (req, res, next) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    // Header format: "Bearer <token>"
+    const token = authHeader && authHeader.split(' ')[1];
+
+    if (!token)
+      return res.status(401).json({ message: 'Access token required' });
+
+    // Decode and verify the token using the secret key
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Fetch the full user from DB (exclude password field)
+    const user = await User.findById(decoded.id).select('-password');
+
+    if (!user || !user.isActive)
+      return res.status(401).json({ message: 'Invalid or expired token' });
+
+    req.user = user;   // attach user to request for downstream use
+    next();
+  } catch (error) {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+};
+
+// Sign a new JWT valid for 7 days
+const generateToken = (userId) =>
+  jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
+
+// Hash a plain-text password with bcrypt (salt rounds = 10)
+const hashPassword = async (password) => {
+  const salt = await bcrypt.genSalt(10);
+  return bcrypt.hash(password, salt);
+};
+
+// Compare a plain-text password against a stored bcrypt hash
+const comparePassword = async (plain, hashed) =>
+  bcrypt.compare(plain, hashed);
+
+module.exports = { authenticate, generateToken, hashPassword, comparePassword };
+\end{lstlisting}
+
+\subsection{Backend — Auth Routes (\texttt{server/routes/authRoutes.js})}
+
+\begin{lstlisting}[language=JavaScript, caption={Register and Login endpoints}]
+const express = require('express');
+const User    = require('../models/User');
+const { authenticate, generateToken,
+        hashPassword, comparePassword } = require('../middleware/auth');
+
+const router = express.Router();
+
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    // Validate that all fields are present
+    if (!name || !email || !password)
+      return res.status(400).json({ success: false,
+                                    message: 'All fields are required.' });
+
+    const cleanEmail = String(email).trim().toLowerCase();
+
+    // Prevent duplicate accounts
+    const existing = await User.findOne({ email: cleanEmail });
+    if (existing)
+      return res.status(400).json({ success: false,
+                                    message: 'User already exists.' });
+
+    // Hash the password before storing — never save plain text
+    const hashed = await hashPassword(password);
+
+    const user = await User.create({
+      name: String(name).trim(),
+      email: cleanEmail,
+      password: hashed,
+      role: 'user',
+    });
+
+    // Issue a JWT immediately so the user is logged in after registering
+    const token = generateToken(user._id);
+
+    return res.status(201).json({
+      success: true,
+      token,
+      user: { id: user._id, name: user.name,
+              email: user.email, role: user.role },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false,
+                                  message: 'Server error during registration.' });
+  }
+});
+
+// POST /api/auth/login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ success: false,
+                                    message: 'Email and password are required.' });
+
+    // Look up the user by email
+    const user = await User.findOne({
+      email: String(email).trim().toLowerCase()
+    });
+
+    // Return the same generic error for both "not found" and "wrong password"
+    // to avoid leaking which emails are registered
+    if (!user || !user.isActive)
+      return res.status(401).json({ success: false,
+                                    message: 'Invalid email or password.' });
+
+    // bcrypt.compare hashes the plain password and checks it against the stored hash
+    const isMatch = await comparePassword(password, user.password);
+    if (!isMatch)
+      return res.status(401).json({ success: false,
+                                    message: 'Invalid email or password.' });
+
+    // Credentials are valid — sign and return a JWT
+    const token = generateToken(user._id);
+
+    return res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: { id: user._id, name: user.name,
+              email: user.email, role: user.role },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false,
+                                  message: 'Server error during login.' });
+  }
+});
+
+module.exports = router;
+\end{lstlisting}
+
+\subsection{Frontend — Auth Service (\texttt{frontend/src/app/services/auth.service.ts})}
+
+\begin{lstlisting}[language=JavaScript, caption={Angular service — stores JWT and exposes reactive state}]
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private baseUrl   = 'http://localhost:5000/api/auth';
+  // isPlatformBrowser prevents localStorage access during SSR prerendering
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  // Angular signal — reactive current-user state used by navbar and guards
+  currentUser = signal<AuthUser | null>(this.loadUser());
+
+  // Read persisted user from localStorage on service init
+  private loadUser(): AuthUser | null {
+    if (!this.isBrowser) return null;
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); }
+    catch { return null; }
+  }
+
+  get token()      { return this.isBrowser
+                       ? localStorage.getItem('token') : null; }
+  get isLoggedIn() { return !!this.token; }
+
+  // Call the login endpoint; on success persist token + user
+  login(email: string, password: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/login`,
+                               { email, password }).pipe(
+      tap(res => {
+        if (res.success && this.isBrowser) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(res.user));
+          this.currentUser.set(res.user);   // update signal instantly
+        }
+      })
+    );
+  }
+
+  // Clear token and redirect to login page
+  logout(): void {
+    if (this.isBrowser) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+}
+\end{lstlisting}
+
+\subsection{Frontend — HTTP Interceptor (\texttt{auth.interceptor.ts})}
+
+\begin{lstlisting}[language=JavaScript, caption={Attach Bearer token to every outgoing request automatically}]
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = inject(AuthService).token;
+
+  if (token) {
+    // Clone the request and add the Authorization header
+    const cloned = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    });
+    return next(cloned);   // forward the modified request
+  }
+
+  return next(req);        // no token — send request as-is
+};
+\end{lstlisting}
+
+\subsection{Frontend — Route Guard (\texttt{auth.guard.ts})}
+
+\begin{lstlisting}[language=JavaScript, caption={Block unauthenticated access to /dashboard and /admin}]
+export const authGuard: CanActivateFn = () => {
+  const auth   = inject(AuthService);
+  const router = inject(Router);
+
+  if (auth.isLoggedIn) return true;   // token present — allow navigation
+
+  router.navigate(['/login']);         // no token — redirect to login
+  return false;
+};
+\end{lstlisting}
+
+\subsection{Frontend — Login Component}
+
+\begin{lstlisting}[language=JavaScript, caption={login.component.ts — calls AuthService on form submit}]
+export class LoginComponent {
+  email = ''; password = ''; error = ''; loading = false;
+
+  constructor(private auth: AuthService, private router: Router) {}
+
+  onSubmit() {
+    if (!this.email || !this.password) return;
+    this.loading = true;
+    this.error   = '';
+
+    this.auth.login(this.email, this.password).subscribe({
+      next: (res) => {
+        this.loading = false;
+        // Navigate to dashboard on successful login
+        if (res.success) this.router.navigate(['/dashboard']);
+        else this.error = res.message || 'Login failed';
+      },
+      error: (err) => {
+        this.loading = false;
+        // Show the server error message (e.g. "Invalid email or password")
+        this.error = err?.error?.message || 'Invalid credentials';
+      }
+    });
+  }
+}
+\end{lstlisting}
+
+\subsection{Authentication Flow Diagram}
+
+\begin{mdframed}
+\begin{center}
+\texttt{
+\begin{tabular}{l}
+1. User fills email + password on Angular login form \\
+2. Angular calls POST /api/auth/login via AuthService \\
+3. Express finds user in MongoDB by email \\
+4. bcrypt.compare(plain, hash) checks the password \\
+5. On match: jwt.sign(\{id\}, SECRET, \{expiresIn:'7d'\}) \\
+6. Token returned to Angular in JSON response \\
+7. Angular stores token in localStorage \\
+8. currentUser signal updated → navbar re-renders \\
+9. HTTP Interceptor adds "Authorization: Bearer <token>" \\
+   to every future request automatically \\
+10. authGuard reads token to allow /dashboard access \\
+\end{tabular}
+}
+\end{center}
+\end{mdframed}
+
+\subsection{Project Screenshots}
+
+\textbf{Login Page:}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{assets/screenshot-login.png}
+  \caption{Login page of The Elevated Navigator}
+\end{figure}
+
+\textbf{Dashboard (after successful login):}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{assets/screenshot-dashboard.png}
+  \caption{User dashboard — accessible only after authentication}
+\end{figure}
+
+\textbf{Admin Panel:}
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.85\textwidth]{assets/screenshot-admin.png}
+  \caption{Admin dashboard — role-based access control in action}
+\end{figure}
+
+\newpage
+
+%% ── Q2 ───────────────────────────────────────────────────────────────────────
+\section{Q2: Configure an Express Application with a Coding Example}
+
+\subsection{Aim}
+To configure an Express.js application, explaining each part of the setup with
+in-code comments written in plain language.
+
+\subsection{Introduction to Express}
+Express is a minimal, unopinionated web framework for Node.js. It wraps Node's
+built-in \texttt{http} module and adds:
+\begin{itemize}
+  \item A clean \textbf{routing API} (\texttt{app.get}, \texttt{app.post}, \ldots)
+  \item A \textbf{middleware pipeline} — functions that run in sequence on every request
+  \item Helpers for sending \textbf{JSON, HTML, files} and setting status codes
+\end{itemize}
+
+In this project the Express server lives in \texttt{server/server.js} and is the
+backbone of the entire backend API.
+
+\subsection{Step 1 — Install Dependencies}
+
+\begin{lstlisting}[language=bash]
+npm install express dotenv mongoose cors
+\end{lstlisting}
+
+\subsection{Step 2 — Environment File (\texttt{.env})}
+
+\begin{lstlisting}[language=bash]
+# Never commit this file — it holds secrets
+MONGO_URI=mongodb://localhost:27017/travel_planner
+PORT=5000
+JWT_SECRET=your_super_secret_key
+\end{lstlisting}
+
+\subsection{Step 3 — Database Connection (\texttt{server/config/db.js})}
+
+\begin{lstlisting}[language=JavaScript, caption={Mongoose connection helper}]
+const mongoose = require('mongoose');
+
+// Async function so we can use await and catch errors cleanly
+const connectDB = async () => {
+  const mongoUri = process.env.MONGO_URI;
+
+  // Stop the process immediately if the URI is missing from .env
+  if (!mongoUri) {
+    console.error('MONGO_URI is missing in .env');
+    process.exit(1);
+  }
+
+  try {
+    // mongoose.connect returns a promise — await it before continuing
+    await mongoose.connect(mongoUri, {
+      useNewUrlParser:    true,   // use the new URL string parser
+      useUnifiedTopology: true,   // use the new server discovery engine
+    });
+    console.log('MongoDB connected');
+  } catch (error) {
+    // If the DB is unreachable, log the reason and exit
+    console.error('MongoDB connection error:', error.message);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+\end{lstlisting}
+
+\subsection{Step 4 — Main Server File (\texttt{server/server.js})}
+
+\begin{lstlisting}[language=JavaScript, caption={Fully commented Express configuration}]
+// Load environment variables from .env into process.env
+// Must be called before any other code reads process.env
+const dotenv = require('dotenv');
+dotenv.config();
+
+// Core Node.js module for working with file paths
+const path    = require('path');
+
+// Express — the web framework
+const express = require('express');
+
+// Our custom DB connection helper
+const connectDB = require('./config/db');
+
+// Route handlers — each file exports an express.Router()
+const authRoutes        = require('./routes/authRoutes');
+const itineraryRoutes   = require('./routes/itineraryRoutes');
+const userRoutes        = require('./routes/userRoutes');
+const roleRequestRoutes = require('./routes/roleRequestRoutes');
+
+// ── Create the Express application instance ──────────────────────────────────
+const app = express();
+
+// ── Connect to MongoDB ────────────────────────────────────────────────────────
+// This runs once at startup; if it fails the process exits (see db.js)
+connectDB();
+
+// ── Global Middleware ─────────────────────────────────────────────────────────
+
+// Parse incoming requests with a JSON body (e.g. from Angular HttpClient)
+// Without this, req.body would be undefined for POST/PUT requests
+app.use(express.json());
+
+// Parse URL-encoded bodies (e.g. traditional HTML form submissions)
+app.use(express.urlencoded({ extended: false }));
+
+// Serve everything inside the /views folder as static files
+// e.g. GET /login.html will return views/login.html directly
+app.use(express.static(path.join(__dirname, '..', 'views')));
+
+// ── Page Routes (serve HTML files) ───────────────────────────────────────────
+
+// Root URL — send the landing page
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'index.html'));
+});
+
+// Login page
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'login.html'));
+});
+
+// Register page
+app.get('/register', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'register.html'));
+});
+
+// Dashboard page (Angular SPA handles auth on the client side)
+app.get('/dashboard', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'views', 'dashboard.html'));
+});
+
+// ── API Routes ────────────────────────────────────────────────────────────────
+// app.use(prefix, router) mounts a router at a URL prefix.
+// All routes defined inside authRoutes will be prefixed with /api/auth
+// e.g. router.post('/login') becomes POST /api/auth/login
+
+app.use('/api/auth',          authRoutes);        // register, login, profile
+app.use('/api/itinerary',     itineraryRoutes);   // CRUD + booking
+app.use('/api/users',         userRoutes);        // user management
+app.use('/api/role-requests', roleRequestRoutes); // admin role requests
+
+// ── Start the Server ──────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 5000;
+
+// Special case: Vercel runs the app as a serverless function,
+// so we export the app instead of calling listen()
+if (process.env.VERCEL) {
+  module.exports = app;
+} else {
+  // app.listen binds to the port and starts accepting connections
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
+\end{lstlisting}
+
+\subsection{Step 5 — A Sample API Route (\texttt{routes/itineraryRoutes.js})}
+
+\begin{lstlisting}[language=JavaScript, caption={Express Router with middleware chaining}]
+const express    = require('express');
+const Itinerary  = require('../models/Itinerary');
+const { authenticate, authorize } = require('../middleware/auth');
+
+// express.Router() creates a mini-app that handles a subset of routes
+const router = express.Router();
+
+// GET /api/itinerary
+// authenticate runs first — if the token is invalid it sends 401 and stops here
+// If the token is valid, control passes to the async handler
+router.get('/', authenticate, async (req, res) => {
+  try {
+    // Regular users only see active itineraries; admins see everything
+    const query = req.user.role === 'user' ? { isActive: true } : {};
+
+    // .populate replaces the createdBy ObjectId with the actual User document
+    const itineraries = await Itinerary.find(query)
+      .populate('createdBy', 'name email role')
+      .sort({ createdAt: -1 });   // newest first
+
+    return res.json(itineraries);
+  } catch (error) {
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// POST /api/itinerary
+// Two middleware functions before the handler:
+//   1. authenticate — verify JWT
+//   2. authorize    — check role is admin or superadmin
+router.post('/', authenticate, authorize('admin', 'superadmin'),
+  async (req, res) => {
+    try {
+      const { title, destination, startDate,
+              endDate, duration, budget } = req.body;
+
+      // Basic validation before touching the database
+      if (!title || !destination || !startDate ||
+          !endDate || !duration || budget === undefined)
+        return res.status(400).json({ message: 'Fill all required fields.' });
+
+      // Create the document; createdBy is taken from the verified JWT user
+      const itinerary = await Itinerary.create({
+        ...req.body,
+        createdBy: req.user._id,
+      });
+
+      return res.status(201).json(itinerary);
+    } catch (error) {
+      return res.status(500).json({ message: 'Server error.' });
+    }
+  }
+);
+
+// Export the router so server.js can mount it
+module.exports = router;
+\end{lstlisting}
+
+\subsection{How Middleware Chaining Works}
+
+When a request arrives at \texttt{POST /api/itinerary}, Express runs each function
+in the chain left-to-right:
+
+\begin{mdframed}
+\begin{center}
+\texttt{
+\begin{tabular}{l}
+Request arrives \\
+  $\downarrow$ \\
+express.json()         -- parse the JSON body \\
+  $\downarrow$ \\
+authenticate()         -- verify the JWT token \\
+  $\downarrow$ \\
+authorize('admin',...)  -- check the user's role \\
+  $\downarrow$ \\
+Route handler          -- create the itinerary in MongoDB \\
+  $\downarrow$ \\
+res.json()             -- send the response back \\
+\end{tabular}
+}
+\end{center}
+\end{mdframed}
+
+Each middleware calls \texttt{next()} to pass control to the next function, or calls
+\texttt{res.status(...).json(...)} to short-circuit the chain and send an error
+response immediately.
+
+\subsection{Key Express Concepts Summary}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{Concept} & \textbf{What it does in this project} \\
+\midrule
+\texttt{express()}            & Creates the application instance \\
+\texttt{app.use()}            & Registers global middleware or mounts a router \\
+\texttt{express.json()}       & Parses \texttt{application/json} request bodies \\
+\texttt{express.static()}     & Serves the \texttt{views/} folder as static files \\
+\texttt{express.Router()}     & Groups related routes into a separate file \\
+\texttt{app.listen(PORT)}     & Starts the HTTP server on the given port \\
+\texttt{req.body}             & Parsed request payload (needs \texttt{express.json()}) \\
+\texttt{req.params.id}        & URL parameter, e.g. \texttt{/itinerary/:id} \\
+\texttt{req.user}             & Custom property set by \texttt{authenticate} middleware \\
+\texttt{res.json()}           & Sends a JSON response with \texttt{Content-Type: application/json} \\
+\texttt{res.status(404)}      & Sets the HTTP status code before sending \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+
+%% ── GitHub Link ──────────────────────────────────────────────────────────────
+\section*{GitHub Repository}
+
+The complete source code for this project (The Elevated Navigator — MEAN Stack
+Travel Itinerary Planner) is available at:
+
+\begin{center}
+  \large
+  \href{https://github.com/sharnjeet21/mean_mini}{https://github.com/sharnjeet21/mean\_mini}
+\end{center}
+
+\vspace{0.5cm}
+\noindent The repository contains:
+\begin{itemize}
+  \item \texttt{server/} — Express + Node.js backend with JWT auth and Mongoose models
+  \item \texttt{frontend/} — Angular 21 SPA with Tailwind CSS design system
+  \item \texttt{views/} — Legacy static HTML pages
+  \item \texttt{.env.example} — Environment variable template
+  \item \texttt{README.md} — Setup and run instructions
+\end{itemize}
+
+\end{document}

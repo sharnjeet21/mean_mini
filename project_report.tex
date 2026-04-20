@@ -1,0 +1,554 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\geometry{margin=1in}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{longtable}
+
+\titleformat{\section}
+{\normalfont\Large\bfseries}{\thesection.}{0.5em}{}
+
+\titleformat{\subsection}
+{\normalfont\large\bfseries}{\thesubsection.}{0.5em}{}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red}
+}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    urlcolor=blue
+}
+
+\begin{document}
+
+% Title page
+\begin{titlepage}
+\begin{center}
+\vspace*{1cm}
+
+{\Large \bfseries MEAN STACK \\[0.2cm] \large \normalfont(LPEIT-109)} \\[0.3cm]
+{\large PROJECT REPORT}
+
+\vspace{0.3cm}
+
+{\large \bfseries GURU NANAK DEV ENGINEERING COLLEGE}
+
+\vspace{0.5cm}
+
+{\normalsize SUBMITTED IN THE PARTIAL FULFILLMENT OF THE REQUIREMENTS \\
+FOR THE AWARD OF THE DEGREE OF \\[0.3cm]
+{\large \bfseries BACHELORS OF TECHNOLOGY} \\[0.2cm]
+(INFORMATION TECHNOLOGY)}}
+
+\vspace{0.8cm}
+
+\includegraphics[width=3in,height=3in]{assets/gnelogo.png}
+
+\vspace{0.5cm}
+
+{\large SUBMITTED BY: \\[0.3cm]
+SHARNJEET SINGH (2303059)}
+
+\vspace{1cm}
+
+{\normalsize DEPARTMENT OF INFORMATION TECHNOLOGY \\[0.2cm]
+GURU NANAK DEV ENGINEERING COLLEGE LUDHIANA \\[0.2cm]
+(An Autonomous College Under UGC ACT)}
+\end{center}
+\end{titlepage}
+
+\newpage
+\tableofcontents
+\newpage
+
+% ─────────────────────────────────────────────
+\section{Project Overview}
+
+\subsection{Project Title}
+\textbf{The Elevated Navigator} — A Travel Itinerary Planner built on the MEAN Stack.
+
+\subsection{Objective}
+The objective of this project is to design and develop a full-stack web application that allows users to browse, book, and manage travel itineraries. The application demonstrates all nine practicals of the MEAN Stack course by integrating MongoDB, Express.js, Angular, and Node.js into a single, cohesive production-ready system.
+
+\subsection{Scope}
+\begin{itemize}
+    \item User registration and login with JWT-based authentication
+    \item Role-based access control (User, Admin, Superadmin)
+    \item Full CRUD management of travel itineraries
+    \item Responsive Angular Single-Page Application (SPA) frontend
+    \item RESTful API backend with Express and Mongoose
+    \item Premium UI design system using Tailwind CSS
+\end{itemize}
+
+% ─────────────────────────────────────────────
+\section{Technology Stack}
+
+\begin{longtable}{>{\bfseries}p{3.5cm} p{4cm} p{6cm}}
+\toprule
+Layer & Technology & Purpose \\
+\midrule
+\endhead
+Database & MongoDB & NoSQL document store for users and itineraries \\
+ODM & Mongoose & Schema definition, validation, and query building \\
+Backend & Node.js & JavaScript runtime for the server \\
+Framework & Express.js & HTTP routing, middleware, and REST API \\
+Frontend & Angular 21 & Component-based SPA framework \\
+Language & TypeScript & Typed superset of JavaScript for Angular \\
+Auth & bcryptjs & Password hashing before storage \\
+Auth & jsonwebtoken & Stateless JWT issuance and verification \\
+Styling & Tailwind CSS v4 & Utility-first CSS framework \\
+Fonts & Manrope / Inter & Headline and body typography \\
+Icons & Material Symbols & Google's icon font library \\
+Environment & dotenv & Secure environment variable management \\
+\bottomrule
+\end{longtable}
+
+% ─────────────────────────────────────────────
+\section{System Architecture}
+
+The application follows a three-tier architecture:
+
+\begin{enumerate}
+    \item \textbf{Presentation Tier} — Angular SPA running in the browser at \texttt{localhost:4200}
+    \item \textbf{Application Tier} — Express.js REST API running at \texttt{localhost:5000}
+    \item \textbf{Data Tier} — MongoDB database accessed via Mongoose ODM
+\end{enumerate}
+
+\subsection{Request Flow}
+
+\begin{lstlisting}[language=bash]
+Browser (Angular SPA)
+    |
+    |  HTTP/JSON  (with Authorization: Bearer <JWT>)
+    v
+Express Server (Node.js :5000)
+    |-- /api/auth        --> authRoutes.js
+    |-- /api/itinerary   --> itineraryRoutes.js
+    |-- /api/users       --> userRoutes.js
+    |-- /api/role-requests --> roleRequestRoutes.js
+    |
+    |  Mongoose ODM
+    v
+MongoDB Database
+    |-- users collection
+    |-- itineraries collection
+    |-- rolerequests collection
+\end{lstlisting}
+
+\subsection{Project Directory Structure}
+
+\begin{lstlisting}[language=bash]
+mean_mini/
+|-- server/
+|   |-- config/
+|   |   |-- db.js               # MongoDB connection
+|   |-- models/
+|   |   |-- User.js             # User Mongoose model
+|   |   |-- Itinerary.js        # Itinerary Mongoose model
+|   |   |-- RoleRequest.js      # Role request model
+|   |-- routes/
+|   |   |-- authRoutes.js       # Register / Login endpoints
+|   |   |-- itineraryRoutes.js  # CRUD + booking endpoints
+|   |   |-- userRoutes.js       # User management
+|   |   |-- roleRequestRoutes.js
+|   |-- middleware/
+|   |   |-- auth.js             # JWT verify, bcrypt helpers
+|   |-- scripts/
+|       |-- initializeDB.js     # Database seeder
+|-- frontend/                   # Angular 21 SPA
+|   |-- src/app/
+|   |   |-- components/
+|   |   |   |-- navbar/
+|   |   |   |-- home/
+|   |   |   |-- login/
+|   |   |   |-- register/
+|   |   |   |-- dashboard/
+|   |   |   |-- itinerary-detail/
+|   |   |   |-- admin-dashboard/
+|   |   |   |-- about/
+|   |   |-- services/
+|   |   |   |-- auth.service.ts
+|   |   |   |-- api.service.ts
+|   |   |   |-- auth.interceptor.ts
+|   |   |-- guards/
+|   |   |   |-- auth.guard.ts
+|   |   |-- app.routes.ts
+|   |   |-- app.config.ts
+|   |-- src/styles.scss
+|   |-- src/index.html
+|-- .env
+|-- package.json
+|-- app.js
+\end{lstlisting}
+
+% ─────────────────────────────────────────────
+\section{Database Design}
+
+\subsection{User Schema}
+
+\begin{lstlisting}[language=JavaScript]
+const userSchema = new mongoose.Schema({
+  name:      { type: String, required: true, trim: true },
+  email:     { type: String, required: true, unique: true, lowercase: true },
+  password:  { type: String, required: true },          // bcrypt hash
+  role:      { type: String, enum: ['user','admin','superadmin'], default: 'user' },
+  isActive:  { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+});
+\end{lstlisting}
+
+\subsection{Itinerary Schema}
+
+\begin{lstlisting}[language=JavaScript]
+const itinerarySchema = new mongoose.Schema({
+  title:       { type: String, required: true },
+  destination: { type: String, required: true },
+  startDate:   { type: Date,   required: true },
+  endDate:     { type: Date,   required: true },
+  duration:    { type: String, required: true },   // e.g. "4 Days / 3 Nights"
+  budget:      { type: Number, required: true, min: 0 },
+  description: { type: String },
+  dailyPlan: [{
+    day:        Number,
+    title:      String,
+    activities: [{ time: String, activity: String, location: String }],
+  }],
+  tripSummary: {
+    highlights:    [String],
+    mealsIncluded: [String],
+  },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+  isActive:  { type: Boolean, default: true },
+  bookings:  [{ userId: ObjectId, status: String, bookedAt: Date }],
+});
+\end{lstlisting}
+
+% ─────────────────────────────────────────────
+\section{Backend Implementation}
+
+\subsection{Server Entry Point (server/server.js)}
+
+The Express server initialises the database connection, registers middleware, mounts all API route groups, and serves the Angular build in production.
+
+\begin{lstlisting}[language=JavaScript]
+require('dotenv').config();
+const express  = require('express');
+const connectDB = require('./config/db');
+
+const app = express();
+connectDB();
+
+app.use(express.json());
+app.use('/api/auth',         require('./routes/authRoutes'));
+app.use('/api/itinerary',    require('./routes/itineraryRoutes'));
+app.use('/api/users',        require('./routes/userRoutes'));
+app.use('/api/role-requests',require('./routes/roleRequestRoutes'));
+
+app.listen(process.env.PORT || 5000,
+  () => console.log('Server running on port 5000'));
+\end{lstlisting}
+
+\subsection{Authentication Middleware (middleware/auth.js)}
+
+\begin{lstlisting}[language=JavaScript]
+// Verify JWT on every protected request
+const authenticate = async (req, res, next) => {
+  const token = req.headers['authorization']?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'Token required' });
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  req.user = await User.findById(decoded.id).select('-password');
+  next();
+};
+
+// Role-based guard
+const authorize = (...roles) => (req, res, next) => {
+  if (!roles.includes(req.user.role))
+    return res.status(403).json({ message: 'Insufficient permissions' });
+  next();
+};
+\end{lstlisting}
+
+\subsection{REST API Endpoints}
+
+\begin{longtable}{>{\ttfamily}p{1.5cm} >{\ttfamily}p{5.5cm} p{6cm}}
+\toprule
+\normalfont\textbf{Method} & \normalfont\textbf{Endpoint} & \normalfont\textbf{Description} \\
+\midrule
+\endhead
+POST & /api/auth/register & Register new user (bcrypt hash) \\
+POST & /api/auth/login & Login, returns JWT \\
+GET  & /api/auth/profile & Get current user profile \\
+\midrule
+GET  & /api/itinerary & List all itineraries \\
+GET  & /api/itinerary/:id & Get single itinerary \\
+POST & /api/itinerary & Create itinerary (admin only) \\
+PUT  & /api/itinerary/:id & Update itinerary (admin only) \\
+DELETE & /api/itinerary/:id & Delete itinerary (admin only) \\
+POST & /api/itinerary/:id/book & Book an itinerary (user) \\
+GET  & /api/itinerary/user/bookings & Get user's bookings \\
+\midrule
+GET  & /api/users & List all users (admin) \\
+PUT  & /api/users/:id/role & Change user role (superadmin) \\
+\bottomrule
+\end{longtable}
+
+% ─────────────────────────────────────────────
+\section{Frontend Implementation}
+
+\subsection{Angular Application Configuration}
+
+The Angular 21 app uses standalone components (no NgModules), the new \texttt{provideRouter} API, and a functional HTTP interceptor for JWT attachment.
+
+\begin{lstlisting}[language=JavaScript]
+// app.config.ts
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(withFetch(), withInterceptors([authInterceptor])),
+  ],
+};
+\end{lstlisting}
+
+\subsection{Routing (app.routes.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+export const routes: Routes = [
+  { path: '',           component: HomeComponent },
+  { path: 'login',      component: LoginComponent },
+  { path: 'register',   component: RegisterComponent },
+  { path: 'about',      component: AboutComponent },
+  { path: 'dashboard',  component: DashboardComponent,
+    canActivate: [authGuard] },
+  { path: 'itinerary/:id', component: ItineraryDetailComponent,
+    canActivate: [authGuard] },
+  { path: 'admin',      component: AdminDashboardComponent,
+    canActivate: [authGuard] },
+  { path: '**', redirectTo: '/home' },
+];
+\end{lstlisting}
+
+\subsection{Angular Components}
+
+\begin{longtable}{>{\bfseries}p{4.5cm} p{9cm}}
+\toprule
+Component & Description \\
+\midrule
+\endhead
+NavbarComponent & Fixed glassmorphism navigation bar. Shows Login/Register when logged out; user name, role badge, and logout when logged in. \\
+HomeComponent & Landing page with hero section, curated collections grid, features, testimonials, and CTA. \\
+LoginComponent & Login form with floating underline fields, ambient background blobs, social login buttons, and error display. \\
+RegisterComponent & Registration form with name, email, password, confirm password, and real-time mismatch validation. \\
+DashboardComponent & Stats bento grid, filter chips, itinerary card grid with gradient ``View Details'' buttons, and a floating action button. \\
+ItineraryDetailComponent & Hero banner, breadcrumbs, trip details sidebar, daily plan accordions, pro tips, and highlights. \\
+AdminDashboardComponent & Sidebar navigation, bento stats cards, searchable data table with edit/delete/toggle actions, and pagination. \\
+AboutComponent & Lists all 9 practicals implemented in the project. \\
+\bottomrule
+\end{longtable}
+
+\subsection{Auth Service (auth.service.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  currentUser = signal<AuthUser | null>(this.loadUser());
+
+  login(email: string, password: string) {
+    return this.http.post('/api/auth/login', { email, password }).pipe(
+      tap(res => {
+        localStorage.setItem('token', res.token);
+        this.currentUser.set(res.user);
+      })
+    );
+  }
+
+  logout() {
+    localStorage.removeItem('token');
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+}
+\end{lstlisting}
+
+\subsection{HTTP Interceptor (auth.interceptor.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = inject(AuthService).token;
+  if (token) {
+    req = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    });
+  }
+  return next(req);
+};
+\end{lstlisting}
+
+\subsection{Route Guard (auth.guard.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+export const authGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  if (localStorage.getItem('token')) return true;
+  router.navigate(['/login']);
+  return false;
+};
+\end{lstlisting}
+
+% ─────────────────────────────────────────────
+\section{UI Design System}
+
+The frontend uses the \textbf{Elevated Navigator} design system, a premium Tailwind CSS v4 theme with the following tokens:
+
+\begin{longtable}{>{\ttfamily}p{5cm} p{3cm} p{5cm}}
+\toprule
+\normalfont\textbf{Token} & \normalfont\textbf{Value} & \normalfont\textbf{Usage} \\
+\midrule
+\endhead
+primary & \#3953bd & Buttons, active links, icons \\
+secondary & \#754aa1 & Accent elements, badges \\
+surface & \#f8f9fa & Page background \\
+surface-container-lowest & \#ffffff & Cards, modals \\
+on-surface & \#191c1d & Body text \\
+on-surface-variant & \#444653 & Secondary text \\
+signature-gradient & \#667eea → \#764ba2 & Hero buttons, FAB, CTA \\
+\bottomrule
+\end{longtable}
+
+\textbf{Typography:} Manrope (headings, labels) and Inter (body text). \\
+\textbf{Icons:} Material Symbols Outlined (Google). \\
+\textbf{Design Rules:} No 1px borders — tonal depth via background shading. Ambient shadows only on hover (\texttt{0 12px 32px -4px rgba(25,28,29,0.06)}).
+
+% ─────────────────────────────────────────────
+\section{Authentication Flow}
+
+\begin{enumerate}
+    \item User submits email and password on the Angular login form.
+    \item Angular calls \texttt{POST /api/auth/login} via \texttt{AuthService}.
+    \item Express finds the user in MongoDB and runs \texttt{bcrypt.compare()}.
+    \item On success, Express signs a JWT (\texttt{expiresIn: '7d'}) and returns it.
+    \item Angular stores the token in \texttt{localStorage} and updates the \texttt{currentUser} signal.
+    \item The HTTP interceptor attaches \texttt{Authorization: Bearer <token>} to every subsequent request.
+    \item The route guard reads the token to allow or deny access to protected routes (\texttt{/dashboard}, \texttt{/admin}).
+    \item On logout, the token is removed and the user is redirected to \texttt{/login}.
+\end{enumerate}
+
+% ─────────────────────────────────────────────
+\section{Role-Based Access Control}
+
+\begin{longtable}{>{\bfseries}p{3cm} p{10cm}}
+\toprule
+Role & Permissions \\
+\midrule
+\endhead
+user & Browse active itineraries, view details, book itineraries, view own bookings \\
+admin & All user permissions + create, update, delete itineraries, view all users \\
+superadmin & All admin permissions + change user roles, manage role requests \\
+\bottomrule
+\end{longtable}
+
+% ─────────────────────────────────────────────
+\section{How to Run the Project}
+
+\subsection{Prerequisites}
+\begin{itemize}
+    \item Node.js v18 or higher
+    \item MongoDB running locally on port 27017
+    \item npm v9 or higher
+\end{itemize}
+
+\subsection{Setup Steps}
+
+\begin{lstlisting}[language=bash]
+# 1. Clone the repository
+git clone <repository-url>
+cd mean_mini
+
+# 2. Install backend dependencies
+npm install
+
+# 3. Install frontend dependencies
+cd frontend && npm install && cd ..
+
+# 4. Create environment file
+echo "MONGO_URI=mongodb://localhost:27017/travel_planner
+PORT=5000
+JWT_SECRET=your_secret_key" > .env
+
+# 5. Seed the database with sample data
+npm run init-db
+
+# 6. Start both servers concurrently
+npm run dev:full
+\end{lstlisting}
+
+\subsection{Access the Application}
+
+\begin{itemize}
+    \item \textbf{Angular Frontend:} \url{http://localhost:4200}
+    \item \textbf{Express API:} \url{http://localhost:5000}
+\end{itemize}
+
+\subsection{Default Seeded Credentials}
+
+\begin{longtable}{>{\ttfamily}p{5cm} >{\ttfamily}p{4cm} p{3cm}}
+\toprule
+\normalfont\textbf{Email} & \normalfont\textbf{Password} & \normalfont\textbf{Role} \\
+\midrule
+\endhead
+superadmin@travel.com & superadmin123 & superadmin \\
+admin@travel.com & admin123 & admin \\
+user@travel.com & user123 & user \\
+\bottomrule
+\end{longtable}
+
+% ─────────────────────────────────────────────
+\section{Mapping to Course Practicals}
+
+\begin{longtable}{>{\bfseries}p{1.5cm} p{5.5cm} p{6cm}}
+\toprule
+No. & Practical & Implementation in Project \\
+\midrule
+\endhead
+1 & Node.js, npm, Express setup & \texttt{package.json}, \texttt{npm install express} \\
+2 & Express server and static site & \texttt{server/server.js}, static \texttt{views/} serving \\
+3 & Bootstrap responsive layouts & Bootstrap 5 CDN in legacy \texttt{views/*.html} \\
+4 & MongoDB CRUD operations & \texttt{itineraryRoutes.js} — insertOne, find, update, delete \\
+5 & Data modelling with Mongoose & \texttt{models/User.js}, \texttt{models/Itinerary.js} schemas \\
+6 & Express–MongoDB connection & \texttt{config/db.js} — \texttt{mongoose.connect()} \\
+7 & Angular components & 8 standalone Angular components in \texttt{frontend/src/app/components/} \\
+8 & Angular SPA & \texttt{app.routes.ts} with \texttt{authGuard}, \texttt{RouterOutlet}, \texttt{RouterLink} \\
+9 & MEAN stack authentication & bcryptjs + JWT + Angular \texttt{AuthService} + HTTP interceptor \\
+\bottomrule
+\end{longtable}
+
+% ─────────────────────────────────────────────
+\section{Conclusion}
+
+The \textbf{Elevated Navigator} project successfully demonstrates the complete MEAN stack by building a real-world travel itinerary planning application. All nine course practicals are implemented and integrated:
+
+\begin{itemize}
+    \item The \textbf{backend} is a production-quality Express REST API with Mongoose models, JWT authentication, bcrypt password hashing, and role-based access control.
+    \item The \textbf{frontend} is a modern Angular 21 SPA with standalone components, reactive signals, a functional HTTP interceptor, and a premium Tailwind CSS design system.
+    \item The \textbf{database} layer uses MongoDB with well-defined Mongoose schemas including references, embedded sub-documents, and validation.
+\end{itemize}
+
+The project demonstrates how the four technologies of the MEAN stack complement each other to deliver a scalable, maintainable, and secure full-stack web application.
+
+\end{document}

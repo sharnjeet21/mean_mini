@@ -1,0 +1,2068 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\geometry{margin=1in}
+\usepackage{enumitem}
+\usepackage{titlesec}
+
+
+\titleformat{\section}
+{\normalfont\Large\bfseries}{\thesection.}{0.5em}{}
+
+\lstset{
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    backgroundcolor=\color{gray!10},
+    keywordstyle=\color{blue},
+    commentstyle=\color{green!60!black},
+    stringstyle=\color{red}
+}
+
+\begin{document}
+
+% Title page
+\begin{titlepage}
+\begin{center}
+\vspace*{1cm}
+
+{\Large \bfseries MEAN STACK \\[0.2cm] \large \normalfont(LPEIT-109)} \\[0.3cm]
+{\large PRACTICAL FILE}
+
+\vspace{0.3cm}
+
+{\large \bfseries GURU NANAK DEV ENGINEERING COLLEGE}
+
+\vspace{0.5cm}
+
+{\normalsize SUBMITTED IN THE PARTIAL FULFILLMENT OF THE REQUIREMENTS \\
+FOR THE AWARD OF THE DEGREE OF \\[0.3cm]
+{\large \bfseries BACHELORS OF TECHNOLOGY} \\[0.2cm]
+(INFORMATION TECHNOLOGY)}}
+
+\vspace{0.8cm}
+
+\includegraphics[width=3in,height=3in]{assets/gnelogo.png}
+
+\vspace{0.5cm}
+
+{\large SUBMITTED BY: \\[0.3cm]
+SHARNJEET SINGH (2303059)}
+
+\vspace{1cm}
+
+{\normalsize DEPARTMENT OF INFORMATION TECHNOLOGY \\[0.2cm]
+GURU NANAK DEV ENGINEERING COLLEGE LUDHIANA \\[0.2cm]
+(An Autonomous College Under UGC ACT)}
+\end{center}
+\end{titlepage}
+
+\newpage
+
+\section{Practical No. 1: Installing and Setting Up Node.js, npm, and Express}
+
+\subsection{Aim of the Practical}
+To install, setup and configure Node.js, npm (Node Package Manager), and Express framework for building web applications.
+
+\subsection{Introduction to Node.js}
+Node.js is an open-source, cross-platform JavaScript runtime environment that executes JavaScript code outside a web browser. It uses Chrome's V8 JavaScript engine and enables developers to build scalable server-side applications using JavaScript.
+
+\subsection{Introduction to npm}
+npm (Node Package Manager) is the default package manager for Node.js. It allows developers to install, share, and manage dependencies (libraries and tools) in their projects. npm comes bundled with Node.js installation.
+
+\subsection{Introduction to Express}
+Express is a minimal and flexible Node.js web application framework that provides robust features for building web and mobile applications. It simplifies server creation, routing, and middleware integration.
+
+\subsection{Installation Steps}
+
+\subsubsection{Install Node.js and npm on macOS}
+
+There are multiple ways to install Node.js on macOS. We'll use Homebrew, the most popular package manager for macOS:
+
+\vspace{1cm}
+
+\textbf{Step 1: Update Homebrew}
+
+\begin{lstlisting}[language=bash]
+brew update
+\end{lstlisting}
+\newpage
+\textbf{Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/brew-update.png}
+\end{center}
+
+\vspace{1cm}
+\textbf{Step 2: Install Node.js using Homebrew}
+
+Node.js installation includes npm automatically:
+
+\begin{lstlisting}[language=bash]
+brew install node
+\end{lstlisting}
+
+\textbf{Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/nodejs-install.png}
+\end{center}
+
+\textbf{Alternative: Download from Official Website}
+
+You can also download the macOS installer (.pkg file) from \url{https://nodejs.org/} and install it manually.
+\vspace{1cm}
+\\\textbf{Step 3: Verify installation}
+
+Check Node.js and npm versions:
+
+\begin{lstlisting}[language=bash]
+node --version
+npm --version
+\end{lstlisting}
+\newpage
+\textbf{Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/node-version.png}
+\end{center}
+
+\subsubsection{Initialize a New Node.js Project}
+
+Create a new directory called \texttt{mean} and initialize npm:
+
+\begin{lstlisting}[language=bash]
+mkdir mean
+cd mean
+npm init 
+\end{lstlisting}
+
+\textbf{Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/npm-init.png}
+\end{center}
+
+
+\subsubsection{Install Express Framework}
+
+Install Express as a project dependency:
+
+\begin{lstlisting}[language=bash]
+npm install express
+\end{lstlisting}
+\newpage
+\textbf{Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/npm-install-express.png}
+\end{center}
+
+This command downloads Express and adds it to the \texttt{node\_modules} folder and \texttt{package.json} dependencies.
+
+
+\subsection{Project File Structure in mean Folder}
+
+After installation, the \texttt{mean} directory contains:
+
+\begin{lstlisting}[language=bash]
+mean/
+|-- node_modules/        # All installed packages
+|-- package.json         # Project metadata and dependencies
+|-- package-lock.json    # Locked versions of dependencies
+\end{lstlisting}
+
+\subsection{Understanding package.json}
+
+The \texttt{package.json} file contains project configuration:
+
+\begin{lstlisting}[language=JSON]
+{
+  "name": "mean",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
+\end{lstlisting}
+
+\subsection{Key Concepts}
+
+\begin{itemize}
+    \item \textbf{dependencies}: Packages required for production
+    \item \textbf{devDependencies}: Packages needed only for development
+    \item \textbf{node\_modules}: Folder containing all installed packages
+    \item \textbf{package-lock.json}: Ensures consistent installations across environments
+\end{itemize}
+
+\newpage
+
+\section{Practical No. 2: Creating Express Project and Building Server}
+
+\subsection{Aim of the Practical}
+To create an Express project and build a basic server using Express and Node.js with routing.
+
+\subsection{Introduction}
+Express simplifies web server creation by providing routing capabilities and middleware support. In this practical, we will create a basic Express server that handles different routes and sends responses directly from the server.
+
+\subsection{Complete Project Structure in mean Folder}
+
+The \texttt{mean} folder contains the following files and directories:
+
+\begin{lstlisting}[language=bash]
+mean/                    # Main project directory
+|-- node_modules/        # Installed packages (auto-generated)
+|-- package.json         # Project configuration
+|-- package-lock.json    # Dependency lock file
+|-- server.js            # Main server file
+\end{lstlisting}
+
+\subsection{File Descriptions}
+
+\subsubsection{server.js - Main Server File}
+
+The \texttt{server.js} file is the entry point of the application. It configures Express, defines routes, and starts the server.
+
+\textbf{Key Components:}
+\begin{itemize}
+    \item Import Express module
+    \item Create Express application instance
+    \item Define routes for different endpoints
+    \item Set up error handling
+    \item Start server on specified port
+\end{itemize}
+
+
+\textbf{server.js Code:}
+
+\begin{lstlisting}[language=JavaScript]
+const express = require('express');
+const app = express();
+
+const port = 3000;
+
+app.get('/', (req, res) => res.send("Hello"));
+
+app.listen(port, () => console.log("hello from server"));
+\end{lstlisting}
+
+\subsection{Configuration in package.json}
+
+The \texttt{package.json} file with configuration:
+
+\begin{lstlisting}[language=JSON]
+{
+  "name": "mean_tutorial",
+  "version": "1.0.0",
+  "description": "this is basic tutorial example for MEAN stack",
+  "keywords": [
+    "MEAN",
+    "Mongo",
+    "Express",
+    "Angular",
+    "Nodejs"
+  ],
+  "license": "ISC",
+  "author": "Sharnjeet",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "test"
+  },
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}
+
+\end{lstlisting}
+
+\subsection{Running the Server}
+
+\subsubsection{Production Mode}
+
+Start the server normally:
+
+\begin{lstlisting}[language=bash]
+npm start
+\end{lstlisting}
+
+\textbf{Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/npm-start.png}
+\end{center}
+
+\subsection{Accessing the Server}
+
+Once the server is running, open a web browser and navigate to:
+
+\begin{itemize}
+    \item Home page: \url{http://localhost:3000/}
+    \item Invalid route: \url{http://localhost:3000/invalid} (shows 404 error)
+\end{itemize}
+
+\textbf{Browser Output:}
+\begin{center}
+\includegraphics[width=0.75\textwidth]{assets/browser-output.png}
+\end{center}
+
+\subsection{Key Concepts}
+
+\subsubsection{Express Application}
+
+\texttt{express()} creates an Express application instance that handles HTTP requests and responses.
+
+\subsubsection{Routing}
+
+Express uses \texttt{app.get()} to define routes:
+\begin{itemize}
+    \item First parameter: URL path (e.g., '/', '/about', '/contact')
+    \item Second parameter: Callback function with request (req) and response (res) objects
+    \item \texttt{res.send()}: Sends HTML content as response
+\end{itemize}
+
+\subsubsection{Port Configuration}
+
+\texttt{process.env.PORT || 3000} allows the server to use environment variable PORT or default to 3000.
+
+\subsubsection{Error Handling}
+
+The 404 handler uses \texttt{app.use()} to catch all undefined routes and sends an appropriate error message.
+
+\subsubsection{Server Listening}
+
+\texttt{app.listen()} starts the server on specified port and executes callback function when server starts successfully.
+
+\subsection{Advantages of This Setup}
+
+\begin{itemize}
+    \item \textbf{Simple Structure}: Minimal files for quick setup and learning
+    \item \textbf{Easy to Understand}: All server logic in one file
+    \item \textbf{Scalable}: Can easily add more routes and functionality
+    \item \textbf{Fast Development}: nodemon enables quick testing during development
+\end{itemize}
+
+
+\newpage
+
+\section{Practical No. 3: Working with Bootstrap for Responsive Layouts}
+
+\subsection{Aim of the Practical}
+To import and implement Bootstrap framework for creating quick, responsive layouts in web applications.
+
+\subsection{Introduction to Bootstrap}
+Bootstrap is a free, open-source CSS framework that provides pre-built components and responsive grid system for building modern, mobile-first websites. It includes HTML, CSS, and JavaScript components for typography, forms, buttons, navigation, and other interface elements.
+
+\subsection{Key Features of Bootstrap}
+\begin{itemize}
+    \item \textbf{Responsive Grid System}: 12-column layout that adapts to different screen sizes
+    \item \textbf{Pre-styled Components}: Buttons, forms, cards, modals, and more
+    \item \textbf{Mobile-First Approach}: Optimized for mobile devices by default
+    \item \textbf{Cross-Browser Compatibility}: Works consistently across modern browsers
+    \item \textbf{Customizable}: Easy to override default styles
+\end{itemize}
+
+\subsection{Methods to Import Bootstrap}
+
+\subsubsection{Method 1: CDN (Content Delivery Network)}
+
+Add Bootstrap via CDN links in your HTML file. This is the quickest method and doesn't require installation.
+
+\textbf{HTML with Bootstrap CDN:}
+
+\begin{lstlisting}[language=HTML]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Example</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+          rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1 class="text-center mt-5">Welcome to Bootstrap</h1>
+        <p class="lead">This is a responsive layout using Bootstrap.</p>
+    </div>
+    
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
+</body>
+</html>
+\end{lstlisting}
+
+\subsubsection{Method 2: npm Installation}
+
+Install Bootstrap as a project dependency using npm:
+
+\begin{lstlisting}[language=bash]
+npm install bootstrap
+\end{lstlisting}
+
+Then import Bootstrap in your JavaScript or CSS files:
+
+\begin{lstlisting}[language=JavaScript]
+// In your main JavaScript file
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+\end{lstlisting}
+
+\subsection{Creating a Responsive Layout}
+
+\subsubsection{Bootstrap Grid System}
+
+The grid system uses containers, rows, and columns to layout content:
+
+\begin{lstlisting}[language=HTML]
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Grid Layout</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" 
+          rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <div class="row">
+            <div class="col-md-4 col-sm-6 col-12 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Column 1</h5>
+                        <p class="card-text">This is a responsive column.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-6 col-12 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Column 2</h5>
+                        <p class="card-text">Adapts to screen size.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 col-sm-12 col-12 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">Column 3</h5>
+                        <p class="card-text">Mobile-first design.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
+</body>
+</html>
+\end{lstlisting}
+
+\subsection{Common Bootstrap Components}
+
+\subsubsection{Navigation Bar}
+
+\begin{lstlisting}[language=HTML]
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">MyApp</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" 
+                data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link active" href="#">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">About</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="#">Contact</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+\end{lstlisting}
+
+\subsubsection{Forms}
+
+\begin{lstlisting}[language=HTML]
+<div class="container mt-5">
+    <form>
+        <div class="mb-3">
+            <label for="email" class="form-label">Email address</label>
+            <input type="email" class="form-control" id="email" 
+                   placeholder="name@example.com">
+        </div>
+        <div class="mb-3">
+            <label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password">
+        </div>
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </form>
+</div>
+\end{lstlisting}
+
+\subsubsection{Buttons}
+
+\begin{lstlisting}[language=HTML]
+<button type="button" class="btn btn-primary">Primary</button>
+<button type="button" class="btn btn-secondary">Secondary</button>
+<button type="button" class="btn btn-success">Success</button>
+<button type="button" class="btn btn-danger">Danger</button>
+<button type="button" class="btn btn-warning">Warning</button>
+<button type="button" class="btn btn-info">Info</button>
+\end{lstlisting}
+
+\subsection{Responsive Breakpoints}
+
+Bootstrap uses the following breakpoints for responsive design:
+
+\begin{itemize}
+    \item \textbf{xs} (Extra small): < 576px (default, no prefix needed)
+    \item \textbf{sm} (Small): \textgreater= 576px
+    \item \textbf{md} (Medium): \textgreater= 768px
+    \item \textbf{lg} (Large): \textgreater= 992px
+    \item \textbf{xl} (Extra large): \textgreater= 1200px
+    \item \textbf{xxl} (Extra extra large): \textgreater= 1400px
+\end{itemize}
+
+\subsection{Integrating Bootstrap with Express}
+
+Create a public folder to serve static files and add Bootstrap:
+
+\textbf{Updated server.js:}
+
+\begin{lstlisting}[language=JavaScript]
+const express = require('express');
+const path = require('path');
+const app = express();
+
+const port = 3000;
+
+// Serve static files from 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.listen(port, () => {
+    console.log(`Server running on http://localhost:${port}`);
+});
+\end{lstlisting}
+
+\subsection{Advantages of Using Bootstrap}
+
+\begin{itemize}
+    \item \textbf{Rapid Development}: Pre-built components speed up development
+    \item \textbf{Consistency}: Uniform design across the application
+    \item \textbf{Responsive by Default}: Automatically adapts to different screen sizes
+    \item \textbf{Large Community}: Extensive documentation and community support
+    \item \textbf{Customizable}: Easy to modify with custom CSS
+\end{itemize}
+
+\newpage
+
+\section{Practical No. 4: MongoDB Installation and CRUD Operations}
+
+\subsection{Aim of the Practical}
+To install MongoDB and perform CRUD (Create, Read, Update, Delete) operations on documents and databases.
+
+\subsection{Introduction to MongoDB}
+MongoDB is a NoSQL, document-oriented database that stores data in flexible, JSON-like documents called BSON (Binary JSON). Unlike traditional relational databases, MongoDB doesn't require a predefined schema, making it ideal for applications with evolving data requirements.
+
+\subsection{Key Features of MongoDB}
+\begin{itemize}
+    \item \textbf{Document-Oriented}: Stores data in JSON-like documents
+    \item \textbf{Schema-less}: No rigid table structure required
+    \item \textbf{Scalable}: Horizontal scaling through sharding
+    \item \textbf{High Performance}: Fast read and write operations
+    \item \textbf{Flexible Queries}: Rich query language with indexing support
+\end{itemize}
+
+\subsection{MongoDB Installation on macOS}
+
+\subsubsection{Step 1: Install MongoDB using Homebrew}
+
+\begin{lstlisting}[language=bash]
+# Tap the MongoDB Homebrew repository
+brew tap mongodb/brew
+
+# Install MongoDB Community Edition
+brew install mongodb-community
+\end{lstlisting}
+
+\subsubsection{Step 2: Start MongoDB Service}
+
+\begin{lstlisting}[language=bash]
+# Start MongoDB as a service
+brew services start mongodb-community
+
+# Verify MongoDB is running
+brew services list
+\end{lstlisting}
+
+\subsubsection{Step 3: Access MongoDB Shell}
+
+\begin{lstlisting}[language=bash]
+# Open MongoDB shell
+mongosh
+\end{lstlisting}
+
+\subsection{MongoDB Basic Concepts}
+
+\begin{itemize}
+    \item \textbf{Database}: Container for collections (similar to a database in SQL)
+    \item \textbf{Collection}: Group of documents (similar to a table in SQL)
+    \item \textbf{Document}: A record in a collection (similar to a row in SQL)
+    \item \textbf{Field}: A key-value pair in a document (similar to a column in SQL)
+\end{itemize}
+
+\subsection{CRUD Operations in MongoDB Shell}
+
+\subsubsection{Create Operations}
+
+\textbf{1. Create/Switch to a Database:}
+
+\begin{lstlisting}[language=bash]
+use studentDB
+\end{lstlisting}
+
+\textbf{2. Insert a Single Document:}
+
+\begin{lstlisting}[language=JavaScript]
+db.students.insertOne({
+    name: "Sharnjeet Singh",
+    rollNo: 2303059,
+    branch: "Information Technology",
+    semester: 6,
+    cgpa: 8.5
+})
+\end{lstlisting}
+
+\textbf{3. Insert Multiple Documents:}
+
+\begin{lstlisting}[language=JavaScript]
+db.students.insertMany([
+    {
+        name: "Rajesh Kumar",
+        rollNo: 2303060,
+        branch: "Computer Science",
+        semester: 6,
+        cgpa: 8.2
+    },
+    {
+        name: "Priya Sharma",
+        rollNo: 2303061,
+        branch: "Information Technology",
+        semester: 6,
+        cgpa: 9.1
+    },
+    {
+        name: "Amit Verma",
+        rollNo: 2303062,
+        branch: "Electronics",
+        semester: 5,
+        cgpa: 7.8
+    }
+])
+\end{lstlisting}
+
+\subsubsection{Read Operations}
+
+\textbf{1. Find All Documents:}
+
+\begin{lstlisting}[language=JavaScript]
+db.students.find()
+\end{lstlisting}
+
+\textbf{2. Find with Pretty Format:}
+
+\begin{lstlisting}[language=JavaScript]
+db.students.find().pretty()
+\end{lstlisting}
+
+\textbf{3. Find Specific Documents (Query):}
+
+\begin{lstlisting}[language=JavaScript]
+// Find students from IT branch
+db.students.find({ branch: "Information Technology" })
+
+// Find students with CGPA greater than 8.0
+db.students.find({ cgpa: { $gt: 8.0 } })
+
+// Find a specific student by roll number
+db.students.findOne({ rollNo: 2303059 })
+\end{lstlisting}
+
+\textbf{4. Find with Projection (Select Specific Fields):}
+
+\begin{lstlisting}[language=JavaScript]
+// Show only name and cgpa, hide _id
+db.students.find(
+    {},
+    { name: 1, cgpa: 1, _id: 0 }
+)
+\end{lstlisting}
+
+\textbf{5. Find with Sorting:}
+
+\begin{lstlisting}[language=JavaScript]
+// Sort by CGPA in descending order
+db.students.find().sort({ cgpa: -1 })
+
+// Sort by name in ascending order
+db.students.find().sort({ name: 1 })
+\end{lstlisting}
+
+\textbf{6. Find with Limit:}
+
+\begin{lstlisting}[language=JavaScript]
+// Get only first 2 students
+db.students.find().limit(2)
+\end{lstlisting}
+
+\subsubsection{Update Operations}
+
+\textbf{1. Update a Single Document:}
+
+\begin{lstlisting}[language=JavaScript]
+// Update CGPA of a specific student
+db.students.updateOne(
+    { rollNo: 2303059 },
+    { $set: { cgpa: 8.7 } }
+)
+\end{lstlisting}
+
+\textbf{2. Update Multiple Documents:}
+
+\begin{lstlisting}[language=JavaScript]
+// Add email field to all IT students
+db.students.updateMany(
+    { branch: "Information Technology" },
+    { $set: { email: "student@gndec.ac.in" } }
+)
+\end{lstlisting}
+
+\textbf{3. Increment a Field Value:}
+
+\begin{lstlisting}[language=JavaScript]
+// Increment semester by 1
+db.students.updateOne(
+    { rollNo: 2303059 },
+    { $inc: { semester: 1 } }
+)
+\end{lstlisting}
+
+\textbf{4. Add a New Field:}
+
+\begin{lstlisting}[language=JavaScript]
+// Add phone number field
+db.students.updateOne(
+    { rollNo: 2303059 },
+    { $set: { phone: "9876543210" } }
+)
+\end{lstlisting}
+
+\textbf{5. Remove a Field:}
+
+\begin{lstlisting}[language=JavaScript]
+// Remove email field
+db.students.updateOne(
+    { rollNo: 2303059 },
+    { $unset: { email: "" } }
+)
+\end{lstlisting}
+
+\textbf{6. Replace Entire Document:}
+
+\begin{lstlisting}[language=JavaScript]
+db.students.replaceOne(
+    { rollNo: 2303059 },
+    {
+        name: "Sharnjeet Singh",
+        rollNo: 2303059,
+        branch: "IT",
+        semester: 7,
+        cgpa: 8.9,
+        status: "active"
+    }
+)
+\end{lstlisting}
+
+\subsubsection{Delete Operations}
+
+\textbf{1. Delete a Single Document:}
+
+\begin{lstlisting}[language=JavaScript]
+// Delete student with specific roll number
+db.students.deleteOne({ rollNo: 2303062 })
+\end{lstlisting}
+
+\textbf{2. Delete Multiple Documents:}
+
+\begin{lstlisting}[language=JavaScript]
+// Delete all students with CGPA less than 8.0
+db.students.deleteMany({ cgpa: { $lt: 8.0 } })
+\end{lstlisting}
+
+\textbf{3. Delete All Documents in Collection:}
+
+\begin{lstlisting}[language=JavaScript]
+// Delete all documents (but keep the collection)
+db.students.deleteMany({})
+\end{lstlisting}
+
+\subsection{Additional MongoDB Operations}
+
+\subsubsection{Database Operations}
+
+\begin{lstlisting}[language=JavaScript]
+// Show all databases
+show dbs
+
+// Show current database
+db
+
+// Drop current database
+db.dropDatabase()
+\end{lstlisting}
+
+\subsubsection{Collection Operations}
+
+\begin{lstlisting}[language=JavaScript]
+// Show all collections in current database
+show collections
+
+// Create a new collection explicitly
+db.createCollection("courses")
+
+// Drop a collection
+db.students.drop()
+
+// Count documents in collection
+db.students.countDocuments()
+
+// Count with filter
+db.students.countDocuments({ branch: "Information Technology" })
+\end{lstlisting}
+
+\subsection{Query Operators in MongoDB}
+
+\subsubsection{Comparison Operators}
+
+\begin{lstlisting}[language=JavaScript]
+// $eq - Equal to
+db.students.find({ semester: { $eq: 6 } })
+
+// $ne - Not equal to
+db.students.find({ branch: { $ne: "Electronics" } })
+
+// $gt - Greater than
+db.students.find({ cgpa: { $gt: 8.5 } })
+
+// $gte - Greater than or equal to
+db.students.find({ cgpa: { $gte: 8.5 } })
+
+// $lt - Less than
+db.students.find({ semester: { $lt: 6 } })
+
+// $lte - Less than or equal to
+db.students.find({ semester: { $lte: 6 } })
+
+// $in - In array
+db.students.find({ branch: { $in: ["IT", "CSE"] } })
+
+// $nin - Not in array
+db.students.find({ semester: { $nin: [1, 2, 3] } })
+\end{lstlisting}
+
+\subsubsection{Logical Operators}
+
+\begin{lstlisting}[language=JavaScript]
+// $and - Logical AND
+db.students.find({
+    $and: [
+        { branch: "Information Technology" },
+        { cgpa: { $gt: 8.0 } }
+    ]
+})
+
+// $or - Logical OR
+db.students.find({
+    $or: [
+        { branch: "IT" },
+        { branch: "CSE" }
+    ]
+})
+
+// $not - Logical NOT
+db.students.find({
+    cgpa: { $not: { $lt: 8.0 } }
+})
+
+// $nor - Logical NOR
+db.students.find({
+    $nor: [
+        { branch: "Electronics" },
+        { semester: 5 }
+    ]
+})
+\end{lstlisting}
+
+\subsection{Connecting MongoDB with Node.js}
+
+\subsubsection{Install MongoDB Driver}
+
+\begin{lstlisting}[language=bash]
+npm install mongodb
+\end{lstlisting}
+
+\subsubsection{Basic Connection Example}
+
+\begin{lstlisting}[language=JavaScript]
+const { MongoClient } = require('mongodb');
+
+// Connection URL
+const url = 'mongodb://localhost:27017';
+const client = new MongoClient(url);
+
+// Database Name
+const dbName = 'studentDB';
+
+async function main() {
+    // Connect to MongoDB
+    await client.connect();
+    console.log('Connected successfully to MongoDB');
+    
+    const db = client.db(dbName);
+    const collection = db.collection('students');
+    
+    // Insert a document
+    const insertResult = await collection.insertOne({
+        name: "John Doe",
+        rollNo: 2303063,
+        branch: "IT",
+        cgpa: 8.3
+    });
+    console.log('Inserted document:', insertResult);
+    
+    // Find documents
+    const findResult = await collection.find({}).toArray();
+    console.log('Found documents:', findResult);
+    
+    // Close connection
+    await client.close();
+}
+
+main().catch(console.error);
+\end{lstlisting}
+
+\subsection{Advantages of MongoDB}
+
+\begin{itemize}
+    \item \textbf{Flexible Schema}: Easy to modify data structure without migrations
+    \item \textbf{Scalability}: Horizontal scaling through sharding
+    \item \textbf{Performance}: Fast read/write operations with indexing
+    \item \textbf{JSON-like Documents}: Natural fit for JavaScript applications
+    \item \textbf{Rich Query Language}: Powerful querying and aggregation capabilities
+    \item \textbf{High Availability}: Replication and automatic failover
+\end{itemize}
+
+\subsection{Best Practices}
+
+\begin{itemize}
+    \item Always use meaningful collection and field names
+    \item Create indexes on frequently queried fields
+    \item Use projection to retrieve only necessary fields
+    \item Validate data before insertion
+    \item Handle errors properly in production applications
+    \item Use connection pooling for better performance
+    \item Close database connections when done
+\end{itemize}
+
+\end{document}
+
+\newpage
+
+\section{Practical No. 5: Building a Data Model with MongoDB and Mongoose}
+
+\subsection{Aim of the Practical}
+To build a data model using MongoDB and Mongoose ODM (Object Data Modeling) library in a Node.js application.
+
+\subsection{Introduction to Mongoose}
+Mongoose is an ODM (Object Data Modeling) library for MongoDB and Node.js. It provides a schema-based solution to model application data, offering built-in type casting, validation, query building, and business logic hooks. Mongoose acts as a bridge between MongoDB's flexible document model and the structured data requirements of an application.
+
+\subsection{Key Features of Mongoose}
+\begin{itemize}
+    \item \textbf{Schema Definition}: Define the structure and data types of documents
+    \item \textbf{Validation}: Built-in and custom validators for data integrity
+    \item \textbf{Middleware (Hooks)}: Pre and post hooks for document lifecycle events
+    \item \textbf{Query Helpers}: Chainable query API for complex queries
+    \item \textbf{Population}: Reference documents across collections (like SQL joins)
+    \item \textbf{Plugins}: Reusable logic that can be attached to schemas
+\end{itemize}
+
+\subsection{Installation}
+
+\begin{lstlisting}[language=bash]
+npm install mongoose
+\end{lstlisting}
+
+\subsection{Project Structure}
+
+\begin{lstlisting}[language=bash]
+mean/
+|-- node_modules/
+|-- models/
+|   |-- User.js          # User data model
+|   |-- Itinerary.js     # Itinerary data model
+|-- server.js
+|-- package.json
+\end{lstlisting}
+
+\subsection{Defining Mongoose Schemas and Models}
+
+\subsubsection{User Model (models/User.js)}
+
+\begin{lstlisting}[language=JavaScript]
+const mongoose = require('mongoose');
+
+const userSchema = new mongoose.Schema(
+  {
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      minlength: [2, 'Name must be at least 2 characters'],
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: [6, 'Password must be at least 6 characters'],
+    },
+    role: {
+      type: String,
+      enum: ['user', 'admin', 'superadmin'],
+      default: 'user',
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model('User', userSchema);
+\end{lstlisting}
+
+\subsubsection{Itinerary Model (models/Itinerary.js)}
+
+\begin{lstlisting}[language=JavaScript]
+const mongoose = require('mongoose');
+
+const itinerarySchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: [true, 'Title is required'],
+      trim: true,
+    },
+    destination: {
+      type: String,
+      required: [true, 'Destination is required'],
+    },
+    duration: {
+      type: Number,
+      required: true,
+      min: [1, 'Duration must be at least 1 day'],
+    },
+    budget: {
+      type: Number,
+      required: true,
+      min: [0, 'Budget cannot be negative'],
+    },
+    description: { type: String, trim: true },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+    status: {
+      type: String,
+      enum: ['active', 'inactive', 'draft'],
+      default: 'active',
+    },
+  },
+  { timestamps: true }
+);
+
+module.exports = mongoose.model('Itinerary', itinerarySchema);
+\end{lstlisting}
+
+\subsection{Using the Models}
+
+\begin{lstlisting}[language=JavaScript]
+const User = require('./models/User');
+const Itinerary = require('./models/Itinerary');
+
+// Create a new user
+const newUser = new User({
+  name: 'Sharnjeet Singh',
+  email: 'sharnjeet@example.com',
+  password: 'secret123',
+  role: 'user',
+});
+
+await newUser.save();
+console.log('User saved:', newUser);
+
+// Create an itinerary linked to the user
+const trip = await Itinerary.create({
+  title: 'Goa Beach Escape',
+  destination: 'Goa, India',
+  duration: 5,
+  budget: 15000,
+  description: 'A relaxing beach holiday.',
+  createdBy: newUser._id,
+});
+
+console.log('Itinerary created:', trip);
+\end{lstlisting}
+
+\subsection{Schema Data Types}
+
+\begin{itemize}
+    \item \textbf{String}: Text values
+    \item \textbf{Number}: Integer or floating-point numbers
+    \item \textbf{Boolean}: \texttt{true} or \texttt{false}
+    \item \textbf{Date}: Date and time values
+    \item \textbf{Array}: List of values or sub-documents
+    \item \textbf{ObjectId}: Reference to another document (\texttt{mongoose.Schema.Types.ObjectId})
+    \item \textbf{Mixed}: Any type (\texttt{mongoose.Schema.Types.Mixed})
+\end{itemize}
+
+\subsection{Validation in Mongoose}
+
+\begin{lstlisting}[language=JavaScript]
+const productSchema = new mongoose.Schema({
+  name:  { type: String, required: true, maxlength: 100 },
+  price: { type: Number, required: true, min: 0 },
+  category: {
+    type: String,
+    enum: ['electronics', 'clothing', 'food'],
+    required: true,
+  },
+  inStock: { type: Boolean, default: true },
+  createdAt: { type: Date, default: Date.now },
+});
+\end{lstlisting}
+
+\subsection{Advantages of Using Mongoose}
+
+\begin{itemize}
+    \item \textbf{Structured Data}: Enforces schema on otherwise schema-less MongoDB
+    \item \textbf{Validation}: Prevents invalid data from reaching the database
+    \item \textbf{Readable Code}: Models make the codebase self-documenting
+    \item \textbf{Middleware}: Automate tasks like hashing passwords before saving
+    \item \textbf{Population}: Easily join related documents across collections
+\end{itemize}
+
+\newpage
+
+\section{Practical No. 6: Connecting Express Application to MongoDB using Mongoose}
+
+\subsection{Aim of the Practical}
+To connect an Express application to a MongoDB database using Mongoose and build a fully functional REST API with CRUD operations.
+
+\subsection{Introduction}
+Connecting Express with MongoDB via Mongoose allows us to build a complete backend API. Express handles HTTP routing and middleware, while Mongoose manages database interactions through models. Together they form the \textbf{M} (MongoDB) and \textbf{E} (Express) layers of the MEAN stack.
+
+\subsection{Installation}
+
+\begin{lstlisting}[language=bash]
+npm install express mongoose dotenv
+\end{lstlisting}
+
+\subsection{Project Structure}
+
+\begin{lstlisting}[language=bash]
+mean/
+|-- config/
+|   |-- db.js            # Database connection
+|-- models/
+|   |-- Itinerary.js     # Mongoose model
+|-- routes/
+|   |-- itineraryRoutes.js  # API routes
+|-- server.js            # Entry point
+|-- .env                 # Environment variables
+|-- package.json
+\end{lstlisting}
+
+\subsection{Environment Variables (.env)}
+
+\begin{lstlisting}[language=bash]
+MONGO_URI=mongodb://localhost:27017/meanDB
+PORT=5000
+\end{lstlisting}
+
+\subsection{Database Connection (config/db.js)}
+
+\begin{lstlisting}[language=JavaScript]
+const mongoose = require('mongoose');
+
+const connectDB = async () => {
+  try {
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error(`Error: ${error.message}`);
+    process.exit(1);
+  }
+};
+
+module.exports = connectDB;
+\end{lstlisting}
+
+\subsection{Express Server (server.js)}
+
+\begin{lstlisting}[language=JavaScript]
+require('dotenv').config();
+const express = require('express');
+const connectDB = require('./config/db');
+const itineraryRoutes = require('./routes/itineraryRoutes');
+
+const app = express();
+
+// Connect to MongoDB
+connectDB();
+
+// Middleware
+app.use(express.json());
+
+// Routes
+app.use('/api/itineraries', itineraryRoutes);
+
+// Health check
+app.get('/', (req, res) => res.json({ message: 'API is running' }));
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+\end{lstlisting}
+
+\subsection{REST API Routes (routes/itineraryRoutes.js)}
+
+\begin{lstlisting}[language=JavaScript]
+const express = require('express');
+const router = express.Router();
+const Itinerary = require('../models/Itinerary');
+
+// GET all itineraries
+router.get('/', async (req, res) => {
+  try {
+    const itineraries = await Itinerary.find();
+    res.json({ success: true, data: itineraries });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// GET single itinerary by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const item = await Itinerary.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    res.json({ success: true, data: item });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST create new itinerary
+router.post('/', async (req, res) => {
+  try {
+    const item = await Itinerary.create(req.body);
+    res.status(201).json({ success: true, data: item });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// PUT update itinerary
+router.put('/:id', async (req, res) => {
+  try {
+    const item = await Itinerary.findByIdAndUpdate(
+      req.params.id, req.body, { new: true, runValidators: true }
+    );
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    res.json({ success: true, data: item });
+  } catch (err) {
+    res.status(400).json({ success: false, message: err.message });
+  }
+});
+
+// DELETE itinerary
+router.delete('/:id', async (req, res) => {
+  try {
+    const item = await Itinerary.findByIdAndDelete(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Not found' });
+    res.json({ success: true, message: 'Deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+module.exports = router;
+\end{lstlisting}
+
+\subsection{Testing the API}
+
+Start the server and test endpoints using a browser or API client (e.g., Postman):
+
+\begin{lstlisting}[language=bash]
+node server.js
+# Output: MongoDB Connected: localhost
+#         Server running on port 5000
+\end{lstlisting}
+
+\begin{itemize}
+    \item \textbf{GET} \texttt{http://localhost:5000/api/itineraries} — Fetch all records
+    \item \textbf{POST} \texttt{http://localhost:5000/api/itineraries} — Create a record
+    \item \textbf{PUT} \texttt{http://localhost:5000/api/itineraries/:id} — Update a record
+    \item \textbf{DELETE} \texttt{http://localhost:5000/api/itineraries/:id} — Delete a record
+\end{itemize}
+
+\subsection{Key Concepts}
+
+\begin{itemize}
+    \item \textbf{async/await}: Handles asynchronous MongoDB operations cleanly
+    \item \textbf{try/catch}: Catches database errors and sends appropriate HTTP responses
+    \item \textbf{dotenv}: Keeps sensitive credentials out of source code
+    \item \textbf{process.exit(1)}: Terminates the app if the DB connection fails
+    \item \textbf{findByIdAndUpdate}: Atomically finds and updates a document
+\end{itemize}
+
+\subsection{Advantages}
+
+\begin{itemize}
+    \item \textbf{Separation of Concerns}: Config, models, and routes are in separate files
+    \item \textbf{Reusable Models}: Mongoose models can be imported anywhere in the app
+    \item \textbf{Error Handling}: Centralized error responses for all routes
+    \item \textbf{Environment Config}: \texttt{.env} file keeps credentials secure
+\end{itemize}
+
+\newpage
+
+\section{Practical No. 7: Creating an Angular Application and Working with Components}
+
+\subsection{Aim of the Practical}
+To create an Angular application and understand how to build, organize, and communicate between Angular components.
+
+\subsection{Introduction to Angular}
+Angular is a TypeScript-based, open-source front-end framework developed and maintained by Google. It follows the component-based architecture where the UI is broken into small, reusable, self-contained pieces called \textbf{components}. Angular provides a complete solution including routing, forms, HTTP client, and dependency injection out of the box.
+
+\subsection{Key Concepts}
+\begin{itemize}
+    \item \textbf{Component}: The fundamental building block of an Angular UI
+    \item \textbf{Template}: HTML view associated with a component
+    \item \textbf{Decorator}: Metadata annotation (e.g., \texttt{@Component}) that configures a class
+    \item \textbf{Module / Standalone}: Logical grouping of components and services
+    \item \textbf{Data Binding}: Synchronization between component class and template
+    \item \textbf{Directive}: Instructions that extend HTML (e.g., \texttt{*ngIf}, \texttt{*ngFor})
+    \item \textbf{Service}: Reusable business logic shared across components
+\end{itemize}
+
+\subsection{Installation and Project Setup}
+
+\subsubsection{Install Angular CLI}
+
+\begin{lstlisting}[language=bash]
+npm install -g @angular/cli
+\end{lstlisting}
+
+\subsubsection{Create a New Angular Project}
+
+\begin{lstlisting}[language=bash]
+ng new frontend --standalone --routing --style=scss
+cd frontend
+\end{lstlisting}
+
+\subsubsection{Project Structure}
+
+\begin{lstlisting}[language=bash]
+frontend/
+|-- src/
+|   |-- app/
+|   |   |-- app.ts              # Root component
+|   |   |-- app.routes.ts       # Route definitions
+|   |   |-- app.config.ts       # App configuration
+|   |   |-- components/
+|   |   |   |-- navbar/         # Navbar component
+|   |   |   |-- home/           # Home component
+|   |   |   |-- dashboard/      # Dashboard component
+|   |   |-- services/
+|   |       |-- api.service.ts  # HTTP service
+|   |-- index.html
+|   |-- styles.scss
+|-- angular.json
+|-- package.json
+\end{lstlisting}
+
+\subsection{Anatomy of a Component}
+
+Every Angular component consists of three parts:
+
+\begin{lstlisting}[language=JavaScript]
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-home',       // HTML tag used in templates
+  standalone: true,           // No NgModule required (Angular 17+)
+  imports: [CommonModule],    // Dependencies for this component
+  template: `
+    <section>
+      <h1>{{ title }}</h1>
+      <p *ngIf="showMessage">Welcome to the MEAN Stack App!</p>
+      <ul>
+        <li *ngFor="let item of items">{{ item }}</li>
+      </ul>
+    </section>
+  `,
+})
+export class HomeComponent {
+  title = 'Travel Itinerary Planner';
+  showMessage = true;
+  items = ['Plan trips', 'Explore destinations', 'Manage itineraries'];
+}
+\end{lstlisting}
+
+\subsection{Data Binding Types}
+
+\subsubsection{Interpolation (One-way: Class to Template)}
+
+\begin{lstlisting}[language=HTML]
+<h1>{{ title }}</h1>
+<p>Welcome, {{ user.name }}!</p>
+\end{lstlisting}
+
+\subsubsection{Property Binding (One-way: Class to DOM)}
+
+\begin{lstlisting}[language=HTML]
+<img [src]="imageUrl" [alt]="imageAlt">
+<button [disabled]="isLoading">Submit</button>
+\end{lstlisting}
+
+\subsubsection{Event Binding (One-way: DOM to Class)}
+
+\begin{lstlisting}[language=HTML]
+<button (click)="onLogin()">Login</button>
+<input (input)="onSearch($event)">
+\end{lstlisting}
+
+\subsubsection{Two-Way Binding (ngModel)}
+
+\begin{lstlisting}[language=HTML]
+<input [(ngModel)]="email" placeholder="Enter email">
+<p>You typed: {{ email }}</p>
+\end{lstlisting}
+
+\subsection{Navbar Component}
+
+\begin{lstlisting}[language=JavaScript]
+import { Component } from '@angular/core';
+import { RouterModule } from '@angular/router';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-navbar',
+  standalone: true,
+  imports: [RouterModule, CommonModule],
+  template: `
+    <nav class="navbar">
+      <a routerLink="/" class="brand">The Elevated Navigator</a>
+      <div class="nav-links">
+        <a routerLink="/home" routerLinkActive="active">Home</a>
+        <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+        <a routerLink="/login">Login</a>
+      </div>
+    </nav>
+  `,
+})
+export class NavbarComponent {}
+\end{lstlisting}
+
+\subsection{Routing Configuration (app.routes.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+import { Routes } from '@angular/router';
+import { HomeComponent } from './components/home/home.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { LoginComponent } from './components/login/login.component';
+
+export const routes: Routes = [
+  { path: '',          component: HomeComponent },
+  { path: 'home',      component: HomeComponent },
+  { path: 'dashboard', component: DashboardComponent },
+  { path: 'login',     component: LoginComponent },
+  { path: '**', redirectTo: '/home' },
+];
+\end{lstlisting}
+
+\subsection{Root App Component (app.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+import { Component } from '@angular/core';
+import { RouterOutlet } from '@angular/router';
+import { NavbarComponent } from './components/navbar/navbar.component';
+
+@Component({
+  selector: 'app-root',
+  standalone: true,
+  imports: [RouterOutlet, NavbarComponent],
+  template: `
+    <app-navbar></app-navbar>
+    <router-outlet></router-outlet>
+  `,
+})
+export class App {}
+\end{lstlisting}
+
+\subsection{Running the Angular Application}
+
+\begin{lstlisting}[language=bash]
+ng serve
+# Application running at: http://localhost:4200/
+\end{lstlisting}
+
+\subsection{Advantages of Angular Components}
+
+\begin{itemize}
+    \item \textbf{Reusability}: Components can be used across multiple pages
+    \item \textbf{Encapsulation}: Each component manages its own logic and styles
+    \item \textbf{Testability}: Components can be unit tested in isolation
+    \item \textbf{Maintainability}: Small, focused components are easier to maintain
+    \item \textbf{Separation of Concerns}: Template, logic, and styles are clearly separated
+\end{itemize}
+
+\newpage
+
+\section{Practical No. 8: Building a Single-Page Application with Angular}
+
+\subsection{Aim of the Practical}
+To build a Single-Page Application (SPA) using Angular with client-side routing, route guards, and navigation between views without full page reloads.
+
+\subsection{Introduction to SPA}
+A Single-Page Application (SPA) loads a single HTML page and dynamically updates the content as the user interacts with the app. Instead of requesting a new page from the server on every navigation, the browser loads only the necessary data and re-renders the relevant portion of the UI. Angular's \texttt{RouterModule} enables SPA behavior through client-side routing.
+
+\subsection{Key SPA Concepts in Angular}
+\begin{itemize}
+    \item \textbf{Router}: Manages navigation between views without page reload
+    \item \textbf{RouterOutlet}: Placeholder where routed components are rendered
+    \item \textbf{RouterLink}: Directive for declarative navigation in templates
+    \item \textbf{ActivatedRoute}: Provides access to route parameters and query strings
+    \item \textbf{Route Guard}: Controls access to routes (e.g., authentication check)
+    \item \textbf{Lazy Loading}: Loads feature modules only when their route is visited
+\end{itemize}
+
+\subsection{SPA Route Configuration (app.routes.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+import { Routes } from '@angular/router';
+import { HomeComponent } from './components/home/home.component';
+import { DashboardComponent } from './components/dashboard/dashboard.component';
+import { LoginComponent } from './components/login/login.component';
+import { AboutComponent } from './components/about/about.component';
+import { authGuard } from './guards/auth.guard';
+
+export const routes: Routes = [
+  { path: '',          component: HomeComponent },
+  { path: 'home',      component: HomeComponent },
+  { path: 'about',     component: AboutComponent },
+  { path: 'login',     component: LoginComponent },
+  // Protected route — only accessible when logged in
+  { path: 'dashboard', component: DashboardComponent,
+    canActivate: [authGuard] },
+  // Wildcard — redirect unknown paths to home
+  { path: '**', redirectTo: '/home', pathMatch: 'full' },
+];
+\end{lstlisting}
+
+\subsection{App Configuration (app.config.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+import { ApplicationConfig } from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { routes } from './app.routes';
+
+export const appConfig: ApplicationConfig = {
+  providers: [
+    provideRouter(routes),
+    provideHttpClient(withFetch()),
+  ],
+};
+\end{lstlisting}
+
+\subsection{Route Guard (guards/auth.guard.ts)}
+
+A route guard prevents unauthenticated users from accessing protected pages:
+
+\begin{lstlisting}[language=JavaScript]
+import { inject } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+
+export const authGuard: CanActivateFn = () => {
+  const router = inject(Router);
+  const token = localStorage.getItem('token');
+
+  if (token) {
+    return true;           // Allow navigation
+  }
+  router.navigate(['/login']);
+  return false;            // Block navigation
+};
+\end{lstlisting}
+
+\subsection{Navigating Between Routes}
+
+\subsubsection{Declarative Navigation (Template)}
+
+\begin{lstlisting}[language=HTML]
+<!-- RouterLink for navigation without page reload -->
+<a routerLink="/home" routerLinkActive="active">Home</a>
+<a routerLink="/dashboard">Dashboard</a>
+
+<!-- Navigate with parameters -->
+<a [routerLink]="['/itinerary', item.id]">View Details</a>
+\end{lstlisting}
+
+\subsubsection{Programmatic Navigation (Component Class)}
+
+\begin{lstlisting}[language=JavaScript]
+import { Component } from '@angular/core';
+import { Router } from '@angular/router';
+
+@Component({ selector: 'app-login', standalone: true, template: '' })
+export class LoginComponent {
+  constructor(private router: Router) {}
+
+  onLoginSuccess() {
+    // Navigate to dashboard after login
+    this.router.navigate(['/dashboard']);
+  }
+
+  goHome() {
+    this.router.navigateByUrl('/home');
+  }
+}
+\end{lstlisting}
+
+\subsection{Reading Route Parameters}
+
+\begin{lstlisting}[language=JavaScript]
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
+
+@Component({ selector: 'app-detail', standalone: true, template: '' })
+export class DetailComponent implements OnInit {
+  itemId = '';
+
+  constructor(private route: ActivatedRoute) {}
+
+  ngOnInit() {
+    // Read :id from /itinerary/:id
+    this.itemId = this.route.snapshot.paramMap.get('id') || '';
+  }
+}
+\end{lstlisting}
+
+\subsection{About Component (SPA Page Example)}
+
+\begin{lstlisting}[language=JavaScript]
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+
+@Component({
+  selector: 'app-about',
+  standalone: true,
+  imports: [CommonModule],
+  template: `
+    <main class="about-page">
+      <h1>About This Application</h1>
+      <p>This MEAN Stack application demonstrates all 9 practicals:</p>
+      <ul>
+        <li *ngFor="let p of practicals; let i = index">
+          <strong>Practical {{ i + 1 }}:</strong> {{ p }}
+        </li>
+      </ul>
+    </main>
+  `,
+})
+export class AboutComponent {
+  practicals = [
+    'Node.js, npm and Express setup',
+    'Express server and static site',
+    'Bootstrap responsive layouts',
+    'MongoDB installation and CRUD',
+    'Data modelling with Mongoose',
+    'Connecting Express to MongoDB',
+    'Angular components',
+    'Single-Page Application with Angular',
+    'Login authentication with MEAN stack',
+  ];
+}
+\end{lstlisting}
+
+\subsection{How SPA Differs from Traditional Web Apps}
+
+\begin{itemize}
+    \item \textbf{No Full Reload}: Only the changed component re-renders, not the entire page
+    \item \textbf{Faster Navigation}: Subsequent page transitions are near-instant
+    \item \textbf{Better UX}: Smooth transitions without white-flash between pages
+    \item \textbf{State Preservation}: Application state (e.g., logged-in user) persists across routes
+    \item \textbf{API-Driven}: Backend serves JSON data; Angular renders the UI
+\end{itemize}
+
+\subsection{Advantages of Angular SPA}
+
+\begin{itemize}
+    \item \textbf{Performance}: Reduced server load; only data is fetched, not full HTML pages
+    \item \textbf{Modular}: Each route maps to an isolated component
+    \item \textbf{Route Guards}: Fine-grained access control per route
+    \item \textbf{Deep Linking}: URLs remain bookmarkable and shareable
+    \item \textbf{Lazy Loading}: Large apps load faster by splitting code per route
+\end{itemize}
+
+\newpage
+
+\section{Practical No. 9: Login Page Web Application Using MEAN Stack Authentication}
+
+\subsection{Aim of the Practical}
+To construct a simple login page web application that authenticates users using the complete MEAN stack with JWT (JSON Web Token) and bcrypt password hashing.
+
+\subsection{Introduction}
+Authentication is the process of verifying the identity of a user. In a MEAN stack application, authentication is typically implemented using:
+\begin{itemize}
+    \item \textbf{bcryptjs}: Hashes passwords before storing them in MongoDB
+    \item \textbf{jsonwebtoken (JWT)}: Issues a signed token on successful login; the client sends this token with every subsequent request
+    \item \textbf{Angular AuthService}: Stores the JWT in \texttt{localStorage} and exposes reactive login state
+    \item \textbf{HTTP Interceptor}: Automatically attaches the JWT to outgoing API requests
+\end{itemize}
+
+\subsection{Installation}
+
+\begin{lstlisting}[language=bash]
+# Backend
+npm install bcryptjs jsonwebtoken dotenv
+
+# Frontend (Angular)
+# No extra packages needed — uses built-in HttpClient
+\end{lstlisting}
+
+\subsection{Project Structure}
+
+\begin{lstlisting}[language=bash]
+mean/
+|-- server/
+|   |-- config/db.js
+|   |-- models/User.js
+|   |-- middleware/auth.js       # JWT verify middleware
+|   |-- routes/authRoutes.js     # /register and /login endpoints
+|-- frontend/src/app/
+|   |-- services/
+|   |   |-- auth.service.ts      # JWT storage and reactive state
+|   |   |-- auth.interceptor.ts  # Attaches Bearer token to requests
+|   |-- guards/auth.guard.ts     # Protects dashboard route
+|   |-- components/
+|       |-- login/               # Login form component
+|       |-- register/            # Register form component
+\end{lstlisting}
+
+\subsection{Backend: Auth Middleware (middleware/auth.js)}
+
+\begin{lstlisting}[language=JavaScript]
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+
+const JWT_SECRET = process.env.JWT_SECRET || 'mean_secret_key';
+
+// Verify JWT on protected routes
+const verifyToken = (req, res, next) => {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
+
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    req.user = jwt.verify(token, JWT_SECRET);
+    next();
+  } catch {
+    res.status(403).json({ message: 'Invalid or expired token' });
+  }
+};
+
+const generateToken = (user) =>
+  jwt.sign(
+    { id: user._id, email: user.email, role: user.role },
+    JWT_SECRET,
+    { expiresIn: '7d' }
+  );
+
+const hashPassword   = (plain) => bcrypt.hash(plain, 10);
+const comparePassword = (plain, hash) => bcrypt.compare(plain, hash);
+
+module.exports = { verifyToken, generateToken, hashPassword, comparePassword };
+\end{lstlisting}
+
+\subsection{Backend: Auth Routes (routes/authRoutes.js)}
+
+\begin{lstlisting}[language=JavaScript]
+const express = require('express');
+const router  = express.Router();
+const User    = require('../models/User');
+const { generateToken, hashPassword, comparePassword } = require('../middleware/auth');
+
+// POST /api/auth/register
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (await User.findOne({ email }))
+      return res.status(400).json({ success: false, message: 'Email already registered' });
+
+    const hashed = await hashPassword(password);
+    const user   = await User.create({ name, email, password: hashed });
+    const token  = generateToken(user);
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /api/auth/login
+router.post('/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user || !(await comparePassword(password, user.password)))
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+
+    const token = generateToken(user);
+    res.json({
+      success: true,
+      token,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+module.exports = router;
+\end{lstlisting}
+
+\subsection{Frontend: Auth Service (auth.service.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+import { Injectable, signal, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { tap } from 'rxjs/operators';
+
+@Injectable({ providedIn: 'root' })
+export class AuthService {
+  private baseUrl   = 'http://localhost:5000/api/auth';
+  private isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
+
+  currentUser = signal<any>(this.loadUser());
+
+  constructor(private http: HttpClient, private router: Router) {}
+
+  private loadUser() {
+    if (!this.isBrowser) return null;
+    try { return JSON.parse(localStorage.getItem('user') || 'null'); }
+    catch { return null; }
+  }
+
+  get token()     { return this.isBrowser ? localStorage.getItem('token') : null; }
+  get isLoggedIn(){ return !!this.token; }
+
+  login(email: string, password: string) {
+    return this.http.post<any>(`${this.baseUrl}/login`, { email, password }).pipe(
+      tap(res => {
+        if (res.success && this.isBrowser) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(res.user));
+          this.currentUser.set(res.user);
+        }
+      })
+    );
+  }
+
+  register(name: string, email: string, password: string) {
+    return this.http.post<any>(`${this.baseUrl}/register`, { name, email, password }).pipe(
+      tap(res => {
+        if (res.success && this.isBrowser) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(res.user));
+          this.currentUser.set(res.user);
+        }
+      })
+    );
+  }
+
+  logout() {
+    if (this.isBrowser) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+    }
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+}
+\end{lstlisting}
+
+\subsection{Frontend: HTTP Interceptor (auth.interceptor.ts)}
+
+\begin{lstlisting}[language=JavaScript]
+import { HttpInterceptorFn } from '@angular/common/http';
+import { inject } from '@angular/core';
+import { AuthService } from './auth.service';
+
+export const authInterceptor: HttpInterceptorFn = (req, next) => {
+  const token = inject(AuthService).token;
+  if (token) {
+    req = req.clone({
+      setHeaders: { Authorization: `Bearer ${token}` },
+    });
+  }
+  return next(req);
+};
+\end{lstlisting}
+
+\subsection{Frontend: Login Component Template}
+
+\begin{lstlisting}[language=HTML]
+<div class="login-container">
+  <h1>The Elevated Navigator</h1>
+  <p>Welcome back to your next adventure.</p>
+
+  <form (ngSubmit)="onSubmit()">
+    <div *ngIf="error" class="error-msg">{{ error }}</div>
+
+    <label>Email Address</label>
+    <input [(ngModel)]="email" name="email" type="email"
+           placeholder="you@example.com" required>
+
+    <label>Password</label>
+    <input [(ngModel)]="password" name="password" type="password"
+           placeholder="••••••••" required>
+
+    <button type="submit" [disabled]="loading">
+      {{ loading ? 'Signing in...' : 'Login to Dashboard' }}
+    </button>
+  </form>
+
+  <p>Don't have an account?
+    <a routerLink="/register">Register for early access</a>
+  </p>
+</div>
+\end{lstlisting}
+
+\subsection{Frontend: Login Component Class}
+
+\begin{lstlisting}[language=JavaScript]
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
+
+@Component({
+  selector: 'app-login',
+  standalone: true,
+  imports: [CommonModule, FormsModule, RouterModule],
+  templateUrl: './login.component.html',
+})
+export class LoginComponent {
+  email = ''; password = ''; loading = false; error = '';
+
+  constructor(private auth: AuthService, private router: Router) {}
+
+  onSubmit() {
+    this.loading = true; this.error = '';
+    this.auth.login(this.email, this.password).subscribe({
+      next:  (res) => { this.loading = false;
+                        if (res.success) this.router.navigate(['/dashboard']); },
+      error: (err) => { this.loading = false;
+                        this.error = err?.error?.message || 'Invalid credentials'; },
+    });
+  }
+}
+\end{lstlisting}
+
+\subsection{Authentication Flow}
+
+\begin{enumerate}
+    \item User submits email and password on the login form
+    \item Angular sends a \texttt{POST /api/auth/login} request to the Express server
+    \item Express finds the user in MongoDB and compares the password with \texttt{bcrypt.compare()}
+    \item On success, Express signs a JWT with \texttt{jsonwebtoken} and returns it
+    \item Angular stores the JWT in \texttt{localStorage} and updates the reactive \texttt{currentUser} signal
+    \item The HTTP interceptor attaches \texttt{Authorization: Bearer <token>} to all future requests
+    \item The route guard reads the token from \texttt{localStorage} to allow or deny access to \texttt{/dashboard}
+\end{enumerate}
+
+\subsection{Security Best Practices}
+
+\begin{itemize}
+    \item \textbf{Never store plain-text passwords}: Always hash with bcrypt before saving
+    \item \textbf{Use environment variables}: Keep \texttt{JWT\_SECRET} in \texttt{.env}, never in source code
+    \item \textbf{Set token expiry}: Short-lived tokens (e.g., \texttt{7d}) reduce risk if stolen
+    \item \textbf{HTTPS in production}: Prevents token interception over the network
+    \item \textbf{Validate on the server}: Never trust client-side auth alone; always verify the JWT on protected API routes
+\end{itemize}
+
+\subsection{Advantages of JWT Authentication in MEAN Stack}
+
+\begin{itemize}
+    \item \textbf{Stateless}: Server does not store session data; scales horizontally
+    \item \textbf{Self-contained}: Token carries user info, reducing database lookups
+    \item \textbf{Cross-domain}: Works seamlessly with Angular calling a separate Express API
+    \item \textbf{Secure}: bcrypt hashing makes brute-force attacks computationally expensive
+    \item \textbf{Reactive UI}: Angular signals update the navbar and guards instantly on login/logout
+\end{itemize}
+
+\end{document}

@@ -25,6 +25,7 @@
     "bcryptjs": "^3.0.3",
     "bootstrap": "^5.3.8",
     "concurrently": "^8.2.2",
+    "cors": "^2.8.6",
     "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
