@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -32,7 +33,7 @@ export class AdminDashboardComponent implements OnInit {
   constructor(public auth: AuthService, private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<any>('http://localhost:5000/api/itineraries').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/itineraries`).subscribe({
       next: (res) => { this.itineraries = res.data || res || []; },
       error: () => { this.itineraries = this.mockData; }
     });
@@ -40,7 +41,7 @@ export class AdminDashboardComponent implements OnInit {
 
   delete(id: string) {
     if (!confirm('Delete this itinerary?')) return;
-    this.http.delete(`http://localhost:5000/api/itineraries/${id}`).subscribe({
+    this.http.delete(`${environment.apiUrl}/api/itineraries/${id}`).subscribe({
       next: () => { this.itineraries = this.itineraries.filter(i => i._id !== id); },
       error: () => {}
     });

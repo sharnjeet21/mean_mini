@@ -1,17 +1,31 @@
-# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
-
-# Compiled output
+# ── Compiled output ───────────────────────────────────────────────────────────
 /dist
 /tmp
 /out-tsc
 /bazel-out
 
-# Node
+# ── Angular cache (large, regenerated on build) ───────────────────────────────
+/.angular/cache
+/.angular/
+
+# ── Dependencies ──────────────────────────────────────────────────────────────
 /node_modules
+
+# ── Environment / Secrets ─────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
 npm-debug.log
 yarn-error.log
+*.log
 
-# IDEs and editors
+# ── Test / Coverage ───────────────────────────────────────────────────────────
+/coverage
+testem.log
+
+# ── IDEs and editors ──────────────────────────────────────────────────────────
 .idea/
 .project
 .classpath
@@ -19,8 +33,6 @@ yarn-error.log
 *.launch
 .settings/
 *.sublime-workspace
-
-# Visual Studio Code
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
@@ -29,16 +41,13 @@ yarn-error.log
 !.vscode/mcp.json
 .history/*
 
-# Miscellaneous
-/.angular/cache
-.sass-cache/
-/connect.lock
-/coverage
-/libpeerconnection.log
-testem.log
-/typings
-__screenshots__/
-
-# System files
+# ── OS files ──────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+.sass-cache/
+/connect.lock
+/libpeerconnection.log
+/typings
+__screenshots__/

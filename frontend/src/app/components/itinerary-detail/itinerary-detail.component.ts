@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-itinerary-detail',
@@ -17,7 +18,7 @@ export class ItineraryDetailComponent implements OnInit {
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    this.http.get<any>(`http://localhost:5000/api/itineraries/${id}`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/itineraries/${id}`).subscribe({
       next: (res) => { this.itinerary = res.data || res; },
       error: () => { this.itinerary = this.mockItinerary; }
     });

@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,7 +32,7 @@ export class DashboardComponent implements OnInit {
   constructor(public auth: AuthService, private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<any>('http://localhost:5000/api/itineraries').subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/itineraries`).subscribe({
       next: (res) => {
         const data = res.data || res || [];
         this.itineraries = Array.isArray(data) ? data : [];

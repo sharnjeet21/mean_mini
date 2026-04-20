@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface User {
   _id: string;
@@ -41,7 +42,7 @@ export interface RegisterRequest {
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = 'http://localhost:5000/api'; // Update this to match your backend URL
+  private baseUrl = `${environment.apiUrl}/api`;
 
   constructor(private http: HttpClient) { }
 
