@@ -210,3 +210,6 @@ This project is licensed under the ISC License.
 ---
 
 **Built with ❤️ using the MEAN Stack**
+
+
+Contact us: sharn.ss123@gmail.com, yuvsingh716@gmail.com
