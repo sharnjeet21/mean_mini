@@ -24,15 +24,15 @@ export class DashboardComponent implements OnInit {
   ];
 
   mockItineraries = [
-    { _id: '1', title: 'Aegean Dreams',     destination: 'Santorini, Greece', duration: 7,  budget: 2400, createdBy: 'Elena Rossi',  badge: 'Recommended', badgeColor: '#3953bd' },
-    { _id: '2', title: 'Neon Horizon',      destination: 'Tokyo, Japan',      duration: 12, budget: 4850, createdBy: 'Hiroshi Sato', badge: 'In Progress', badgeColor: '#754aa1' },
-    { _id: '3', title: 'Parisian Escapade', destination: 'Paris, France',     duration: 5,  budget: 3200, createdBy: 'Julian Dash',  badge: 'Current',     badgeColor: '#835100' },
+    { _id: '1', title: 'Aegean Dreams', destination: 'Santorini, Greece', duration: 7, budget: 2400, createdBy: 'Elena Rossi', badge: 'Recommended', badgeColor: '#3953bd', image: 'https://images.unsplash.com/photo-1613395877344-13d4a3217360?w=500&q=80', photographer: 'Ryan Spencer', profile: 'https://unsplash.com/@ryanancill' },
+    { _id: '2', title: 'Neon Horizon', destination: 'Tokyo, Japan', duration: 12, budget: 4850, createdBy: 'Hiroshi Sato', badge: 'In Progress', badgeColor: '#754aa1', image: 'https://images.unsplash.com/photo-1540959733332-eab4ce288d6e?w=500&q=80', photographer: 'Jezael Melgoza', profile: 'https://unsplash.com/@jezar' },
+    { _id: '3', title: 'Parisian Escapade', destination: 'Paris, France', duration: 5, budget: 3200, createdBy: 'Julian Dash', badge: 'Current', badgeColor: '#835100', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500&q=80', photographer: 'Chris Karidis', profile: 'https://unsplash.com/@chriskaridis' },
   ];
 
   constructor(public auth: AuthService, private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<any>(`${environment.apiUrl}/api/itineraries`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/itinerary`).subscribe({
       next: (res) => {
         const data = res.data || res || [];
         this.itineraries = Array.isArray(data) ? data : [];

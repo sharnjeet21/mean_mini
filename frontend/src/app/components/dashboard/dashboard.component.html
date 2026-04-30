@@ -48,12 +48,27 @@
          class="group bg-surface-container-lowest rounded-xl overflow-hidden
                 transition-all hover:shadow-xl flex flex-col">
 
-      <!-- Card image placeholder -->
-      <div class="relative h-48 overflow-hidden bg-gradient-to-br from-[#667eea]/20 to-[#764ba2]/20
-                  flex items-center justify-center">
-        <span class="material-symbols-outlined text-7xl text-outline-variant">travel_explore</span>
-        <div class="absolute top-4 left-4">
-          <span class="px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider"
+      <!-- Card Image -->
+      <div class="relative h-48 overflow-hidden bg-surface-container-low flex items-center justify-center group/image">
+        <!-- If image exists -->
+        <ng-container *ngIf="item.image; else noImage">
+          <img [src]="item.image" alt="{{ item.destination }}" class="w-full h-full object-cover transition-transform duration-700 group-hover/image:scale-105" />
+          <!-- Attribution Overlay -->
+          <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 opacity-0 group-hover/image:opacity-100 transition-opacity duration-300">
+            <p class="text-[10px] text-white/90 font-medium">
+              Photo by <a [href]="item.profile" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">{{ item.photographer }}</a> on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer" class="underline hover:text-white">Unsplash</a>
+            </p>
+          </div>
+        </ng-container>
+        <!-- Fallback image -->
+        <ng-template #noImage>
+          <div class="w-full h-full bg-gradient-to-br from-[#667eea]/20 to-[#764ba2]/20 flex items-center justify-center">
+            <span class="material-symbols-outlined text-7xl text-outline-variant">travel_explore</span>
+          </div>
+        </ng-template>
+
+        <div class="absolute top-4 left-4 z-10">
+          <span class="px-3 py-1 bg-white/90 backdrop-blur-md rounded-full text-xs font-bold uppercase tracking-wider shadow-sm"
                 [style.color]="item.badgeColor || '#3953bd'">
             {{ item.badge || 'Itinerary' }}
           </span>
@@ -92,7 +107,7 @@
 </main>
 
 <!-- FAB -->
-<button class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-[#667eea] to-[#764ba2]
+<button routerLink="/itinerary-create" class="fixed bottom-8 right-8 w-14 h-14 bg-gradient-to-br from-[#667eea] to-[#764ba2]
                text-white rounded-full shadow-2xl flex items-center justify-center
                hover:scale-110 transition-transform active:scale-95 group z-40">
   <span class="material-symbols-outlined text-2xl">add</span>
