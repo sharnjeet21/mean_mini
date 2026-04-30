@@ -52,7 +52,26 @@ router.get("/", authenticate, async (req, res) => {
       .sort({ createdAt: -1 })
       .lean();
 
-    return res.json(itineraries);
+    // Enrich with Unsplash Images
+    const { enrichWithImage } = require('../services/imageService');
+    const enrichedItineraries = await Promise.all(
+      itineraries.map(async (itinerary) => {
+        const itinObj = itinerary.toObject();
+        try {
+          const imageData = await enrichWithImage(itinObj.destination);
+          if (imageData) {
+            itinObj.image = imageData.image;
+            itinObj.photographer = imageData.photographer;
+            itinObj.profile = imageData.profile;
+          }
+        } catch (err) {
+          console.error(`Error enriching image for ${itinObj.destination}:`, err.message);
+        }
+        return itinObj;
+      })
+    );
+
+    return res.json(enrichedItineraries);
   } catch (error) {
     console.error("Fetch itineraries error:", error.message);
     return res.status(500).json({ message: "Server error." });
