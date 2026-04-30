@@ -9,6 +9,7 @@ const authRoutes         = require("./routes/authRoutes");
 const itineraryRoutes    = require("./routes/itineraryRoutes");
 const userRoutes         = require("./routes/userRoutes");
 const roleRequestRoutes  = require("./routes/roleRequestRoutes");
+const aiRoutes           = require("./routes/aiRoutes");
 
 dotenv.config();
 
@@ -31,6 +32,8 @@ app.use("/api/auth",          apiCors, authRoutes);
 app.use("/api/itinerary",     apiCors, itineraryRoutes);
 app.use("/api/users",         apiCors, userRoutes);
 app.use("/api/role-requests", apiCors, roleRequestRoutes);
+app.use("/api/ai",            apiCors, aiRoutes);
+app.use("/api/image",         apiCors, require("./routes/imageRoutes"));
 
 // ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");
