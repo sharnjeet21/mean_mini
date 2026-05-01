@@ -1,8 +1,9 @@
 import { RenderMode, ServerRoute } from '@angular/ssr';
 
 export const serverRoutes: ServerRoute[] = [
-  // Parameterized routes cannot be prerendered without getPrerenderParams
-  { path: 'itinerary/:id', renderMode: RenderMode.Server },
+  // Auth-protected routes — render client-side only (no token available on server)
+  { path: 'itinerary/:id', renderMode: RenderMode.Client },
+  { path: 'dashboard', renderMode: RenderMode.Client },
   // All other routes prerender normally
   { path: '**', renderMode: RenderMode.Prerender },
 ];

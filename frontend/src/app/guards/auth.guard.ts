@@ -12,3 +12,14 @@ export const authGuard: CanActivateFn = () => {
   router.navigate(['/login']);
   return false;
 };
+
+// Guard to redirect already-logged-in users away from login/register
+export const guestGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (!auth.isLoggedIn) return true;
+
+  router.navigate(['/dashboard']);
+  return false;
+};

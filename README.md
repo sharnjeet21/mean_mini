@@ -52,7 +52,23 @@ Create a `.env` file in the root directory:
 MONGO_URI=mongodb://localhost:27017/travel_planner
 PORT=5000
 JWT_SECRET=your_jwt_secret_here
+UNSPLASH_ACCESS_KEY=your_unsplash_access_key_here
+GEMINI_API_KEY=your_gemini_api_key_here
 ```
+
+### AI Features Setup
+
+The application uses two external APIs to power its AI-enhanced travel features:
+
+**Unsplash (destination images)**
+1. Create a free account at [https://unsplash.com/developers](https://unsplash.com/developers)
+2. Create a new application to get your Access Key
+3. Set `UNSPLASH_ACCESS_KEY` in your `.env` file
+
+**Google Gemini (AI suggestions & itineraries)**
+1. Visit [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Sign in with your Google account and generate an API key
+3. Set `GEMINI_API_KEY` in your `.env` file
 
 3. **Initialize Database:**
 ```bash
@@ -97,6 +113,12 @@ npm run frontend
 ### Users
 - `GET /api/users` - Get all users (Admin only)
 - `PUT /api/users/:id/role` - Update user role (Superadmin only)
+
+### AI Travel Features
+- `GET /api/image?place={destination}` - Get destination image
+- `GET /api/suggestions?q={query}` - Get AI place suggestions
+- `GET /api/trending` - Get trending destinations
+- `GET /api/itinerary-suggestions?place={destination}` - Get attraction suggestions
 
 ### Role Requests
 - `POST /api/role-requests` - Request admin role

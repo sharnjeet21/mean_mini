@@ -4,8 +4,8 @@ const { authenticate, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Create itinerary (Admin and Superadmin only)
-router.post("/", authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+// Create itinerary (All authenticated users)
+router.post("/", authenticate, async (req, res) => {
   try {
     const {
       title,
@@ -47,10 +47,10 @@ router.post("/", authenticate, authorize('admin', 'superadmin'), async (req, res
 // Get all itineraries (All authenticated users)
 router.get("/", authenticate, async (req, res) => {
   try {
-    const query = req.user.role === 'user' ? { isActive: true } : {};
-    const itineraries = await Itinerary.find(query)
+    const itineraries = await Itinerary.find({ isActive: true })
       .populate('createdBy', 'name email role')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
     return res.json(itineraries);
   } catch (error) {
@@ -173,74 +173,6 @@ router.get("/user/bookings", authenticate, authorize('user'), async (req, res) =
     return res.json(userBookings);
   } catch (error) {
     console.error("Fetch user bookings error:", error.message);
-    return res.status(500).json({ message: "Server error." });
-  }
-});
-
-module.exports = router;
-
-router.post("/", async (req, res) => {
-  try {
-    const { destination, startDate, endDate, budget, notes } = req.body;
-
-    if (!destination || !startDate || !endDate || budget === undefined) {
-      return res.status(400).json({ message: "Please fill all required fields." });
-    }
-
-    const itinerary = await Itinerary.create({
-      destination,
-      startDate,
-      endDate,
-      budget,
-      notes,
-    });
-
-    return res.status(201).json(itinerary);
-  } catch (error) {
-    console.error("Create itinerary error:", error.message);
-    return res.status(500).json({ message: "Server error." });
-  }
-});
-
-router.get("/", async (req, res) => {
-  try {
-    const itineraries = await Itinerary.find().sort({ createdAt: -1 });
-    return res.json(itineraries);
-  } catch (error) {
-    console.error("Fetch itineraries error:", error.message);
-    return res.status(500).json({ message: "Server error." });
-  }
-});
-
-router.put("/:id", async (req, res) => {
-  try {
-    const updated = await Itinerary.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    if (!updated) {
-      return res.status(404).json({ message: "Itinerary not found." });
-    }
-
-    return res.json(updated);
-  } catch (error) {
-    console.error("Update itinerary error:", error.message);
-    return res.status(500).json({ message: "Server error." });
-  }
-});
-
-router.delete("/:id", async (req, res) => {
-  try {
-    const deleted = await Itinerary.findByIdAndDelete(req.params.id);
-
-    if (!deleted) {
-      return res.status(404).json({ message: "Itinerary not found." });
-    }
-
-    return res.json({ message: "Itinerary deleted." });
-  } catch (error) {
-    console.error("Delete itinerary error:", error.message);
     return res.status(500).json({ message: "Server error." });
   }
 });
