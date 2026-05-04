@@ -33,6 +33,11 @@ const itinerarySchema = new mongoose.Schema({
     trim: true,
     default: "",
   },
+  stops: [{
+    name:  { type: String, trim: true },
+    notes: { type: String, trim: true, default: '' },
+    order: { type: Number, default: 0 },
+  }],
   dailyPlan: [{
     day: {
       type: Number,
