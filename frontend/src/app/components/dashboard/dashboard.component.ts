@@ -1,6 +1,6 @@
 import { Component, OnInit, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
@@ -25,6 +25,7 @@ export class DashboardComponent implements OnInit {
   showModal = false;
   saving = false;
   formError = '';
+  destinationToast = '';   // brief confirmation when a destination is selected from AI search
   form = {
     title: '',
     destination: '',
@@ -55,7 +56,7 @@ export class DashboardComponent implements OnInit {
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  constructor(public auth: AuthService, private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(public auth: AuthService, private http: HttpClient, private cdr: ChangeDetectorRef, private route: ActivatedRoute) {}
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -63,6 +64,12 @@ export class DashboardComponent implements OnInit {
       return;
     }
     this.loadItineraries();
+    // If navigated from homepage "Plan This Trip" — pre-fill destination and open modal
+    const dest = this.route.snapshot.queryParamMap.get('destination');
+    if (dest) {
+      this.form.destination = dest;
+      setTimeout(() => this.openModal(), 200);
+    }
   }
 
   loadItineraries() {
@@ -111,9 +118,11 @@ export class DashboardComponent implements OnInit {
 
   onDestinationSelected(place: string): void {
     this.form.destination = place;
-    if (this.showModal === false) {
-      this.openModal();
-    }
+    // Pre-fill the destination but do NOT auto-open the modal.
+    // Show a brief toast so the user knows the selection was registered.
+    this.destinationToast = `✓ Destination set to "${place}" — click New Itinerary to plan your trip.`;
+    setTimeout(() => { this.destinationToast = ''; this.cdr.detectChanges(); }, 4000);
+    this.cdr.detectChanges();
   }
 
   onRateLimitError(message: string): void {
