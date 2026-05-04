@@ -4,8 +4,8 @@ const { authenticate, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Create itinerary (Admin and Superadmin only)
-router.post("/", authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+// Create itinerary (All authenticated users)
+router.post("/", authenticate, async (req, res) => {
   try {
     const {
       title,
@@ -47,31 +47,12 @@ router.post("/", authenticate, authorize('admin', 'superadmin'), async (req, res
 // Get all itineraries (All authenticated users)
 router.get("/", authenticate, async (req, res) => {
   try {
-    const query = req.user.role === 'user' ? { isActive: true } : {};
-    const itineraries = await Itinerary.find(query)
+    const itineraries = await Itinerary.find({ isActive: true })
       .populate('createdBy', 'name email role')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    // Enrich with Unsplash Images
-    const { enrichWithImage } = require('../services/imageService');
-    const enrichedItineraries = await Promise.all(
-      itineraries.map(async (itinerary) => {
-        const itinObj = itinerary.toObject();
-        try {
-          const imageData = await enrichWithImage(itinObj.destination);
-          if (imageData) {
-            itinObj.image = imageData.image;
-            itinObj.photographer = imageData.photographer;
-            itinObj.profile = imageData.profile;
-          }
-        } catch (err) {
-          console.error(`Error enriching image for ${itinObj.destination}:`, err.message);
-        }
-        return itinObj;
-      })
-    );
-
-    return res.json(enrichedItineraries);
+    return res.json(itineraries);
   } catch (error) {
     console.error("Fetch itineraries error:", error.message);
     return res.status(500).json({ message: "Server error." });
@@ -197,4 +178,3 @@ router.get("/user/bookings", authenticate, authorize('user'), async (req, res) =
 });
 
 module.exports = router;
-

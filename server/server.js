@@ -1,7 +1,9 @@
+const dotenv  = require("dotenv");
+dotenv.config();
+
 const express = require("express");
 const path    = require("path");
 const fs      = require("fs");
-const dotenv  = require("dotenv");
 const cors    = require("cors");
 
 const connectDB          = require("./config/db");
@@ -10,8 +12,6 @@ const itineraryRoutes    = require("./routes/itineraryRoutes");
 const userRoutes         = require("./routes/userRoutes");
 const roleRequestRoutes  = require("./routes/roleRequestRoutes");
 const aiRoutes           = require("./routes/aiRoutes");
-
-dotenv.config();
 
 const app = express();
 
@@ -32,8 +32,7 @@ app.use("/api/auth",          apiCors, authRoutes);
 app.use("/api/itinerary",     apiCors, itineraryRoutes);
 app.use("/api/users",         apiCors, userRoutes);
 app.use("/api/role-requests", apiCors, roleRequestRoutes);
-app.use("/api/ai",            apiCors, aiRoutes);
-app.use("/api/image",         apiCors, require("./routes/imageRoutes"));
+app.use("/api",               apiCors, aiRoutes);
 
 // ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");

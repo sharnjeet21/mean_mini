@@ -1,0 +1,42 @@
+<section class="mb-8">
+  <!-- Section heading -->
+  <p class="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Trending Destinations 🌍</p>
+
+  <!-- Loading skeleton -->
+  <div *ngIf="loading" class="flex gap-4 overflow-x-auto pb-2">
+    <div
+      *ngFor="let i of [0, 1, 2, 3, 4]"
+      class="flex-shrink-0 w-48 animate-pulse bg-slate-200 rounded-xl h-32"
+    ></div>
+  </div>
+
+  <!-- Error state -->
+  <div
+    *ngIf="!loading && error"
+    class="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm"
+  >
+    <span class="material-symbols-outlined text-base text-amber-500">warning</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Cards row -->
+  <div *ngIf="!loading && !error && destinations.length > 0" class="flex gap-4 overflow-x-auto pb-2">
+    <div
+      *ngFor="let destination of destinations"
+      (click)="onCardClick(destination.name)"
+      class="flex-shrink-0 w-48 bg-white rounded-xl border border-slate-100 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+    >
+      <!-- Gradient top strip -->
+      <div
+        class="h-2 rounded-t-xl"
+        style="background: linear-gradient(to right, #667eea, #764ba2)"
+      ></div>
+
+      <!-- Card content -->
+      <div class="p-4">
+        <p class="font-bold text-slate-800 text-sm mb-1 truncate">{{ destination.name }}</p>
+        <p class="text-xs text-slate-500 line-clamp-2">{{ destination.description }}</p>
+      </div>
+    </div>
+  </div>
+</section>

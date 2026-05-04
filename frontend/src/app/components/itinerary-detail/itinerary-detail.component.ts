@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
@@ -12,15 +12,34 @@ import { environment } from '../../../environments/environment';
 })
 export class ItineraryDetailComponent implements OnInit {
   itinerary: any = null;
+  loading = true;
   openDay: number | null = 0;
+  private platformId = inject(PLATFORM_ID);
 
   constructor(private route: ActivatedRoute, private http: HttpClient) {}
 
   ngOnInit() {
+    // Skip HTTP call on server — no auth token available
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
     const id = this.route.snapshot.paramMap.get('id');
-    this.http.get<any>(`${environment.apiUrl}/api/itineraries/${id}`).subscribe({
-      next: (res) => { this.itinerary = res.data || res; },
-      error: () => { this.itinerary = this.mockItinerary; }
+    if (!id) {
+      this.itinerary = this.mockItinerary;
+      this.loading = false;
+      return;
+    }
+    this.http.get<any>(`${environment.apiUrl}/api/itinerary/${id}`).subscribe({
+      next: (res) => {
+        this.itinerary = res.data || res;
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Failed to load itinerary:', err);
+        this.itinerary = this.mockItinerary;
+        this.loading = false;
+      }
     });
   }
 

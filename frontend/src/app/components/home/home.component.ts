@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
@@ -9,6 +10,11 @@ import { RouterModule } from '@angular/router';
   templateUrl: './home.component.html',
 })
 export class HomeComponent {
+  constructor(private auth: AuthService, private router: Router) {}
+
+  onStartPlanning() {
+    this.router.navigate([this.auth.isLoggedIn ? '/dashboard' : '/register']);
+  }
   featuredCards = [
     { icon: 'temple_buddhist', title: 'The Zen of Kyoto', subtitle: 'Culture, Cuisine & Traditions', duration: '12 Days', price: '$3,200' },
     { icon: 'sailing', title: 'Cyclades Serenity', subtitle: 'Luxury Yachting & Island Hopping', duration: '7 Days', price: '$4,850' },

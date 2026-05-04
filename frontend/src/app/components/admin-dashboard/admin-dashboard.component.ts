@@ -33,7 +33,7 @@ export class AdminDashboardComponent implements OnInit {
   constructor(public auth: AuthService, private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<any>(`${environment.apiUrl}/api/itineraries`).subscribe({
+    this.http.get<any>(`${environment.apiUrl}/api/itinerary`).subscribe({
       next: (res) => { this.itineraries = res.data || res || []; },
       error: () => { this.itineraries = this.mockData; }
     });
@@ -41,7 +41,7 @@ export class AdminDashboardComponent implements OnInit {
 
   delete(id: string) {
     if (!confirm('Delete this itinerary?')) return;
-    this.http.delete(`${environment.apiUrl}/api/itineraries/${id}`).subscribe({
+    this.http.delete(`${environment.apiUrl}/api/itinerary/${id}`).subscribe({
       next: () => { this.itineraries = this.itineraries.filter(i => i._id !== id); },
       error: () => {}
     });

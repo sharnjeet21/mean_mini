@@ -1,0 +1,117 @@
+<div class="relative w-full">
+
+  <!-- Search Input -->
+  <div class="relative">
+    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+      travel_explore
+    </span>
+    <input
+      type="text"
+      [(ngModel)]="query"
+      (ngModelChange)="onInput()"
+      [maxlength]="200"
+      placeholder="Search destinations..."
+      autocomplete="off"
+      class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800
+             placeholder-slate-400 text-sm font-medium shadow-sm
+             focus:outline-none focus:ring-2 focus:ring-[#3953bd] focus:border-[#3953bd]
+             transition-all"
+    />
+  </div>
+
+  <!-- Rate Limit Error -->
+  <div *ngIf="rateLimitError"
+       class="mt-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium flex items-center gap-2">
+    <span class="material-symbols-outlined text-base">warning</span>
+    {{ rateLimitError }}
+  </div>
+
+  <!-- Suggestion Dropdown -->
+  <div *ngIf="showSuggestions && suggestions.length > 0"
+       class="absolute z-50 w-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
+    <ul class="py-1">
+      <li
+        *ngFor="let suggestion of suggestions; let i = index"
+        (click)="selectSuggestion(suggestion)"
+        [class]="i === activeIndex
+          ? 'flex items-center gap-3 px-4 py-2.5 cursor-pointer bg-slate-50 text-slate-800'
+          : 'flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 text-slate-700 transition-colors'"
+      >
+        <span class="material-symbols-outlined text-base text-slate-400 flex-shrink-0">location_on</span>
+        <span class="text-sm">
+          <ng-container *ngFor="let part of getHighlightedParts(suggestion, query)">
+            <strong *ngIf="part.highlight" class="font-bold text-[#3953bd]">{{ part.text }}</strong>
+            <span *ngIf="!part.highlight">{{ part.text }}</span>
+          </ng-container>
+        </span>
+      </li>
+    </ul>
+  </div>
+
+  <!-- Image Preview -->
+  <div *ngIf="imageLoading || imageUrl || imageError" class="mt-4">
+
+    <!-- Loading Skeleton -->
+    <div *ngIf="imageLoading && !imageUrl"
+         class="w-full h-48 rounded-xl bg-slate-200 animate-pulse flex items-center justify-center">
+      <span class="material-symbols-outlined text-4xl text-slate-300">image</span>
+    </div>
+
+    <!-- Fetched Image -->
+    <img
+      *ngIf="imageUrl && !imageError"
+      [src]="imageUrl"
+      loading="lazy"
+      alt="Destination preview"
+      (error)="imageError = true; imageUrl = null"
+      class="w-full h-48 object-cover rounded-xl shadow-md"
+    />
+
+    <!-- Fallback Placeholder -->
+    <div *ngIf="imageError"
+         class="w-full h-48 rounded-xl bg-slate-200 flex flex-col items-center justify-center gap-2">
+      <span class="material-symbols-outlined text-5xl text-slate-400">travel_explore</span>
+      <span class="text-sm text-slate-500 font-medium">Image unavailable</span>
+    </div>
+
+  </div>
+
+  <!-- Attractions Section -->
+  <div *ngIf="attractionsLoading || attractions.length > 0 || attractionsError" class="mt-4">
+
+    <!-- Attractions Loading Skeleton -->
+    <div *ngIf="attractionsLoading" class="space-y-3">
+      <div class="h-4 w-32 bg-slate-200 animate-pulse rounded mb-4"></div>
+      <div *ngFor="let _ of [1,2,3]" class="p-4 rounded-xl bg-slate-100 animate-pulse">
+        <div class="h-4 w-2/5 bg-slate-200 rounded mb-2"></div>
+        <div class="h-3 w-4/5 bg-slate-200 rounded"></div>
+      </div>
+    </div>
+
+    <!-- Attraction Error -->
+    <div *ngIf="attractionsError && !attractionsLoading"
+         class="px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-2">
+      <span class="material-symbols-outlined text-base">error</span>
+      {{ attractionsError }}
+    </div>
+
+    <!-- Attraction List -->
+    <div *ngIf="attractions.length > 0 && !attractionsLoading">
+      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
+        <span class="material-symbols-outlined text-base text-[#3953bd]">star</span>
+        Top Attractions
+      </h3>
+      <ul class="space-y-3">
+        <li
+          *ngFor="let attraction of attractions"
+          class="p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
+        >
+          <p class="text-sm font-bold text-slate-800 mb-1">{{ attraction.name }}</p>
+          <p class="text-xs text-slate-500 leading-relaxed">{{ attraction.description }}</p>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+</div>

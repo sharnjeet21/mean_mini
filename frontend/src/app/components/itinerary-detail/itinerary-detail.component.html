@@ -58,7 +58,7 @@
             <span class="material-symbols-outlined text-[#3953bd] p-2 bg-[#dde1ff] rounded-lg">person_edit</span>
             <div>
               <p class="text-xs text-[#757684] uppercase font-bold tracking-wider">Created By</p>
-              <p class="font-semibold text-[#191c1d]">{{ itinerary.createdBy }}</p>
+              <p class="font-semibold text-[#191c1d]">{{ itinerary.createdBy?.name || itinerary.createdBy }}</p>
             </div>
           </div>
         </div>
@@ -66,10 +66,10 @@
     </div>
 
     <!-- Daily Plan -->
-    <div class="space-y-8 mb-16" *ngIf="itinerary.days?.length">
+    <div class="space-y-8 mb-16" *ngIf="itinerary.dailyPlan?.length || itinerary.days?.length">
       <h2 class="text-3xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Daily Itinerary</h2>
       <div class="space-y-4">
-        <div *ngFor="let day of itinerary.days; let i = index"
+        <div *ngFor="let day of (itinerary.dailyPlan || itinerary.days); let i = index"
           class="bg-white rounded-2xl overflow-hidden shadow-sm"
           [class.border-l-4]="openDay === i" [class.border-[#3953bd]]="openDay === i">
           <div class="p-6 flex justify-between items-center cursor-pointer hover:bg-[#f3f4f5] transition-colors" (click)="toggleDay(i)">
@@ -119,7 +119,7 @@
 </div>
 
 <!-- Loading state -->
-<div *ngIf="!itinerary" class="min-h-screen flex items-center justify-center pt-16">
+<div *ngIf="loading" class="min-h-screen flex items-center justify-center pt-16">
   <div class="text-center">
     <span class="material-symbols-outlined text-[80px] text-[#c5c5d5] animate-spin">travel_explore</span>
     <p class="text-[#444653] mt-4">Loading itinerary...</p>

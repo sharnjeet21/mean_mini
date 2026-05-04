@@ -1,48 +1,121 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { AuthService } from '../../services/auth.service';
 import { environment } from '../../../environments/environment';
+import { DestinationSearchComponent } from '../destination-search/destination-search.component';
+import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, FormsModule, DestinationSearchComponent, TrendingCardsComponent],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
   itineraries: any[] = [];
-  activeFilter = 'Budget';
-  filters = ['Budget', 'Duration', 'Date'];
+  loading = true;
+  activeFilter = 'Date';
+  filters = ['Date', 'Budget', 'Duration'];
+  rateLimitMessage = '';
+  private platformId = inject(PLATFORM_ID);
 
-  stats = [
-    { icon: 'map',      label: 'Total Itineraries',    value: 24,        badge: '+12%', badgeStyle: 'color:#835100', iconStyle: 'color:#3953bd; background:#dde1ff' },
-    { icon: 'explore',  label: 'Unique Destinations',  value: 18,        badge: 'Global', badgeStyle: 'color:#3953bd', iconStyle: 'color:#754aa1; background:#f0dbff' },
-    { icon: 'schedule', label: 'Avg Duration',         value: '8.5 Days',badge: 'Avg.', badgeStyle: 'color:#444653', iconStyle: 'color:#835100; background:#ffddb9' },
-    { icon: 'payments', label: 'Avg Budget',           value: '$3,420',  badge: 'Active', badgeStyle: 'color:#ba1a1a', iconStyle: 'color:#93000a; background:#ffdad6' },
-  ];
+  showModal = false;
+  saving = false;
+  formError = '';
+  form = {
+    title: '',
+    destination: '',
+    startDate: '',
+    endDate: '',
+    duration: '',
+    budget: null as number | null,
+    description: '',
+  };
 
-  mockItineraries = [
-    { _id: '1', title: 'Aegean Dreams', destination: 'Santorini, Greece', duration: 7, budget: 2400, createdBy: 'Elena Rossi', badge: 'Recommended', badgeColor: '#3953bd', image: 'https://images.unsplash.com/photo-1613395877344-13d4a3217360?w=500&q=80', photographer: 'Ryan Spencer', profile: 'https://unsplash.com/@ryanancill' },
-    { _id: '2', title: 'Neon Horizon', destination: 'Tokyo, Japan', duration: 12, budget: 4850, createdBy: 'Hiroshi Sato', badge: 'In Progress', badgeColor: '#754aa1', image: 'https://images.unsplash.com/photo-1540959733332-eab4ce288d6e?w=500&q=80', photographer: 'Jezael Melgoza', profile: 'https://unsplash.com/@jezar' },
-    { _id: '3', title: 'Parisian Escapade', destination: 'Paris, France', duration: 5, budget: 3200, createdBy: 'Julian Dash', badge: 'Current', badgeColor: '#835100', image: 'https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=500&q=80', photographer: 'Chris Karidis', profile: 'https://unsplash.com/@chriskaridis' },
-  ];
+  get stats() {
+    const total = this.itineraries.length;
+    const destinations = new Set(this.itineraries.map(i => i.destination)).size;
+    const avgBudget = total
+      ? Math.round(this.itineraries.reduce((s, i) => s + (i.budget || 0), 0) / total)
+      : 0;
+    return [
+      { icon: 'map',      label: 'Total Itineraries',   value: total,           badge: 'All',    badgeColor: '#835100', iconStyle: 'color:#3953bd; background:#dde1ff' },
+      { icon: 'explore',  label: 'Unique Destinations', value: destinations,    badge: 'Global', badgeColor: '#3953bd', iconStyle: 'color:#754aa1; background:#f0dbff' },
+      { icon: 'payments', label: 'Avg Budget',          value: `$${avgBudget.toLocaleString()}`, badge: 'Avg', badgeColor: '#444653', iconStyle: 'color:#835100; background:#ffddb9' },
+    ];
+  }
+
+  get sortedItineraries() {
+    const list = [...this.itineraries];
+    if (this.activeFilter === 'Budget')   return list.sort((a, b) => (a.budget || 0) - (b.budget || 0));
+    if (this.activeFilter === 'Duration') return list.sort((a, b) => String(a.duration).localeCompare(String(b.duration)));
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
 
   constructor(public auth: AuthService, private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get<any>(`${environment.apiUrl}/api/itinerary`).subscribe({
+    if (!isPlatformBrowser(this.platformId)) {
+      this.loading = false;
+      return;
+    }
+    this.loadItineraries();
+  }
+
+  loadItineraries() {
+    this.loading = true;
+    this.http.get<any[]>(`${environment.apiUrl}/api/itinerary`).subscribe({
       next: (res) => {
-        const data = res.data || res || [];
-        this.itineraries = Array.isArray(data) ? data : [];
-        if (this.itineraries.length) this.stats[0].value = this.itineraries.length;
+        this.itineraries = Array.isArray(res) ? res : [];
+        this.loading = false;
       },
-      error: () => { this.itineraries = this.mockItineraries; }
+      error: () => {
+        this.itineraries = [];
+        this.loading = false;
+      }
     });
   }
 
-  get displayItineraries() {
-    return this.itineraries.length ? this.itineraries : this.mockItineraries;
+  openModal() {
+    this.form = { title: '', destination: '', startDate: '', endDate: '', duration: '', budget: null, description: '' };
+    this.formError = '';
+    this.showModal = true;
+  }
+
+  closeModal() { this.showModal = false; }
+
+  submitCreate() {
+    if (!this.form.title || !this.form.destination || !this.form.startDate || !this.form.endDate || !this.form.duration || !this.form.budget) {
+      this.formError = 'Please fill all required fields.';
+      return;
+    }
+    this.saving = true;
+    this.formError = '';
+    this.http.post<any>(`${environment.apiUrl}/api/itinerary`, this.form).subscribe({
+      next: (res) => {
+        this.itineraries.unshift(res);
+        this.saving = false;
+        this.showModal = false;
+      },
+      error: (err) => {
+        this.formError = err?.error?.message || err?.message || 'Failed to create itinerary. Please try again.';
+        this.saving = false;
+      }
+    });
+  }
+
+  onDestinationSelected(place: string): void {
+    this.form.destination = place;
+    if (this.showModal === false) {
+      this.openModal();
+    }
+  }
+
+  onRateLimitError(message: string): void {
+    this.rateLimitMessage = message;
+    setTimeout(() => { this.rateLimitMessage = ''; }, 5000);
   }
 }
