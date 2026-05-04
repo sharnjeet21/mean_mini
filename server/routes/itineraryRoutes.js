@@ -15,6 +15,7 @@ router.post("/", authenticate, async (req, res) => {
       duration,
       budget,
       description,
+      stops,
       dailyPlan,
       tripSummary
     } = req.body;
@@ -31,6 +32,7 @@ router.post("/", authenticate, async (req, res) => {
       duration,
       budget,
       description,
+      stops: Array.isArray(stops) ? stops.filter(s => s.name?.trim()).map((s, i) => ({ name: s.name, notes: s.notes || '', order: i })) : [],
       dailyPlan,
       tripSummary,
       createdBy: req.user._id,
