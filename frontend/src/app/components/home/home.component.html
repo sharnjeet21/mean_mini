@@ -1,15 +1,25 @@
 <!-- Hero Section -->
-<section class="relative min-h-[870px] flex items-center overflow-hidden bg-[#f8f9fa]">
+<section
+  class="relative min-h-[870px] flex items-center overflow-hidden"
+  [ngStyle]="heroImageUrl ? {'background-image': 'url(' + heroImageUrl + ')', 'background-size': 'cover', 'background-position': 'center'} : {}"
+  [class.bg-[#f8f9fa]]="!heroImageUrl"
+>
+  <!-- Dark overlay for legibility when photo is present -->
+  <div *ngIf="heroImageUrl" class="absolute inset-0 bg-slate-900/55 z-0"></div>
+
   <div class="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 items-center relative z-10 pt-16">
     <div class="space-y-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#dde1ff] text-[#001356] text-[10px] uppercase tracking-widest font-bold">
+      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-[#001356] text-[10px] uppercase tracking-widest font-bold"
+           [class.bg-[#dde1ff]]="!heroImageUrl" [class.text-white]="!!heroImageUrl">
         <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
         Next-Gen Planning
       </div>
-      <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight text-[#191c1d] leading-[1.1]" style="font-family:Manrope,sans-serif">
-        Discover Your Next <span class="bg-gradient-to-r from-[#667eea] to-[#764ba2] bg-clip-text text-transparent">Great Adventure</span>
+      <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]" style="font-family:Manrope,sans-serif"
+          [class.text-white]="!!heroImageUrl" [class.text-[#191c1d]]="!heroImageUrl">
+        Discover Your Next <span class="bg-gradient-to-r from-[#a5b4fc] to-[#e879f9] bg-clip-text text-transparent">Great Adventure</span>
       </h1>
-      <p class="text-lg text-[#444653] max-w-xl leading-relaxed">
+      <p class="text-lg max-w-xl leading-relaxed"
+         [class.text-white\/80]="!!heroImageUrl" [class.text-[#444653]]="!heroImageUrl">
         Precision-crafted itineraries for the modern explorer. We blend editorial aesthetics with high-performance logistics to curate your perfect journey.
       </p>
       <div class="flex flex-wrap gap-4 pt-4">
@@ -17,14 +27,17 @@
           Start Planning
           <span class="material-symbols-outlined">arrow_forward</span>
         </button>
-        <button routerLink="/dashboard" class="bg-[#e1e3e4] text-[#444653] px-8 py-4 rounded-xl font-bold hover:bg-[#e7e8e9] transition-colors" style="font-family:Manrope,sans-serif">
+        <button routerLink="/dashboard" class="bg-white/20 backdrop-blur border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/30 transition-colors" style="font-family:Manrope,sans-serif"
+                [class.bg-[#e1e3e4]]="!heroImageUrl" [class.text-[#444653]]="!heroImageUrl" [class.border-0]="!heroImageUrl">
           View Dashboard
         </button>
       </div>
     </div>
     <div class="relative hidden lg:block">
-      <div class="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl rotate-2 relative z-20 bg-[#edeeef] flex items-center justify-center">
-        <span class="material-symbols-outlined text-[120px] text-[#c5c5d5]">travel_explore</span>
+      <div class="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl rotate-2 relative z-20"
+           [ngStyle]="heroImageUrl ? {'background-image': 'url(' + heroImageUrl + ')', 'background-size': 'cover', 'background-position': 'center'} : {}"
+           [class.bg-[#edeeef]]="!heroImageUrl" [class.flex]="!heroImageUrl" [class.items-center]="!heroImageUrl" [class.justify-center]="!heroImageUrl">
+        <span *ngIf="!heroImageUrl" class="material-symbols-outlined text-[120px] text-[#c5c5d5]">travel_explore</span>
       </div>
       <div class="absolute top-20 -right-4 w-20 h-20 signature-gradient rounded-full blur-3xl opacity-30"></div>
     </div>
@@ -45,9 +58,13 @@
     </div>
     <div class="grid md:grid-cols-3 gap-8">
       <div *ngFor="let card of featuredCards" class="group bg-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2">
-        <div class="aspect-[16/10] overflow-hidden relative bg-[#edeeef] flex items-center justify-center">
-          <span class="material-symbols-outlined text-[64px] text-[#c5c5d5]">{{ card.icon }}</span>
-          <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight">
+        <div class="aspect-[16/10] overflow-hidden relative flex items-center justify-center"
+             [ngStyle]="card.imageUrl ? {'background-image': 'url(' + card.imageUrl + ')', 'background-size': 'cover', 'background-position': 'center'} : {'background-color': '#edeeef'}">
+          <!-- Gradient overlay for legibility -->
+          <div *ngIf="card.imageUrl" class="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent"></div>
+          <!-- Fallback icon shown only when no image is loaded yet -->
+          <span *ngIf="!card.imageUrl" class="material-symbols-outlined text-[64px] text-[#c5c5d5]">{{ card.icon }}</span>
+          <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight z-10">
             {{ card.duration }}
           </div>
         </div>

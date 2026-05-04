@@ -13,25 +13,24 @@ export class TrendingCardsComponent implements OnInit {
 
   destinations: TrendingDestination[] = [];
   loading = false;
-  error = '';
+  rateLimitWarning = '';
 
   constructor(private aiService: AiService) {}
 
   ngOnInit(): void {
     this.loading = true;
-    this.error = '';
+    this.rateLimitWarning = '';
 
     this.aiService.getTrendingDestinations().subscribe({
       next: (results) => {
         this.destinations = results;
         this.loading = false;
       },
+      // Only a 429 reaches here (other errors are caught inside AiService and return fallback)
       error: (err) => {
         this.loading = false;
         if (err?.message?.includes('Too many requests')) {
-          this.error = 'Too many requests — please wait a moment before trying again.';
-        } else {
-          this.error = 'Failed to load trending destinations.';
+          this.rateLimitWarning = err.message;
         }
       },
     });

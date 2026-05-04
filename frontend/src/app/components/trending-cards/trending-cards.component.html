@@ -10,17 +10,17 @@
     ></div>
   </div>
 
-  <!-- Error state -->
+  <!-- Rate-limit warning only (not shown for fallback data) -->
   <div
-    *ngIf="!loading && error"
+    *ngIf="!loading && rateLimitWarning"
     class="flex items-center gap-2 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-sm"
   >
     <span class="material-symbols-outlined text-base text-amber-500">warning</span>
-    <span>{{ error }}</span>
+    <span>{{ rateLimitWarning }}</span>
   </div>
 
-  <!-- Cards row -->
-  <div *ngIf="!loading && !error && destinations.length > 0" class="flex gap-4 overflow-x-auto pb-2">
+  <!-- Cards row — always shown when destinations exist (including fallback data) -->
+  <div *ngIf="!loading && destinations.length > 0" class="flex gap-4 overflow-x-auto pb-2">
     <div
       *ngFor="let destination of destinations"
       (click)="onCardClick(destination.name)"
