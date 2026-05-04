@@ -1,80 +1,144 @@
-<!-- Hero Section -->
+<!-- ══════════════════════════════════════════════════════════════════
+     HERO SECTION
+══════════════════════════════════════════════════════════════════ -->
 <section
-  class="relative min-h-[870px] flex items-center overflow-hidden"
-  [ngStyle]="heroImageUrl ? {'background-image': 'url(' + heroImageUrl + ')', 'background-size': 'cover', 'background-position': 'center'} : {}"
-  [class.bg-[#f8f9fa]]="!heroImageUrl"
+  class="relative min-h-screen flex items-center overflow-hidden"
+  [ngStyle]="heroImageUrl
+    ? {'background-image': 'url(' + heroImageUrl + ')', 'background-size': 'cover', 'background-position': 'center'}
+    : {'background': 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'}"
 >
-  <!-- Dark overlay for legibility when photo is present -->
-  <div *ngIf="heroImageUrl" class="absolute inset-0 bg-slate-900/55 z-0"></div>
+  <!-- Overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-slate-900/80 z-0"></div>
+  <!-- Decorative orbs -->
+  <div class="absolute top-32 right-24 w-72 h-72 bg-[#667eea]/20 rounded-full blur-[100px] z-0"></div>
+  <div class="absolute bottom-20 left-16 w-64 h-64 bg-[#764ba2]/20 rounded-full blur-[80px] z-0"></div>
 
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 grid lg:grid-cols-2 gap-12 items-center relative z-10 pt-16">
-    <div class="space-y-8">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur text-[#001356] text-[10px] uppercase tracking-widest font-bold"
-           [class.bg-[#dde1ff]]="!heroImageUrl" [class.text-white]="!!heroImageUrl">
-        <span class="material-symbols-outlined text-[14px]">auto_awesome</span>
-        Next-Gen Planning
-      </div>
-      <h1 class="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]" style="font-family:Manrope,sans-serif"
-          [class.text-white]="!!heroImageUrl" [class.text-[#191c1d]]="!heroImageUrl">
-        Discover Your Next <span class="bg-gradient-to-r from-[#a5b4fc] to-[#e879f9] bg-clip-text text-transparent">Great Adventure</span>
+  <div class="max-w-7xl mx-auto px-6 lg:px-12 w-full relative z-10 py-32">
+    <!-- Badge -->
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] uppercase tracking-widest font-bold mb-8">
+      <span class="material-symbols-outlined text-[13px] text-[#a5b4fc]">auto_awesome</span>
+      AI-Powered Travel Planning
+    </div>
+
+    <div class="max-w-3xl">
+      <h1 class="text-6xl lg:text-8xl font-extrabold tracking-tight text-white leading-[1.05] mb-6" style="font-family:Manrope,sans-serif">
+        Discover Your<br>
+        Next <span class="bg-gradient-to-r from-[#a5b4fc] via-[#c084fc] to-[#e879f9] bg-clip-text text-transparent">Great</span><br>
+        <span class="bg-gradient-to-r from-[#e879f9] to-[#a5b4fc] bg-clip-text text-transparent">Adventure</span>
       </h1>
-      <p class="text-lg max-w-xl leading-relaxed"
-         [class.text-white\/80]="!!heroImageUrl" [class.text-[#444653]]="!heroImageUrl">
-        Precision-crafted itineraries for the modern explorer. We blend editorial aesthetics with high-performance logistics to curate your perfect journey.
+      <p class="text-white/70 text-xl max-w-xl leading-relaxed mb-10">
+        Precision-crafted itineraries for the modern explorer. We blend editorial aesthetics with AI-powered logistics to curate your perfect journey.
       </p>
-      <div class="flex flex-wrap gap-4 pt-4">
-        <button (click)="onStartPlanning()" class="signature-gradient text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 active:scale-95 transition-all shadow-xl shadow-indigo-100" style="font-family:Manrope,sans-serif">
+      <div class="flex flex-wrap gap-4">
+        <button (click)="onStartPlanning()"
+                class="group signature-gradient text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 active:scale-95 transition-all shadow-2xl shadow-indigo-500/30"
+                style="font-family:Manrope,sans-serif">
           Start Planning
-          <span class="material-symbols-outlined">arrow_forward</span>
+          <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
         </button>
-        <button routerLink="/dashboard" class="bg-white/20 backdrop-blur border border-white/30 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/30 transition-colors" style="font-family:Manrope,sans-serif"
-                [class.bg-[#e1e3e4]]="!heroImageUrl" [class.text-[#444653]]="!heroImageUrl" [class.border-0]="!heroImageUrl">
+        <button routerLink="/dashboard"
+                class="bg-white/10 backdrop-blur border border-white/20 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-colors"
+                style="font-family:Manrope,sans-serif">
           View Dashboard
         </button>
       </div>
     </div>
-    <div class="relative hidden lg:block">
-      <div class="aspect-[4/5] rounded-[2rem] overflow-hidden shadow-2xl rotate-2 relative z-20"
-           [ngStyle]="heroImageUrl ? {'background-image': 'url(' + heroImageUrl + ')', 'background-size': 'cover', 'background-position': 'center'} : {}"
-           [class.bg-[#edeeef]]="!heroImageUrl" [class.flex]="!heroImageUrl" [class.items-center]="!heroImageUrl" [class.justify-center]="!heroImageUrl">
-        <span *ngIf="!heroImageUrl" class="material-symbols-outlined text-[120px] text-[#c5c5d5]">travel_explore</span>
+
+    <!-- Stats strip -->
+    <div class="mt-20 grid grid-cols-3 gap-6 max-w-lg">
+      <div class="text-center">
+        <p class="text-3xl font-extrabold text-white" style="font-family:Manrope,sans-serif">50K+</p>
+        <p class="text-white/50 text-xs uppercase tracking-widest mt-1">Explorers</p>
       </div>
-      <div class="absolute top-20 -right-4 w-20 h-20 signature-gradient rounded-full blur-3xl opacity-30"></div>
+      <div class="text-center border-x border-white/10">
+        <p class="text-3xl font-extrabold text-white" style="font-family:Manrope,sans-serif">180+</p>
+        <p class="text-white/50 text-xs uppercase tracking-widest mt-1">Destinations</p>
+      </div>
+      <div class="text-center">
+        <p class="text-3xl font-extrabold text-white" style="font-family:Manrope,sans-serif">4.9★</p>
+        <p class="text-white/50 text-xs uppercase tracking-widest mt-1">Rating</p>
+      </div>
     </div>
+  </div>
+
+  <!-- Scroll hint -->
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 text-white/30 animate-bounce">
+    <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
   </div>
 </section>
 
-<!-- Curated Collections -->
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TRENDING DESTINATIONS (AI-powered)
+══════════════════════════════════════════════════════════════════ -->
+<section class="py-16 bg-white border-b border-slate-100">
+  <div class="max-w-7xl mx-auto px-6 lg:px-12">
+    <div class="flex items-end justify-between mb-8">
+      <div>
+        <span class="text-[#754aa1] font-bold text-xs uppercase tracking-[0.2em] mb-2 block">Live AI Feed</span>
+        <h2 class="text-3xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Trending Right Now</h2>
+      </div>
+      <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full font-medium">
+        <span class="material-symbols-outlined text-sm text-[#667eea]">bolt</span>
+        Powered by Gemini
+      </span>
+    </div>
+    <!-- Trending cards — clicking opens the preview modal, NOT the create modal -->
+    <app-trending-cards (destinationSelected)="onTrendingSelect($event)"></app-trending-cards>
+  </div>
+</section>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CURATED COLLECTIONS — click to open full itinerary preview
+══════════════════════════════════════════════════════════════════ -->
 <section class="py-24 bg-[#f3f4f5]">
   <div class="max-w-7xl mx-auto px-6 lg:px-12">
     <div class="flex justify-between items-end mb-12">
       <div class="space-y-2">
-        <h2 class="text-3xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Curated Collections</h2>
-        <p class="text-[#444653]">Hand-picked experiences by our elite travel architects.</p>
+        <span class="text-[#3953bd] font-bold text-xs uppercase tracking-[0.2em] block">Hand-Picked Experiences</span>
+        <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Curated Collections</h2>
+        <p class="text-[#444653]">Click any journey to see the full AI-generated itinerary.</p>
       </div>
       <button routerLink="/dashboard" class="text-[#3953bd] font-semibold flex items-center gap-1 hover:underline text-sm">
-        Explore all <span class="material-symbols-outlined text-sm">arrow_outward</span>
+        All itineraries <span class="material-symbols-outlined text-sm">arrow_outward</span>
       </button>
     </div>
     <div class="grid md:grid-cols-3 gap-8">
-      <div *ngFor="let card of featuredCards" class="group bg-white rounded-xl overflow-hidden transition-all duration-300 hover:-translate-y-2">
-        <div class="aspect-[16/10] overflow-hidden relative flex items-center justify-center"
-             [ngStyle]="card.imageUrl ? {'background-image': 'url(' + card.imageUrl + ')', 'background-size': 'cover', 'background-position': 'center'} : {'background-color': '#edeeef'}">
-          <!-- Gradient overlay for legibility -->
-          <div *ngIf="card.imageUrl" class="absolute inset-0 bg-gradient-to-t from-slate-900/50 to-transparent"></div>
-          <!-- Fallback icon shown only when no image is loaded yet -->
-          <span *ngIf="!card.imageUrl" class="material-symbols-outlined text-[64px] text-[#c5c5d5]">{{ card.icon }}</span>
+      <div
+        *ngFor="let card of featuredCards"
+        (click)="openPreview(card)"
+        class="group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl hover:shadow-slate-300/50 cursor-pointer relative"
+      >
+        <!-- Photo -->
+        <div class="aspect-[4/3] overflow-hidden relative"
+             [ngStyle]="card.imageUrl
+               ? {'background-image': 'url(' + card.imageUrl + ')', 'background-size': 'cover', 'background-position': 'center'}
+               : {'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
+          <!-- Duration badge -->
           <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight z-10">
             {{ card.duration }}
           </div>
+          <!-- Hover overlay: View Itinerary -->
+          <div class="absolute inset-0 bg-[#667eea]/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            <div class="text-center text-white">
+              <span class="material-symbols-outlined text-4xl block mb-2">open_in_new</span>
+              <span class="font-bold text-sm uppercase tracking-widest">View Itinerary</span>
+            </div>
+          </div>
+          <!-- Bottom title on photo -->
+          <div class="absolute bottom-0 left-0 right-0 p-5 z-10">
+            <h3 class="text-xl font-bold text-white mb-1" style="font-family:Manrope,sans-serif">{{ card.title }}</h3>
+            <p class="text-white/70 text-sm">{{ card.subtitle }}</p>
+          </div>
         </div>
-        <div class="p-6 relative">
-          <div class="absolute left-0 top-0 w-1 h-full bg-[#3953bd] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <h3 class="text-xl font-bold mb-1" style="font-family:Manrope,sans-serif">{{ card.title }}</h3>
-          <p class="text-[#444653] text-sm mb-4">{{ card.subtitle }}</p>
-          <div class="flex justify-between items-center pt-4 border-t border-[#c5c5d5]/20">
-            <span class="text-[#3953bd] font-bold">{{ card.price }} <span class="text-[#444653] font-normal text-xs">/ person</span></span>
-            <span class="material-symbols-outlined text-[#757684]">favorite</span>
+        <!-- Card footer -->
+        <div class="p-5 flex items-center justify-between">
+          <span class="text-[#3953bd] font-bold text-lg">{{ card.price }} <span class="text-[#757684] font-normal text-xs">/ person</span></span>
+          <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <span class="material-symbols-outlined text-sm text-[#754aa1]">auto_awesome</span>
+            AI itinerary ready
           </div>
         </div>
       </div>
@@ -82,50 +146,63 @@
   </div>
 </section>
 
-<!-- Features Section -->
-<section class="py-24 bg-[#f8f9fa]">
+
+<!-- ══════════════════════════════════════════════════════════════════
+     FEATURES
+══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 bg-white">
   <div class="max-w-7xl mx-auto px-6 lg:px-12 text-center mb-16">
     <span class="text-[#754aa1] font-bold text-xs uppercase tracking-[0.2em] mb-4 block">The Ecosystem</span>
     <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Designed for the Discerning Traveler</h2>
   </div>
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 grid md:grid-cols-3 gap-12">
-    <div *ngFor="let f of features" class="p-8 rounded-2xl bg-white hover:shadow-2xl hover:shadow-slate-200/50 transition-all duration-500 border border-[#c5c5d5]/10">
-      <div class="w-14 h-14 rounded-xl signature-gradient flex items-center justify-center text-white mb-6">
+  <div class="max-w-7xl mx-auto px-6 lg:px-12 grid md:grid-cols-3 gap-8">
+    <div *ngFor="let f of features"
+         class="p-8 rounded-2xl border border-slate-100 hover:border-[#667eea]/30 hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-500 group">
+      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
+           [ngStyle]="{'background': f.bg, 'color': f.color}">
         <span class="material-symbols-outlined text-3xl">{{ f.icon }}</span>
       </div>
-      <h3 class="text-xl font-bold mb-4" style="font-family:Manrope,sans-serif">{{ f.title }}</h3>
-      <p class="text-[#444653] leading-relaxed">{{ f.desc }}</p>
+      <h3 class="text-xl font-bold mb-3 text-[#191c1d]" style="font-family:Manrope,sans-serif">{{ f.title }}</h3>
+      <p class="text-[#444653] leading-relaxed text-sm">{{ f.desc }}</p>
     </div>
   </div>
 </section>
 
-<!-- Testimonials -->
-<section class="py-24 bg-[#e7e8e9] overflow-hidden">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 flex flex-col lg:flex-row items-center gap-16">
-    <div class="lg:w-1/3 space-y-6">
-      <h2 class="text-4xl font-bold leading-tight" style="font-family:Manrope,sans-serif">Trusted by World Travelers</h2>
-      <p class="text-[#444653]">Join over 50,000+ adventurers who have elevated their travel game with our platform.</p>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     TESTIMONIALS
+══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 bg-[#f3f4f5]">
+  <div class="max-w-7xl mx-auto px-6 lg:px-12">
+    <div class="text-center mb-16">
+      <span class="text-[#3953bd] font-bold text-xs uppercase tracking-[0.2em] mb-4 block">Social Proof</span>
+      <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Trusted by World Travelers</h2>
+      <p class="text-[#444653] mt-3">Join over 50,000+ adventurers who have elevated their travel game.</p>
     </div>
-    <div class="lg:w-2/3 grid md:grid-cols-2 gap-6">
-      <div class="p-8 bg-white rounded-2xl shadow-sm italic text-[#444653] relative">
-        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 -left-2 opacity-50">format_quote</span>
-        "The Elevated Navigator changed how I travel. No more messy spreadsheets—just pure editorial joy and perfect timing on every leg of my trip."
-        <div class="mt-6 flex items-center gap-3 not-italic">
-          <div class="w-10 h-10 rounded-full bg-[#e1e3e4]"></div>
+    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+      <div class="p-8 bg-white rounded-2xl shadow-sm border border-slate-100 relative">
+        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 left-6 opacity-60">format_quote</span>
+        <p class="italic text-[#444653] leading-relaxed mb-6">
+          "The Elevated Navigator changed how I travel. No more messy spreadsheets—just pure editorial joy and perfect timing on every leg of my trip."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full signature-gradient flex items-center justify-center text-white font-bold text-sm">EV</div>
           <div>
             <p class="text-sm font-bold text-[#191c1d]">Eleanor Vance</p>
-            <p class="text-xs">Solo Luxury Traveler</p>
+            <p class="text-xs text-[#757684]">Solo Luxury Traveler</p>
           </div>
         </div>
       </div>
-      <div class="p-8 bg-white rounded-2xl shadow-sm italic text-[#444653] relative mt-8 md:mt-12">
-        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 -left-2 opacity-50">format_quote</span>
-        "The management tools are a godsend for my travel agency. We can deliver high-end itineraries in half the time it used to take."
-        <div class="mt-6 flex items-center gap-3 not-italic">
-          <div class="w-10 h-10 rounded-full bg-[#e1e3e4]"></div>
+      <div class="p-8 bg-white rounded-2xl shadow-sm border border-slate-100 relative md:mt-10">
+        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 left-6 opacity-60">format_quote</span>
+        <p class="italic text-[#444653] leading-relaxed mb-6">
+          "The management tools are a godsend for my travel agency. We can deliver high-end itineraries in half the time it used to take."
+        </p>
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#835100] to-[#c07800] flex items-center justify-center text-white font-bold text-sm">MT</div>
           <div>
             <p class="text-sm font-bold text-[#191c1d]">Marcus Thorne</p>
-            <p class="text-xs">Lead Agent, Thorne Travel</p>
+            <p class="text-xs text-[#757684]">Lead Agent, Thorne Travel</p>
           </div>
         </div>
       </div>
@@ -133,15 +210,18 @@
   </div>
 </section>
 
-<!-- Final CTA -->
-<section class="py-24">
+
+<!-- ══════════════════════════════════════════════════════════════════
+     FINAL CTA
+══════════════════════════════════════════════════════════════════ -->
+<section class="py-24 bg-white">
   <div class="max-w-5xl mx-auto px-6 lg:px-12">
     <div class="signature-gradient rounded-[2.5rem] p-12 lg:p-20 text-center text-white space-y-8 relative overflow-hidden shadow-2xl shadow-indigo-200">
       <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
       <div class="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
       <h2 class="text-4xl lg:text-5xl font-extrabold relative z-10" style="font-family:Manrope,sans-serif">Ready to Elevate Your Journey?</h2>
       <p class="text-white/80 text-lg max-w-2xl mx-auto relative z-10">
-        Join the community of explorers who don't just visit places, they experience them through perfectly planned stories.
+        Join the community of explorers who don't just visit places — they experience them through perfectly planned stories.
       </p>
       <div class="flex justify-center relative z-10">
         <button (click)="onStartPlanning()" class="bg-white text-[#3953bd] px-10 py-5 rounded-xl font-bold text-lg active:scale-95 transition-all shadow-xl shadow-black/10" style="font-family:Manrope,sans-serif">
@@ -152,12 +232,15 @@
   </div>
 </section>
 
-<!-- Footer -->
+
+<!-- ══════════════════════════════════════════════════════════════════
+     FOOTER
+══════════════════════════════════════════════════════════════════ -->
 <footer class="w-full border-t border-slate-100 bg-white">
   <div class="flex flex-col md:flex-row justify-between items-center py-8 px-6 lg:px-12 max-w-7xl mx-auto">
     <div class="text-xs text-slate-500 order-2 md:order-1 mt-6 md:mt-0">
       <span class="font-bold text-slate-900 mr-2">The Elevated Navigator</span>
-      © 2024 The Elevated Navigator. All rights reserved.
+      © 2025 The Elevated Navigator. All rights reserved.
     </div>
     <div class="flex gap-8 text-xs text-slate-500 order-1 md:order-2">
       <a href="#" class="hover:text-slate-900 transition-colors">Privacy Policy</a>
@@ -166,3 +249,97 @@
     </div>
   </div>
 </footer>
+
+
+<!-- ══════════════════════════════════════════════════════════════════
+     ITINERARY PREVIEW MODAL
+══════════════════════════════════════════════════════════════════ -->
+<div *ngIf="showPreviewModal && previewCard"
+     class="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6"
+     (click)="closePreview()">
+
+  <!-- Backdrop -->
+  <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
+
+  <!-- Modal panel -->
+  <div class="relative bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
+       (click)="$event.stopPropagation()">
+
+    <!-- Hero photo header -->
+    <div class="relative h-56 overflow-hidden rounded-t-3xl md:rounded-t-3xl"
+         [ngStyle]="previewCard.imageUrl
+           ? {'background-image': 'url(' + previewCard.imageUrl + ')', 'background-size': 'cover', 'background-position': 'center'}
+           : {'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
+      <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
+      <!-- Close button -->
+      <button (click)="closePreview()"
+              class="absolute top-4 right-4 w-9 h-9 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors">
+        <span class="material-symbols-outlined text-lg">close</span>
+      </button>
+      <!-- Title -->
+      <div class="absolute bottom-0 left-0 right-0 p-6">
+        <div class="flex flex-wrap gap-2 mb-2">
+          <span *ngIf="previewCard.duration !== '—'" class="bg-white/20 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-semibold border border-white/30">{{ previewCard.duration }}</span>
+          <span *ngIf="previewCard.price !== '—'" class="bg-white/20 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-semibold border border-white/30">from {{ previewCard.price }}</span>
+        </div>
+        <h2 class="text-2xl font-bold text-white" style="font-family:Manrope,sans-serif">{{ previewCard.title }}</h2>
+        <p class="text-white/70 text-sm mt-1">{{ previewCard.subtitle }}</p>
+      </div>
+    </div>
+
+    <!-- Modal body -->
+    <div class="p-6">
+      <!-- AI badge -->
+      <div class="flex items-center gap-2 mb-5">
+        <span class="material-symbols-outlined text-base text-[#667eea]">auto_awesome</span>
+        <span class="text-xs font-bold uppercase tracking-widest text-[#667eea]">AI-Generated Highlights</span>
+        <span class="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-[#3953bd]">Gemini</span>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div *ngIf="previewCard.attractionsLoading" class="space-y-3">
+        <div *ngFor="let _ of [1,2,3,4,5]" class="flex gap-4 p-4 rounded-xl bg-slate-50">
+          <div class="w-8 h-8 rounded-lg bg-slate-200 animate-pulse flex-shrink-0"></div>
+          <div class="flex-1">
+            <div class="h-4 w-2/5 bg-slate-200 animate-pulse rounded mb-2"></div>
+            <div class="h-3 w-4/5 bg-slate-200 animate-pulse rounded"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Attractions list -->
+      <div *ngIf="!previewCard.attractionsLoading && previewCard.attractions.length > 0" class="space-y-3">
+        <div *ngFor="let attraction of previewCard.attractions; let i = index"
+             class="flex gap-4 p-4 rounded-xl bg-slate-50 hover:bg-indigo-50/50 transition-colors">
+          <div class="w-8 h-8 rounded-lg signature-gradient flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+            {{ i + 1 }}
+          </div>
+          <div>
+            <p class="font-bold text-[#191c1d] text-sm mb-1">{{ attraction.name }}</p>
+            <p class="text-xs text-[#444653] leading-relaxed">{{ attraction.description }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!previewCard.attractionsLoading && previewCard.attractions.length === 0"
+           class="text-center py-8 text-slate-400">
+        <span class="material-symbols-outlined text-4xl block mb-2">travel_explore</span>
+        <p class="text-sm">Attractions will appear here</p>
+      </div>
+
+      <!-- Action buttons -->
+      <div class="flex gap-3 mt-6 pt-5 border-t border-slate-100">
+        <button (click)="closePreview()"
+                class="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
+          Close
+        </button>
+        <button (click)="planThisTrip()"
+                class="flex-1 py-3 signature-gradient text-white rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2">
+          <span class="material-symbols-outlined text-base">add_circle</span>
+          Plan This Trip
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
