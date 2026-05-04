@@ -217,10 +217,8 @@ export class DashboardComponent implements OnInit {
   // ── AI destination selection (from search / trending) ─────────────────────────
 
   onDestinationSelected(place: string): void {
-    this.form.destination = place;
-    this.destinationToast = `✓ Destination set to "${place}" — click New Itinerary to begin planning.`;
-    setTimeout(() => { this.destinationToast = ''; this.cdr.detectChanges(); }, 4000);
-    this.cdr.detectChanges();
+    // Open wizard directly with destination pre-filled — same UX as "Plan This Trip" on homepage
+    this.openModal(place);
   }
 
   onRateLimitError(message: string): void {
