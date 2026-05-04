@@ -1,19 +1,31 @@
 <!-- ══════════════════════════════════════════════════════════════════
-     HERO SECTION
+     HERO SECTION — Crossfade Slideshow
 ══════════════════════════════════════════════════════════════════ -->
-<section
-  class="relative min-h-screen flex items-center overflow-hidden"
-  [ngStyle]="heroImageUrl
-    ? {'background-image': 'url(' + heroImageUrl + ')', 'background-size': 'cover', 'background-position': 'center'}
-    : {'background': 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'}"
->
-  <!-- Overlay -->
-  <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-slate-900/80 z-0"></div>
-  <!-- Decorative orbs -->
-  <div class="absolute top-32 right-24 w-72 h-72 bg-[#667eea]/20 rounded-full blur-[100px] z-0"></div>
-  <div class="absolute bottom-20 left-16 w-64 h-64 bg-[#764ba2]/20 rounded-full blur-[80px] z-0"></div>
+<section class="relative min-h-screen flex items-center overflow-hidden">
 
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 w-full relative z-10 py-32">
+  <!-- Slide layers (crossfade via opacity) -->
+  <div *ngFor="let url of slideUrls; let i = index"
+       class="absolute inset-0 transition-opacity duration-1000"
+       [class.opacity-100]="i === activeSlide"
+       [class.opacity-0]="i !== activeSlide"
+       [ngStyle]="url
+         ? {'background-image': 'url(' + url + ')', 'background-size': 'cover', 'background-position': 'center'}
+         : {'background': 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'}">
+  </div>
+  <!-- Fallback gradient shown before any image loads -->
+  <div *ngIf="slideUrls.length === 0"
+       class="absolute inset-0"
+       style="background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)">
+  </div>
+
+  <!-- Dark overlay -->
+  <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-slate-900/80 z-10"></div>
+  <!-- Decorative orbs -->
+  <div class="absolute top-32 right-24 w-72 h-72 bg-[#667eea]/20 rounded-full blur-[100px] z-10"></div>
+  <div class="absolute bottom-20 left-16 w-64 h-64 bg-[#764ba2]/20 rounded-full blur-[80px] z-10"></div>
+
+  <!-- Hero content -->
+  <div class="max-w-7xl mx-auto px-6 lg:px-12 w-full relative z-20 py-32">
     <!-- Badge -->
     <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] uppercase tracking-widest font-bold mb-8">
       <span class="material-symbols-outlined text-[13px] text-[#a5b4fc]">auto_awesome</span>
@@ -61,8 +73,22 @@
     </div>
   </div>
 
+  <!-- Slideshow dot indicators -->
+  <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
+    <button *ngFor="let url of slideUrls; let i = index"
+            (click)="goToSlide(i)"
+            class="transition-all duration-300 rounded-full"
+            [class.w-6]="i === activeSlide"
+            [class.w-2]="i !== activeSlide"
+            [class.h-2]="true"
+            [class.bg-white]="i === activeSlide"
+            [class.bg-white\\/40]="i !== activeSlide"
+            [class.hover:bg-white\\/70]="i !== activeSlide">
+    </button>
+  </div>
+
   <!-- Scroll hint -->
-  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 flex flex-col items-center gap-1 text-white/30 animate-bounce">
+  <div class="absolute bottom-8 right-8 z-20 flex flex-col items-center gap-1 text-white/30 animate-bounce">
     <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
   </div>
 </section>

@@ -1,4 +1,4 @@
-import { Component, OnInit, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -13,10 +13,18 @@ export interface FeaturedCard {
   duration: string;
   price: string;
   imageUrl: string;
-  // AI-loaded preview fields
   attractions: Attraction[];
   attractionsLoading: boolean;
 }
+
+// Slide config — images fetched from Unsplash, fallback gradient used until loaded
+const SLIDE_QUERIES = [
+  'aerial beach ocean tropical travel',
+  'mountain alpine sunset landscape',
+  'ancient temple japan culture',
+  'european city river architecture',
+  'safari africa wildlife sunset',
+];
 
 @Component({
   selector: 'app-home',
@@ -24,16 +32,20 @@ export interface FeaturedCard {
   imports: [CommonModule, RouterModule, TrendingCardsComponent],
   templateUrl: './home.component.html',
 })
-export class HomeComponent implements OnInit {
+export class HomeComponent implements OnInit, OnDestroy {
   private platformId = inject(PLATFORM_ID);
   private cdr = inject(ChangeDetectorRef);
 
-  heroImageUrl = '';
+  // ── Slideshow state ───────────────────────────────────────────────────────────
+  slideUrls: string[] = [];
+  activeSlide = 0;
+  private slideshowTimer: any = null;
+  readonly SLIDE_INTERVAL_MS = 5000;
 
   featuredCards: FeaturedCard[] = [
-    { key: 'Kyoto Japan',    icon: 'temple_buddhist', title: 'The Zen of Kyoto',   subtitle: 'Culture, Cuisine & Traditions',     duration: '12 Days', price: '$3,200', imageUrl: '', attractions: [], attractionsLoading: false },
-    { key: 'Santorini',     icon: 'sailing',          title: 'Cyclades Serenity',  subtitle: 'Luxury Yachting & Island Hopping',  duration: '7 Days',  price: '$4,850', imageUrl: '', attractions: [], attractionsLoading: false },
-    { key: 'Swiss Alps',    icon: 'landscape',         title: 'Alpine Elevation',   subtitle: 'Luxury Lodges & Peak Adventures',   duration: '9 Days',  price: '$5,100', imageUrl: '', attractions: [], attractionsLoading: false },
+    { key: 'Kyoto Japan',  icon: 'temple_buddhist', title: 'The Zen of Kyoto',   subtitle: 'Culture, Cuisine & Traditions',    duration: '12 Days', price: '$3,200', imageUrl: '', attractions: [], attractionsLoading: false },
+    { key: 'Santorini',    icon: 'sailing',          title: 'Cyclades Serenity', subtitle: 'Luxury Yachting & Island Hopping', duration: '7 Days',  price: '$4,850', imageUrl: '', attractions: [], attractionsLoading: false },
+    { key: 'Swiss Alps',   icon: 'landscape',        title: 'Alpine Elevation',  subtitle: 'Luxury Lodges & Peak Adventures',  duration: '9 Days',  price: '$5,100', imageUrl: '', attractions: [], attractionsLoading: false },
   ];
 
   features = [
@@ -54,17 +66,60 @@ export class HomeComponent implements OnInit {
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
-    this.loadHeroImage();
+    this.loadSlideshow();
     this.loadCardImages();
-    // Pre-load attractions for all cards in background so the modal opens instantly
     this.featuredCards.forEach((_, i) => this.loadAttractionsForCard(i));
   }
 
-  private loadHeroImage(): void {
-    this.aiService.getDestinationImage('scenic travel landscape mountains ocean').subscribe(res => {
-      if (res.url) { this.heroImageUrl = res.url; this.cdr.detectChanges(); }
+  ngOnDestroy(): void {
+    this.clearSlideshow();
+  }
+
+  // ── Slideshow ─────────────────────────────────────────────────────────────────
+
+  private loadSlideshow(): void {
+    // Initialize with empty slots so the gradient shows first
+    this.slideUrls = new Array(SLIDE_QUERIES.length).fill('');
+
+    SLIDE_QUERIES.forEach((query, i) => {
+      this.aiService.getDestinationImage(query).subscribe(res => {
+        if (res.url) {
+          this.slideUrls[i] = res.url;
+          // Start timer only after the first image arrives
+          if (i === 0 && !this.slideshowTimer) this.startSlideshow();
+          this.cdr.detectChanges();
+        }
+      });
     });
   }
+
+  private startSlideshow(): void {
+    this.slideshowTimer = setInterval(() => {
+      this.nextSlide();
+    }, this.SLIDE_INTERVAL_MS);
+  }
+
+  private clearSlideshow(): void {
+    if (this.slideshowTimer) { clearInterval(this.slideshowTimer); this.slideshowTimer = null; }
+  }
+
+  nextSlide(): void {
+    this.activeSlide = (this.activeSlide + 1) % SLIDE_QUERIES.length;
+    this.cdr.detectChanges();
+  }
+
+  goToSlide(i: number): void {
+    this.clearSlideshow();
+    this.activeSlide = i;
+    this.cdr.detectChanges();
+    this.startSlideshow(); // restart timer from this slide
+  }
+
+  get currentHeroUrl(): string {
+    return this.slideUrls[this.activeSlide] || '';
+  }
+
+  // ── Card images ───────────────────────────────────────────────────────────────
 
   private loadCardImages(): void {
     this.featuredCards.forEach((card, i) => {
@@ -90,7 +145,7 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  // ── Public handlers ───────────────────────────────────────────────────────────
+  // ── Preview modal ─────────────────────────────────────────────────────────────
 
   openPreview(card: FeaturedCard): void {
     this.previewCard = card;
@@ -104,9 +159,7 @@ export class HomeComponent implements OnInit {
     document.body.style.overflow = '';
   }
 
-  /** Called when a trending card is clicked on the homepage */
   onTrendingSelect(destination: string): void {
-    // Create a synthetic preview card for the trending destination
     const synthetic: FeaturedCard = {
       key: destination,
       icon: 'travel_explore',
@@ -122,7 +175,6 @@ export class HomeComponent implements OnInit {
     this.showPreviewModal = true;
     document.body.style.overflow = 'hidden';
 
-    // Load image and attractions in parallel
     this.aiService.getDestinationImage(destination).subscribe(res => {
       if (this.previewCard?.key === destination && res.url) {
         this.previewCard.imageUrl = res.url;
@@ -146,7 +198,6 @@ export class HomeComponent implements OnInit {
     });
   }
 
-  /** Navigate to dashboard with destination pre-selected for planning */
   planThisTrip(): void {
     const dest = this.previewCard?.key || '';
     this.closePreview();
