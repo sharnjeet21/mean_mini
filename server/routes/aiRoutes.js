@@ -204,7 +204,6 @@ router.get('/trending', rateLimiter, async (req, res) => {
 
     trendingCache.set(cacheKey, destinations);
     return res.set('X-Cache', 'MISS').json({ destinations });
-    return res.set('X-Cache', 'MISS').json({ destinations: parsed });
   } catch (err) {
     console.error('[aiRoutes] Gemini trending error:', err.message);
     return res.status(502).json({ message: 'AI service unavailable.' });

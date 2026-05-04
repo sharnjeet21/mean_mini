@@ -1,4 +1,4 @@
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -55,7 +55,7 @@ export class DashboardComponent implements OnInit {
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  constructor(public auth: AuthService, private http: HttpClient) {}
+  constructor(public auth: AuthService, private http: HttpClient, private cdr: ChangeDetectorRef) {}
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -99,10 +99,12 @@ export class DashboardComponent implements OnInit {
         this.itineraries.unshift(res);
         this.saving = false;
         this.showModal = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.formError = err?.error?.message || err?.message || 'Failed to create itinerary. Please try again.';
         this.saving = false;
+        this.cdr.detectChanges();
       }
     });
   }
