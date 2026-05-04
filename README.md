@@ -1,237 +1,91 @@
-# Travel Itinerary Planner - MEAN Stack Application
+# Travel Itinerary Planner - Advanced MEAN Stack Application
 
-A comprehensive travel planning application built with MongoDB, Express.js, Angular, and Node.js (MEAN Stack).
+A premium, AI-enhanced travel planning application built with MongoDB, Express.js, Angular 21, and Node.js. Featuring deep Gemini AI integration, dynamic Unsplash imagery, and a robust client-side caching architecture.
 
-## Features
+## 🚀 Key Modern Features
 
-✅ **Task 1**: Express, Node.js and npm packages setup
-✅ **Task 2**: Express project and static site creation  
-✅ **Task 3**: Bootstrap integration for responsive layouts
-✅ **Task 4**: MongoDB with full CRUD operations
-✅ **Task 5**: Data models with MongoDB and Mongoose
-✅ **Task 6**: Express-MongoDB connection via Mongoose
-✅ **Task 7**: Beautiful Angular UI with components
+### 🤖 AI-Powered Intelligence
+*   **Gemini Integration**: Generates attraction lists, local tips, and full itinerary suggestions in seconds.
+*   **Dynamic Unsplash Hero**: Interactive homepage with an AI-driven crossfade slideshow of world destinations.
+*   **Itinerary Preview Modal**: Instantly view rich, AI-generated previews of curated trips before planning.
+*   **Smart Search**: Real-time destination autocomplete and suggestion engine.
 
-## Project Structure
+### 🧭 Advanced Planning Tools
+*   **4-Step Creation Wizard**: Guided flow for planning basics, dates, budget, and stops.
+*   **Multi-Stop Support**: Add unlimited extra destinations and notes to a single itinerary.
+*   **Auto-Duration Calculation**: Real-time "Days & Nights" calculation based on your selected travel dates.
+*   **Social Proof**: Live trending destinations feed showing what the global community is exploring.
+
+### ⚡ Performance & Reliability
+*   **Smart AI Caching**: Client-side `localStorage` caching layer with TTL (Time-To-Live) to reduce API latency and protect rate limits.
+*   **Fault-Tolerant UI**: Curated mock data fallbacks ensure the app stays beautiful even if external APIs are unreachable.
+*   **Auto-Healing Auth**: Automatic logout and session cleanup upon JWT token expiry (prevents 401 loops).
+*   **Forced Reactivity**: Change detection optimization ensures the UI always reflects async AI data arrival.
+
+## 📁 Project Structure
 
 ```
 ├── server/                 # Backend (Express.js + MongoDB)
-│   ├── config/            # Database configuration
-│   ├── models/            # Mongoose models
-│   ├── routes/            # API routes
-│   ├── middleware/        # Authentication middleware
-│   └── server.js          # Main server file
-├── frontend/              # Frontend (Angular)
+│   ├── config/            # Database & Environment configuration
+│   ├── models/            # Mongoose schemas (User, Itinerary, etc.)
+│   ├── routes/            # API endpoints (Auth, Itinerary, AI)
+│   ├── middleware/        # JWT Authentication & Role-based guards
+│   └── server.js          # Entry point
+├── frontend/              # Frontend (Angular 21 + Tailwind/Custom CSS)
 │   ├── src/app/
-│   │   ├── components/    # Angular components
-│   │   └── services/      # API services
+│   │   ├── components/    # Smart components (Wizard, Slideshow, Search)
+│   │   └── services/      # API wrappers & LocalStorage Cache logic
 │   └── package.json
-└── views/                 # Static HTML files (legacy)
+└── README.md
 ```
 
-## Quick Start
+## 🛠️ Quick Start
 
-### Prerequisites
-- Node.js (v18 or higher)
-- MongoDB (local or cloud)
-- npm or yarn
+### 1. Prerequisites
+- Node.js (v20+ recommended)
+- MongoDB (Local or Atlas)
+- Unsplash Developer Access Key
+- Google Gemini API Key
 
-### Installation
+### 2. Installation & Setup
 
-1. **Clone and install dependencies:**
 ```bash
-git clone <repository-url>
+# Clone the repo
+git clone https://github.com/sharnjeet21/mean_mini.git
 cd mean_mini
+
+# Install all dependencies (Backend + Frontend)
 npm install
 cd frontend && npm install && cd ..
 ```
 
-2. **Environment Setup:**
+### 3. Environment Configuration
 Create a `.env` file in the root directory:
 ```env
-MONGO_URI=mongodb://localhost:27017/travel_planner
+MONGO_URI=mongodb+srv://... (or localhost)
 PORT=5000
-JWT_SECRET=your_jwt_secret_here
-UNSPLASH_ACCESS_KEY=your_unsplash_access_key_here
-GEMINI_API_KEY=your_gemini_api_key_here
+JWT_SECRET=your_secret_key
+UNSPLASH_ACCESS_KEY=your_key
+GEMINI_API_KEY=your_key
 ```
 
-### AI Features Setup
-
-The application uses two external APIs to power its AI-enhanced travel features:
-
-**Unsplash (destination images)**
-1. Create a free account at [https://unsplash.com/developers](https://unsplash.com/developers)
-2. Create a new application to get your Access Key
-3. Set `UNSPLASH_ACCESS_KEY` in your `.env` file
-
-**Google Gemini (AI suggestions & itineraries)**
-1. Visit [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-2. Sign in with your Google account and generate an API key
-3. Set `GEMINI_API_KEY` in your `.env` file
-
-3. **Initialize Database:**
+### 4. Running the Application
 ```bash
-npm run init-db
-```
-
-### Running the Application
-
-#### Option 1: Run Both Frontend and Backend Together
-```bash
+# Run the full stack concurrently
 npm run dev:full
 ```
-- Backend: http://localhost:5000
-- Frontend: http://localhost:4200
+*   **Frontend**: http://localhost:4200
+*   **Backend API**: http://localhost:5000
 
-#### Option 2: Run Separately
+## 🛡️ Role-Based Access Control
 
-**Backend only:**
-```bash
-npm run dev
-```
-
-**Frontend only:**
-```bash
-npm run frontend
-```
-
-## API Endpoints
-
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-
-### Itineraries
-- `GET /api/itinerary` - Get all itineraries
-- `POST /api/itinerary` - Create new itinerary (Admin only)
-- `GET /api/itinerary/:id` - Get single itinerary
-- `PUT /api/itinerary/:id` - Update itinerary (Admin only)
-- `DELETE /api/itinerary/:id` - Delete itinerary (Admin only)
-- `POST /api/itinerary/:id/book` - Book itinerary (User only)
-
-### Users
-- `GET /api/users` - Get all users (Admin only)
-- `PUT /api/users/:id/role` - Update user role (Superadmin only)
-
-### AI Travel Features
-- `GET /api/image?place={destination}` - Get destination image
-- `GET /api/suggestions?q={query}` - Get AI place suggestions
-- `GET /api/trending` - Get trending destinations
-- `GET /api/itinerary-suggestions?place={destination}` - Get attraction suggestions
-
-### Role Requests
-- `POST /api/role-requests` - Request admin role
-- `GET /api/role-requests` - Get role requests (Admin only)
-- `PUT /api/role-requests/:id` - Review role request (Superadmin only)
-
-## Angular Components
-
-### 🏠 Home Component
-- Hero section with call-to-action
-- Feature showcase
-- How it works section
-- Responsive design with Bootstrap
-
-### 🔐 Authentication Components
-- **Login Component**: User authentication form
-- **Register Component**: User registration with validation
-
-### 📊 Dashboard Component
-- Statistics cards
-- Itinerary grid with search/filter
-- Responsive cards with hover effects
-- Integration with backend API
-
-### 🧭 Navbar Component
-- Responsive navigation
-- Route-based active states
-- Modern gradient buttons
-
-## Technologies Used
-
-### Backend
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM for MongoDB
-- **JWT** - Authentication
-- **bcrypt** - Password hashing
-
-### Frontend
-- **Angular 21** - Frontend framework
-- **Bootstrap 5** - CSS framework
-- **Font Awesome** - Icons
-- **RxJS** - Reactive programming
-- **TypeScript** - Type safety
-
-### Development
-- **Concurrently** - Run multiple commands
-- **Nodemon** - Auto-restart server
-- **Angular CLI** - Development tools
-
-## Features Implemented
-
-### 🎨 Beautiful UI/UX
-- Modern gradient designs
-- Smooth animations and transitions
-- Responsive layouts for all devices
-- Professional typography with Inter font
-- Custom scrollbar styling
-
-### 🔒 Authentication System
-- JWT-based authentication
-- Role-based access control (User, Admin, Superadmin)
-- Protected routes and middleware
-
-### 📱 Responsive Design
-- Mobile-first approach
-- Bootstrap grid system
-- Flexible components
-- Touch-friendly interfaces
-
-### 🚀 Performance
-- Lazy loading components
-- Optimized API calls
-- Efficient state management
-- Fast build times
-
-## Development Commands
-
-```bash
-# Install dependencies
-npm install
-
-# Run backend only
-npm run dev
-
-# Run frontend only
-npm run frontend
-
-# Run both together
-npm run dev:full
-
-# Build frontend for production
-npm run frontend:build
-
-# Initialize database with sample data
-npm run init-db
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## License
-
-This project is licensed under the ISC License.
+*   **User**: Browse, search, and preview itineraries.
+*   **Admin**: Create complex multi-stop itineraries and manage bookings.
+*   **Superadmin**: Full user management and role delegation controls.
 
 ---
 
-**Built with ❤️ using the MEAN Stack**
+**Built with ❤️ using the Modern MEAN Stack**
 
-
-Contact us: sharn.ss123@gmail.com, yuvsingh716@gmail.com
+Contributors: [sharnjeet21](https://github.com/sharnjeet21), [yuvsingh716](https://github.com/yuvsingh716)  
+Support: sharn.ss123@gmail.com, yuvsingh716@gmail.com
