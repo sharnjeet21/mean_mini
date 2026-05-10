@@ -1,0 +1,287 @@
+================================================================================
+ASSIGNMENT 2 — MEAN STACK: ANGULAR SPA + SECURE USER AUTHENTICATION
+Student: Sharnjeet Singh
+Project: Travel Itinerary Planner (MEAN Stack)
+GitHub: https://github.com/sharnjeet21/mean_mini
+================================================================================
+
+------------------------------------------------------------------------
+Q1. Building a Single-Page Application with Angular
+------------------------------------------------------------------------
+
+OVERVIEW
+--------
+The project is a full MEAN-stack SPA built with Angular 21 (standalone
+components), Express.js, MongoDB/Mongoose, and Node.js. All navigation
+happens client-side without full page reloads.
+
+1. NAVIGATION & ROUTING
+-----------------------
+File: frontend/src/app/app.routes.ts
+
+  const routes: Routes = [
+    { path: '',          component: HomeComponent },
+    { path: 'home',      component: HomeComponent },
+    { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
+    { path: 'itinerary/:id', component: ItineraryDetailComponent, canActivate: [authGuard] },
+    { path: 'login',     component: LoginComponent,    canActivate: [guestGuard] },
+    { path: 'register',  component: RegisterComponent, canActivate: [guestGuard] },
+    { path: 'admin',     component: AdminDashboardComponent, canActivate: [authGuard] },
+    { path: '**',        redirectTo: '/home' },
+  ];
+
+RouterModule and routerLink directives handle all in-app navigation.
+The Navbar uses routerLinkActive to highlight the current route.
+
+2. MODULAR APP STRUCTURE
+------------------------
+Each feature is a standalone Angular component in its own folder:
+
+  frontend/src/app/
+  ├── components/
+  │   ├── home/
+  │   ├── dashboard/          ← itinerary list + AI assistant
+  │   ├── itinerary-detail/   ← routing parameter (:id)
+  │   ├── login/
+  │   ├── register/
+  │   ├── navbar/
+  │   ├── destination-search/ ← AI-powered search component
+  │   └── trending-cards/     ← AI trending destinations
+  ├── services/
+  │   ├── auth.service.ts
+  │   ├── api.service.ts
+  │   └── ai.service.ts
+  └── guards/
+      └── auth.guard.ts
+
+3. HTML BINDING
+---------------
+Angular template binding is used throughout:
+
+  <!-- Interpolation -->
+  <h1>Welcome back, {{ auth.currentUser()?.name || 'Explorer' }}</h1>
+
+  <!-- Property binding -->
+  <button [disabled]="saving">{{ saving ? 'Creating...' : 'Submit' }}</button>
+
+  <!-- Event binding -->
+  <button (click)="openModal()">New Itinerary</button>
+
+  <!-- Two-way binding (ngModel) -->
+  <input [(ngModel)]="form.title" name="title" />
+
+  <!-- Structural directives -->
+  <div *ngIf="loading">Loading...</div>
+  <div *ngFor="let item of sortedItineraries">{{ item.title }}</div>
+
+4. ROUTING PARAMETERS
+---------------------
+File: frontend/src/app/components/itinerary-detail/itinerary-detail.component.ts
+
+  ngOnInit() {
+    const id = this.route.snapshot.paramMap.get('id');  // reads :id param
+    this.http.get(`${environment.apiUrl}/api/itinerary/${id}`).subscribe({
+      next: (res) => { this.itinerary = res; },
+      error: () => { this.itinerary = this.mockItinerary; }
+    });
+  }
+
+The route /itinerary/:id passes the MongoDB _id to the component which
+fetches the specific itinerary from the backend.
+
+5. FORMS & SUBMITTED DATA
+--------------------------
+File: frontend/src/app/components/dashboard/dashboard.component.ts
+
+  form = { title: '', destination: '', startDate: '', endDate: '',
+           duration: '', budget: null, description: '' };
+
+  submitCreate() {
+    if (!this.form.title || !this.form.destination /* ... */) {
+      this.formError = 'Please fill all required fields.';
+      return;
+    }
+    this.http.post(`${environment.apiUrl}/api/itinerary`, this.form)
+      .subscribe({
+        next: (res) => { this.itineraries.unshift(res); this.showModal = false; },
+        error: (err) => { this.formError = err?.error?.message; }
+      });
+  }
+
+FormsModule with ngModel handles two-way binding. On submit, data is
+sent via HTTP POST to the Express backend which validates and saves to
+MongoDB.
+
+
+------------------------------------------------------------------------
+Q2. Secure User Authentication System
+------------------------------------------------------------------------
+
+OVERVIEW
+--------
+The system implements JWT-based authentication with:
+- Login/Register forms (Angular)
+- JWT issued by Express backend
+- Token stored in localStorage
+- HTTP interceptor attaches token to all /api/* requests
+- Route guards protect authenticated routes
+- Logout clears token and redirects
+
+1. LOGIN FORM
+-------------
+File: frontend/src/app/components/login/login.component.ts
+
+  onSubmit() {
+    this.auth.login(this.email, this.password).subscribe({
+      next: (res) => {
+        if (res.success) this.router.navigate(['/dashboard']);
+        else this.error = res.message;
+      },
+      error: (err) => { this.error = err?.error?.message || 'Invalid credentials'; }
+    });
+  }
+
+The form collects email + password and calls AuthService.login() which
+sends HTTP POST to /api/auth/login on the Express backend.
+
+2. TOKEN STORAGE
+----------------
+File: frontend/src/app/services/auth.service.ts
+
+  login(email: string, password: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/login`, { email, password }).pipe(
+      tap((res: any) => {
+        if (res.success && isPlatformBrowser(this.platformId)) {
+          localStorage.setItem('token', res.token);
+          localStorage.setItem('user', JSON.stringify(res.user));
+          this.currentUser.set(res.user);
+        }
+      })
+    );
+  }
+
+  get token(): string | null {
+    if (!isPlatformBrowser(this.platformId)) return null;
+    return localStorage.getItem('token');
+  }
+
+On successful login the JWT is stored in localStorage. Error handling
+is done via the Observable error callback in the component.
+
+3. REQUEST INTERCEPTOR
+----------------------
+File: frontend/src/app/services/auth.interceptor.ts
+
+  export const authInterceptor: HttpInterceptorFn = (req, next) => {
+    const auth = inject(AuthService);
+    const platformId = inject(PLATFORM_ID);
+
+    if (!isPlatformBrowser(platformId)) return next(req);
+
+    const token = auth.token;
+    if (token) {
+      const cloned = req.clone({
+        setHeaders: { Authorization: `Bearer ${token}` }
+      });
+      return next(cloned);
+    }
+    return next(req);
+  };
+
+Registered in app.config.ts:
+
+  provideHttpClient(withFetch(), withInterceptors([authInterceptor]))
+
+Every outgoing HTTP request to /api/* automatically gets the
+Authorization: Bearer <token> header attached.
+
+4. PROTECTED ROUTES
+--------------------
+File: frontend/src/app/guards/auth.guard.ts
+
+  export const authGuard: CanActivateFn = () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    if (auth.isLoggedIn) return true;
+    router.navigate(['/login']);
+    return false;
+  };
+
+  export const guestGuard: CanActivateFn = () => {
+    const auth = inject(AuthService);
+    const router = inject(Router);
+    if (!auth.isLoggedIn) return true;
+    router.navigate(['/dashboard']);
+    return false;
+  };
+
+- /dashboard and /itinerary/:id require authGuard (redirect to /login)
+- /login and /register use guestGuard (redirect to /dashboard if logged in)
+
+LOGOUT:
+
+  logout(): void {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    this.currentUser.set(null);
+    this.router.navigate(['/login']);
+  }
+
+5. BACKEND ENDPOINTS
+---------------------
+File: server/routes/authRoutes.js
+
+  POST /api/auth/register  — hash password (bcrypt), create user, return JWT
+  POST /api/auth/login     — verify credentials, return JWT
+  GET  /api/auth/profile   — protected, returns current user
+
+JWT generation (server/middleware/auth.js):
+
+  const generateToken = (userId) =>
+    jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+  const authenticate = async (req, res, next) => {
+    const token = req.headers['authorization']?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'Access token required' });
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = await User.findById(decoded.id).select('-password');
+    next();
+  };
+
+6. TOKEN FLOW SUMMARY
+----------------------
+
+  [User fills login form]
+        ↓
+  POST /api/auth/login  →  Express verifies credentials
+        ↓
+  JWT returned  →  stored in localStorage
+        ↓
+  authInterceptor attaches token to every request
+        ↓
+  GET /api/itinerary  →  authenticate middleware verifies JWT
+        ↓
+  Protected data returned to Angular component
+        ↓
+  [Logout] → localStorage cleared → redirect to /login
+
+
+------------------------------------------------------------------------
+SCREENSHOTS (attach separately)
+------------------------------------------------------------------------
+1. Login page with form
+2. Successful login → redirect to dashboard
+3. Dashboard showing itineraries (authenticated)
+4. Network tab showing Authorization: Bearer <token> header on API calls
+5. Attempting to access /dashboard without login → redirect to /login
+6. Logout → redirect to /login, token cleared from localStorage
+
+
+------------------------------------------------------------------------
+DELIVERABLES
+------------------------------------------------------------------------
+- Complete Angular frontend: components, services, interceptor, guards
+- Express backend: auth routes, JWT middleware, itinerary routes
+- Token flow demonstrated: login → store → attach → protect → logout
+- GitHub: https://github.com/sharnjeet21/mean_mini
+================================================================================
