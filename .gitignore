@@ -44,3 +44,8 @@ coverage/
 
 # ── Assets / Documentation ───────────────────────────────────────────────────
 screenshot_*.png
+
+# ── Docker ────────────────────────────────────────────────────────────────────
+# Do NOT ignore Dockerfile or Jenkinsfile — they must be committed
+# Only ignore local Docker volumes or override files
+docker-compose.override.yml

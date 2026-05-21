@@ -1,0 +1,14 @@
+# Don't copy these into the Docker build context — keeps image small and fast
+
+node_modules/
+dist/
+.angular/
+.git/
+.gitignore
+*.md
+*.log
+.env
+.env.*
+coverage/
+.vscode/
+.idea/
