@@ -51,7 +51,7 @@
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <span class="material-symbols-outlined text-[#757684]">lock</span>
             </div>
-            <input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" placeholder="Min. 6 characters" required minlength="6"
+            <input [(ngModel)]="password" name="password" [type]="showPassword ? 'text' : 'password'" placeholder="Min. 8 characters" required minlength="8"
               class="block w-full pl-10 pr-10 py-3 border-0 border-b border-[#c5c5d5]/40 bg-transparent focus:ring-0 focus:border-b-2 focus:border-[#3953bd] transition-all placeholder:text-[#757684] text-[#191c1d] text-sm outline-none">
             <button type="button" (click)="showPassword = !showPassword" class="absolute inset-y-0 right-0 pr-3 flex items-center text-[#757684]">
               <span class="material-symbols-outlined text-[20px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>

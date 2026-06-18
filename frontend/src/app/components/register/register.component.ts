@@ -22,6 +22,8 @@ export class RegisterComponent {
   constructor(private auth: AuthService, private router: Router) {}
 
   onRegister() {
+    if (this.name.trim().length < 2) { this.error = 'Please enter your full name.'; return; }
+    if (this.password.length < 8) { this.error = 'Password must contain at least 8 characters.'; return; }
     if (this.password !== this.confirmPassword) { this.error = 'Passwords do not match.'; return; }
     this.error = '';
     this.loading = true;

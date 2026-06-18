@@ -49,6 +49,9 @@ const itineraryCache = new InMemoryCache(ONE_HOUR_MS);
  * @returns {Promise<string>}
  */
 async function callGemini(prompt) {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
@@ -58,7 +61,11 @@ async function callGemini(prompt) {
     }
   );
   const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text;
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `Gemini request failed with status ${response.status}`);
+  }
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini returned an empty response');
   return text;
 }
 
@@ -88,6 +95,9 @@ router.get('/image', rateLimiter, validateQueryParam('place'), async (req, res) 
 
   // Cache miss — call Unsplash
   try {
+    if (!UNSPLASH_ACCESS_KEY) {
+      return res.status(503).json({ message: 'Image service is not configured.' });
+    }
     const response = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place)}&per_page=1&orientation=landscape`,
       {
@@ -95,6 +105,9 @@ router.get('/image', rateLimiter, validateQueryParam('place'), async (req, res) 
       }
     );
     const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.errors?.[0] || `Unsplash request failed with status ${response.status}`);
+    }
 
     if (!data.results || data.results.length === 0) {
       return res.status(404).json({ message: `No image found for '${place}'.` });
@@ -145,7 +158,10 @@ router.get('/suggestions', rateLimiter, validateQueryParam('q'), async (req, res
     const text = await callGemini(prompt);
     // Strip markdown code fences if present
     const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
-    const suggestions = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    const suggestions = Array.isArray(parsed)
+      ? parsed.map((item) => String(item).trim()).filter(Boolean).slice(0, 8)
+      : [];
 
     // If Gemini returns no results or empty array
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
@@ -181,7 +197,7 @@ router.get('/trending', rateLimiter, async (req, res) => {
   // Cache miss — call Gemini
   try {
     const prompt =
-      'Suggest 5 trending travel destinations in 2026 with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.';
+      `Suggest 5 trending travel destinations in ${new Date().getFullYear()} with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.`;
     const text = await callGemini(prompt);
     const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
     const parsed = JSON.parse(cleaned);
@@ -204,7 +220,6 @@ router.get('/trending', rateLimiter, async (req, res) => {
 
     trendingCache.set(cacheKey, destinations);
     return res.set('X-Cache', 'MISS').json({ destinations });
-    return res.set('X-Cache', 'MISS').json({ destinations: parsed });
   } catch (err) {
     console.error('[aiRoutes] Gemini trending error:', err.message);
     return res.status(502).json({ message: 'AI service unavailable.' });

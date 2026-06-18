@@ -6,7 +6,7 @@ import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { AboutComponent } from './components/about/about.component';
 import { ItineraryDetailComponent } from './components/itinerary-detail/itinerary-detail.component';
 import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
-import { authGuard, guestGuard } from './guards/auth.guard';
+import { adminGuard, authGuard, guestGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '',          component: HomeComponent },
@@ -16,6 +16,6 @@ export const routes: Routes = [
   { path: 'register',  component: RegisterComponent, canActivate: [guestGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'itinerary/:id', component: ItineraryDetailComponent, canActivate: [authGuard] },
-  { path: 'admin',     component: AdminDashboardComponent, canActivate: [authGuard] },
+  { path: 'admin',     component: AdminDashboardComponent, canActivate: [adminGuard] },
   { path: '**', redirectTo: '/home', pathMatch: 'full' },
 ];

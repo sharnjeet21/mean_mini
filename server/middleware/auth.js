@@ -2,7 +2,11 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'mean_mini_secret_key';
+const JWT_SECRET = process.env.JWT_SECRET || 'development_only_change_me';
+
+if (!process.env.JWT_SECRET) {
+  console.warn('[auth] JWT_SECRET is not configured; using a development-only fallback.');
+}
 
 // Task 9: JWT-based authentication middleware
 const authenticate = async (req, res, next) => {

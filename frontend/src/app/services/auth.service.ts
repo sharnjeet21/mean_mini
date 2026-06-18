@@ -25,10 +25,16 @@ export class AuthService {
 
   constructor(private http: HttpClient, private router: Router) {}
 
+  private get storage(): Storage | null {
+    if (!this.isBrowser || typeof globalThis.localStorage === 'undefined') return null;
+    return typeof globalThis.localStorage.getItem === 'function' ? globalThis.localStorage : null;
+  }
+
   private loadUser(): AuthUser | null {
-    if (!this.isBrowser) return null;
+    const storage = this.storage;
+    if (!storage) return null;
     try {
-      const u = localStorage.getItem('user');
+      const u = storage.getItem('user');
       return u ? JSON.parse(u) : null;
     } catch {
       return null;
@@ -36,8 +42,7 @@ export class AuthService {
   }
 
   get token(): string | null {
-    if (!this.isBrowser) return null;
-    return localStorage.getItem('token');
+    return this.storage?.getItem('token') || null;
   }
 
   get isLoggedIn(): boolean {
@@ -53,9 +58,10 @@ export class AuthService {
   login(email: string, password: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/login`, { email, password }).pipe(
       tap((res) => {
-        if (res.success && this.isBrowser) {
-          localStorage.setItem('token', res.token);
-          localStorage.setItem('user', JSON.stringify(res.user));
+        const storage = this.storage;
+        if (res.success && storage) {
+          storage.setItem('token', res.token);
+          storage.setItem('user', JSON.stringify(res.user));
           this.currentUser.set(res.user);
         }
       })
@@ -66,9 +72,10 @@ export class AuthService {
   register(name: string, email: string, password: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/register`, { name, email, password }).pipe(
       tap((res) => {
-        if (res.success && this.isBrowser) {
-          localStorage.setItem('token', res.token);
-          localStorage.setItem('user', JSON.stringify(res.user));
+        const storage = this.storage;
+        if (res.success && storage) {
+          storage.setItem('token', res.token);
+          storage.setItem('user', JSON.stringify(res.user));
           this.currentUser.set(res.user);
         }
       })
@@ -76,9 +83,10 @@ export class AuthService {
   }
 
   logout(): void {
-    if (this.isBrowser) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+    const storage = this.storage;
+    if (storage) {
+      storage.removeItem('token');
+      storage.removeItem('user');
     }
     this.currentUser.set(null);
     this.router.navigate(['/login']);

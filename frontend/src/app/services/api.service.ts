@@ -18,13 +18,61 @@ export interface Itinerary {
   endDate: string;
   duration: string;
   budget: number;
+  travelerCount: number;
+  category: string;
+  travelStyle: string;
+  transportMode: string;
+  accommodationType: string;
+  budgetBreakdown: {
+    transport: number;
+    accommodation: number;
+    food: number;
+    activities: number;
+    contingency: number;
+  };
   description: string;
   dailyPlan: any[];
   tripSummary: any;
   createdBy: User;
   isActive: boolean;
-  bookings: any[];
+  bookings?: any[];
+  favorites?: string[];
+  reviews?: any[];
+  engagement: {
+    bookingCount: number;
+    favoriteCount: number;
+    ratingCount: number;
+    averageRating: number;
+    isFavorite: boolean;
+    hasBooked: boolean;
+  };
   createdAt: string;
+}
+
+export interface TripAnalysis {
+  generatedAt: string;
+  scores: {
+    feasibility: number;
+    completeness: number;
+    pace: number;
+    budget: number;
+    sustainability: number;
+  };
+  metrics: {
+    durationDays: number;
+    travelerCount: number;
+    plannedDays: number;
+    activityCount: number;
+    averageActivitiesPerDay: number;
+    paceLabel: string;
+    budgetPerDay: number;
+    budgetPerTraveler: number;
+    budgetPerTravelerPerDay: number;
+    budgetBreakdownTotal: number;
+    budgetVariance: number;
+  };
+  risks: Array<{ severity: string; code: string; title: string; message: string }>;
+  recommendations: string[];
 }
 
 export interface LoginRequest {
@@ -84,6 +132,30 @@ export class ApiService {
     return this.http.get<any[]>(`${this.baseUrl}/itinerary/user/bookings`);
   }
 
+  getFavorites(): Observable<Itinerary[]> {
+    return this.http.get<Itinerary[]>(`${this.baseUrl}/itinerary/user/favorites`);
+  }
+
+  getTripAnalysis(id: string): Observable<TripAnalysis> {
+    return this.http.get<TripAnalysis>(`${this.baseUrl}/itinerary/${id}/analysis`);
+  }
+
+  toggleFavorite(id: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/itinerary/${id}/favorite`, {});
+  }
+
+  cancelBooking(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/itinerary/${id}/book`);
+  }
+
+  submitReview(id: string, rating: number, comment: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/itinerary/${id}/reviews`, { rating, comment });
+  }
+
+  getItineraryAnalytics(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/itinerary/analytics/overview`);
+  }
+
   // User endpoints
   getUsers(): Observable<User[]> {
     return this.http.get<User[]>(`${this.baseUrl}/users`);
@@ -106,7 +178,7 @@ export class ApiService {
   }
 
   reviewRoleRequest(requestId: string, status: string, reviewNotes?: string): Observable<any> {
-    return this.http.put(`${this.baseUrl}/role-requests/${requestId}`, {
+    return this.http.put(`${this.baseUrl}/role-requests/${requestId}/review`, {
       status,
       reviewNotes
     });

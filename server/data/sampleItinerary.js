@@ -2,10 +2,22 @@
 const sampleItinerary = {
   title: "Ludhiana to Kasauli - Hill Station Getaway",
   destination: "Kasauli, Himachal Pradesh",
-  startDate: new Date("2024-04-15"),
-  endDate: new Date("2024-04-18"),
+  startDate: new Date("2026-10-15"),
+  endDate: new Date("2026-10-18"),
   duration: "4 Days / 3 Nights",
   budget: 15000,
+  travelerCount: 2,
+  category: "adventure",
+  travelStyle: "balanced",
+  transportMode: "car",
+  accommodationType: "homestay",
+  budgetBreakdown: {
+    transport: 3500,
+    accommodation: 4500,
+    food: 3000,
+    activities: 2500,
+    contingency: 1500
+  },
   description: "A perfect hill station getaway from Ludhiana to the serene town of Kasauli. Experience panoramic Himalayan views, colonial architecture, and peaceful mountain walks.",
   dailyPlan: [
     {

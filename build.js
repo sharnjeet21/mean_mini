@@ -8,7 +8,7 @@ const path = require('path');
 const frontendDir = path.join(__dirname, 'frontend');
 
 console.log('Installing frontend dependencies...');
-execSync('npm install', { cwd: frontendDir, stdio: 'inherit' });
+execSync('npm ci --include=dev', { cwd: frontendDir, stdio: 'inherit' });
 
 console.log('Building Angular app...');
 execSync('npx ng build --configuration production', {
