@@ -41,34 +41,76 @@ flowchart LR
 - Google Gemini and Unsplash APIs
 - Node test runner, fast-check, Vitest, Playwright, and Puppeteer
 
+## Prerequisites
+
+- Node.js `24.17.0`
+- npm `11.x`
+- MongoDB Atlas or a local MongoDB instance if you do not want to rely on the development fallback
+- Docker Desktop or Docker Engine if you want to validate the container workflow
+
+Version files included in the repo:
+
+- `.node-version`
+- `.nvmrc`
+
+On Windows PowerShell, if `npm` is blocked by execution policy, use `npm.cmd` instead.
+
+## Development workflow
+
+- `main` is the stable branch.
+- Use `yuvraj-dev` for active development work.
+- Do not commit Phase 0 or feature work directly on `main`.
+
 ## Local setup
 
-Requirements: Node.js 24 and either MongoDB or permission to use the development in-memory fallback.
+Install root and frontend dependencies from a clean environment:
 
 ```bash
-npm install
+npm ci
 cd frontend
-npm install
+npm ci
 cd ..
 copy .env.example .env
 ```
 
-Configure `.env`:
+If you already have stale `node_modules` content, remove it first and rerun the clean install steps above.
+
+## Environment setup
+
+Copy `.env.example` to `.env` and fill in the values you need:
 
 ```env
-MONGO_URI=mongodb://127.0.0.1:27017/travel_intelligence
-JWT_SECRET=replace-with-a-long-secret
+NODE_ENV=development
 PORT=5000
-GEMINI_API_KEY=
+MONGO_URI=
+JWT_SECRET=replace_with_a_long_random_secret
+CLIENT_ORIGINS=http://localhost:4200
 UNSPLASH_ACCESS_KEY=
+GEMINI_API_KEY=
+MAPBOX_TOKEN=
 ```
 
-Seed and run:
+Notes:
+
+- Leave `MONGO_URI` blank only if you intentionally want to test the development fallback path.
+- `MAPBOX_TOKEN` is included as a forward-looking placeholder for the map-driven roadmap work.
+- `RENDER_EXTERNAL_URL` is supplied by Render in production and does not need to be set locally.
+
+## Run the app
+
+Seed demo data when you have a working database connection:
 
 ```bash
 npm run seed:demo
+```
+
+Run backend and frontend together:
+
+```bash
 npm run dev:full
 ```
+
+Useful local URLs:
 
 - Angular development server: `http://localhost:4200`
 - Express API: `http://localhost:5000`
@@ -88,6 +130,70 @@ npm run frontend:build
 npm run init-db
 npm run seed:demo
 ```
+
+## Testing
+
+Backend test suite:
+
+```bash
+npm run test:backend
+```
+
+Frontend unit tests:
+
+```bash
+npm run test:frontend
+```
+
+Full test run:
+
+```bash
+npm run test:all
+```
+
+UI audit script:
+
+```bash
+npm run test:ui
+```
+
+## Build
+
+Frontend-only build:
+
+```bash
+npm run frontend:build
+```
+
+Root production-style build:
+
+```bash
+npm run build
+```
+
+The root build script installs frontend dependencies and then runs the Angular production build from the correct working directory.
+
+## Docker
+
+The repo includes a frontend container build in `frontend/Dockerfile`.
+
+Build it with:
+
+```bash
+docker build -t mean-mini-frontend ./frontend
+```
+
+Requirements:
+
+- Docker daemon must be running
+- Local Docker config must be accessible
+- Node 24 is used inside the Docker build stage
+
+## Backend startup notes
+
+- The backend uses `MONGO_URI` when provided.
+- In development, it attempts to fall back to an in-memory MongoDB only when the required dev dependency set is installed.
+- In production, startup aborts if MongoDB is unavailable.
 
 ## Roles
 

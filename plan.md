@@ -73,29 +73,110 @@ The best next step is not to jump directly into all future features. The roadmap
 
 ## 6. Phase 0 - Platform Foundation
 
-Goal: make the current application stable enough to support roadmap growth.
+Status: `In Progress`
 
-Why this phase matters:
+Goal: make the current application stable enough to support roadmap growth without changing user-visible behavior.
 
-- The roadmap depends on a reliable build and deployment workflow.
-- Map, routing, and pricing features will add external dependencies.
-- Shared planning models should be defined before multiple feature teams build on top of them.
+Scope rules for this phase:
 
-Execution checklist:
+- No UI redesign
+- No authentication changes
+- No schema changes
+- No API redesign
+- No Trip Intelligence logic changes
+- No new product features
 
-- [ ] Align local and CI runtime to the supported Node 24 version.
-- [ ] Restore reproducible frontend builds in a clean environment.
-- [ ] Define shared environment variable strategy for AI, map, routing, and pricing providers.
-- [ ] Add a reusable location domain model for destinations, attractions, coordinates, and route segments.
-- [ ] Add integration boundaries so external providers can be swapped without rewriting product logic.
-- [ ] Add error monitoring and API health visibility for external-service failures.
-- [ ] Expand automated tests around itinerary analysis, AI fallbacks, and future integration adapters.
+Phase 0 checklist:
+
+- [x] Validate branch strategy and move active work off `main`
+- [x] Standardize Node version files on `24.17.0`
+- [x] Review root and frontend dependency manifests
+- [x] Review build, startup, Render, Docker, and Jenkins entry points
+- [x] Expand `.env.example` with stable placeholders
+- [x] Update README with setup, build, Docker, and workflow guidance
+- [x] Run backend tests
+- [x] Run backend startup validation
+- [x] Attempt frontend clean install validation
+- [x] Attempt frontend test validation
+- [x] Attempt frontend build validation
+- [x] Attempt Docker build validation
+- [ ] Complete clean install and frontend validation under Node 24 on the host machine
+- [ ] Re-run Docker build with confirmed local Docker access
+
+Completed work:
+
+- Files added:
+  - `.nvmrc`
+- Files modified:
+  - `.env.example`
+  - `README.md`
+  - `frontend/Dockerfile`
+  - `plan.md`
+- Infrastructure improvements:
+  - Added an explicit `.nvmrc` to match the existing `.node-version`
+  - Aligned the frontend Docker builder image to Node 24
+  - Documented clean-install workflow with `npm ci`
+  - Documented branch workflow using `yuvraj-dev`
+  - Added `MAPBOX_TOKEN` as a placeholder for upcoming map work without changing runtime code
+
+Build results:
+
+- Frontend build:
+  - Blocked on this host environment
+  - `npm run frontend:build` failed because the checked-in frontend install is incomplete and the missing `@angular/build` package cannot be repaired while the host is on Node `22.17.0`
+- Backend startup:
+  - Partially validated
+  - Express started and `/api/health` responded successfully
+  - Development fallback was degraded because the current root install is missing `mongodb-memory-server`
+- Docker build:
+  - Not fully validated
+  - The non-elevated attempt failed because local Docker config and buildx paths were not accessible from the current environment
+  - Elevated retry was not approved, so this still needs confirmation
+
+Test results:
+
+- Backend:
+  - Total: 31
+  - Passed: 31
+  - Failed: 0
+  - Skipped: 0
+- Frontend:
+  - Could not run successfully on this host
+  - `ng test` failed because the frontend builder packages are not fully installed
+- UI audit:
+  - Could not run successfully on this host
+  - `scripts/uiFunctionalAudit.js` failed because `playwright-core` is missing from the current root install
+
+Lessons learned:
+
+- The repository is already standardized around Node 24, but the current machine is still on Node `22.17.0`.
+- The lockfiles appear to include the expected dependencies, but the current local `node_modules` state is incomplete/stale.
+- Phase 0 should treat clean dependency installation as a required validation step, not an assumption.
+- Docker validation depends on both daemon availability and local config access, so it should be verified explicitly on each developer machine.
+
+Risks:
+
+- Future feature work will be noisy and harder to debug until the host toolchain matches the repo's Node requirement.
+- Frontend roadmap work should not begin until clean install and build validation succeed under Node 24.
+- The in-memory development DB fallback is not reliable unless root dev dependencies are actually installed.
+
+Recommendations:
+
+- Install or switch the host runtime to Node `24.17.0` before re-running install/build/test checks.
+- Run `npm ci` in the root and `frontend/` directories from a clean environment.
+- Re-run `npm run test:frontend`, `npm run frontend:build`, `npm run build`, and `npm run test:ui` after the Node 24 switch.
+- Re-run `docker build -t mean-mini-frontend ./frontend` after Docker access is confirmed.
 
 Exit criteria:
 
-- [ ] `frontend` builds cleanly in the intended Node environment.
-- [ ] Provider configuration is centralized and documented.
-- [ ] The platform can support map-based features without reworking the core data model.
+- [ ] Host machine is using Node `24.17.0`
+- [ ] Root clean install succeeds
+- [ ] Frontend clean install succeeds
+- [ ] Frontend unit tests run successfully
+- [ ] Frontend build succeeds
+- [ ] Root production-style build succeeds
+- [ ] Backend startup is validated with expected dependency availability
+- [ ] Docker build succeeds
 
 ## 7. Phase 1 - Visual Discovery
 
