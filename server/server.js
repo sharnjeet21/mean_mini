@@ -37,6 +37,8 @@ const apiCors = cors({
       .filter(Boolean);
     const renderOrigin = process.env.RENDER_EXTERNAL_URL;
     const allowedOrigins = [
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
       "http://localhost:4200",
       "http://127.0.0.1:4200",
       "http://localhost:3000",
