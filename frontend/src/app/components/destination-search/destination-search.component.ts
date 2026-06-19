@@ -59,37 +59,9 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
   constructor(private aiService: AiService) {}
 
   ngOnInit(): void {
-    // Debounced input pipeline for image (≥1 char) and suggestions (≥2 chars)
+    // Debounced input pipeline — suggestions only (≥2 chars).
+    // Images are fetched ONLY after a valid destination is selected, not on raw input.
     const debouncedInput$ = this.inputSubject.pipe(debounceTime(400));
-
-    const imageSub = debouncedInput$
-      .pipe(
-        switchMap((value) => {
-          if (!this.isValid(value) || value.length < 1) {
-            this.clearImage();
-            return [];
-          }
-          this.imageLoading = true;
-          this.imageError = false;
-          this.imageUrl = null;
-          this.rateLimitError = '';
-          return this.aiService.getDestinationImage(value);
-        })
-      )
-      .subscribe({
-        next: (res) => {
-          this.imageLoading = false;
-          this.imageUrl = res.url;
-          this.imageError = false;
-        },
-        error: (err) => {
-          this.imageLoading = false;
-          this.imageError = true;
-          if (err?.message?.includes('Too many requests')) {
-            this.rateLimitError = 'Too many requests — please wait a moment before trying again.';
-          }
-        },
-      });
 
     const suggestionSub = debouncedInput$
       .pipe(
@@ -117,7 +89,6 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
         },
       });
 
-    this.subscriptions.add(imageSub);
     this.subscriptions.add(suggestionSub);
   }
 
@@ -175,6 +146,20 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
     this.rateLimitError = '';
     this.attractionsLoading = true;
     this.attractions = [];
+
+    // Fetch image only after a valid destination is confirmed — not on raw keystrokes
+    this.clearImage();
+    this.imageLoading = true;
+    this.aiService.getDestinationImage(place).subscribe({
+      next: (res) => { this.imageLoading = false; this.imageUrl = res.url; },
+      error: (err) => {
+        this.imageLoading = false;
+        this.imageError = true;
+        if (err?.message?.includes('Too many requests')) {
+          this.rateLimitError = 'Too many requests — please wait a moment before trying again.';
+        }
+      },
+    });
 
     this.aiService.getItinerarySuggestions(place).subscribe({
       next: (results) => {

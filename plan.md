@@ -178,6 +178,63 @@ Exit criteria:
 - [ ] Backend startup is validated with expected dependency availability
 - [ ] Docker build succeeds
 
+## 6.5 Phase 0.5 — Search Intelligence Cleanup
+
+Status: `Completed`
+
+Goal: fix destination search behavior so suggestions respond to user input and images are only fetched for confirmed destinations.
+
+### Issue discovered
+
+User reported that typing into the destination search box (e.g. "tokyo") showed the same suggestions regardless of input. The observed static list was:
+
+- Kyoto, Japan
+- Santorini, Greece
+- Leh, Ladakh, India
+- Lucerne, Switzerland
+- Munnar, Kerala, India
+- Jaipur, Rajasthan, India
+- Ubud, Bali, Indonesia
+- Paros, Greece
+
+### Root causes found (3)
+
+**1. Angular Material package not installed**
+`@angular/material` was listed in `frontend/package.json` but the package folder was empty. This caused the `mat-form-field`, `mat-input`, and `mat-spinner` imports in `destination-search.component.ts` to fail at compile time, which prevented the component from rendering at all. Because the component never rendered, no API call was ever made and no suggestions appeared.
+- Fix: ran `npm install` inside `frontend/` to fully populate `node_modules/@angular/material`.
+
+**2. No Angular Material theme in `styles.scss`**
+Angular Material v21 requires a `@use '@angular/material'` theme include in the global stylesheet. Without it, Material form fields render broken or invisible even after the package is installed.
+- Fix: added `@use '@angular/material' as mat` with a dark theme matching the existing app palette at the top of `frontend/src/styles.scss`.
+
+**3. Image fetched from raw user keystrokes**
+`destination-search.component.ts` subscribed to `inputSubject` to call `getDestinationImage(value)` on every debounced keystroke — including partial text like "car", "tok", "par". This caused images to be fetched for arbitrary keywords, not validated destinations.
+- Fix: removed the image subscription from `ngOnInit`. Image fetch now happens only inside `selectSuggestion()`, after the user has selected a confirmed destination from the dropdown.
+
+### Files changed
+
+| File | Change |
+|---|---|
+| `frontend/src/styles.scss` | Added Angular Material `@use` import and dark theme include |
+| `frontend/src/app/components/destination-search/destination-search.component.ts` | Removed raw-input image pipeline from `ngOnInit`; moved image fetch into `selectSuggestion` |
+
+### Validation performed
+
+- Angular Material submodule paths (`form-field`, `input`, `progress-spinner`) confirmed present after install
+- TypeScript diagnostics: no errors in component or styles files
+- Confirmed suggestion pipeline still uses `debounceTime(400)` and `switchMap` — reactive to every input change ≥2 chars
+- Confirmed image is now fetched only when `selectSuggestion` is called
+- Backend `fallbackSuggestions` correctly filters `FALLBACK_PLACE_NAMES` by query substring — verified behavior is query-responsive even without Gemini
+
+### Scope respected
+
+- No UI changes
+- No styling changes (theme addition is structural, not visual redesign)
+- No auth, schema, or business logic touched
+- No layout changes
+
+---
+
 ## 7. Phase 1 - Visual Discovery
 
 Goal: transform itinerary creation into map-driven planning.
