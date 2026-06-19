@@ -538,11 +538,92 @@ The business roadmap is successful when the platform can also:
 - [ ] Support agency workflows without rebuilding the core product
 - [ ] Keep the experience simple even as features expand
 
-## 16. Recommended Near-Term Delivery Order
+## 16. Immediate UI Improvements (Planned)
+
+Small, high-value improvements to existing screens that do not require new phases or backend changes.
+
+Status: `Planned`
+
+### 16.1 Back Button
+
+Add a browser-aware back button to all secondary pages (itinerary detail, profile, admin).
+
+Requirements:
+- Use Angular `Location.back()` so it respects browser history
+- Show only when there is history to go back to
+- Do not show on top-level pages (home, dashboard, login, register)
+
+Files to change:
+- `frontend/src/app/components/itinerary-detail/itinerary-detail.component.ts`
+- `frontend/src/app/components/itinerary-detail/itinerary-detail.component.html`
+
+Checklist:
+- [ ] Add back button to itinerary detail page
+- [ ] Add back button to profile page
+- [ ] Add back button to admin dashboard
+- [ ] Back button hidden on root-level routes
+
+### 16.2 Profile Page
+
+Create a dedicated profile page at `/profile` showing the logged-in user's account details and a summary of their activity.
+
+Requirements:
+- Route: `/profile` — protected by `authGuard`
+- Display: name, email, role, account created date
+- Display: count of itineraries created, bookings made
+- Allow user to update their display name
+- No password change in this iteration
+
+Backend:
+- `GET /api/users/me` — return full profile with stats
+- `PATCH /api/users/me` — update name only
+
+Frontend files to create:
+- `frontend/src/app/components/profile/profile.component.ts`
+- `frontend/src/app/components/profile/profile.component.html`
+
+Files to change:
+- `frontend/src/app/app.routes.ts` — add `/profile` route
+- `frontend/src/app/components/navbar/navbar.component.html` — link avatar to `/profile`
+
+Checklist:
+- [ ] Create profile component
+- [ ] Add `/profile` route with `authGuard`
+- [ ] Wire navbar avatar to `/profile`
+- [ ] Show user stats (itinerary count, booking count)
+- [ ] Allow name update via PATCH
+
+### 16.3 Destination Search Suggestions in Create Itinerary
+
+The destination field inside the itinerary creation wizard currently accepts free text only. Add the same AI-powered autocomplete suggestions used in the dashboard search box.
+
+Requirements:
+- Reuse `DestinationSearchComponent` or extract a lightweight suggestion-only variant
+- Trigger on ≥2 characters with 400 ms debounce — same as the existing search pipeline
+- Selecting a suggestion fills the destination field and does not navigate away
+- No image preview or attraction cards inside the wizard — suggestions only
+- Keyboard navigation (ArrowUp/Down, Enter, Escape) must work
+
+Files to change:
+- `frontend/src/app/components/dashboard/dashboard.component.html` — destination field in wizard step 1
+- `frontend/src/app/components/dashboard/dashboard.component.ts` — wire suggestion selection to form field
+
+Checklist:
+- [ ] Add suggestion dropdown to wizard destination field
+- [ ] Debounced input calls `AiService.getSuggestions()`
+- [ ] Selecting suggestion fills `form.destination` without closing wizard
+- [ ] Keyboard navigation works in dropdown
+- [ ] No image or attractions panel shown inside wizard
+
+## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:
 
 - [ ] Phase 0: Platform Foundation
+- [ ] Phase 0.5: Search Intelligence Cleanup ✅
+- [ ] Phase 16.1: Back Button
+- [ ] Phase 16.2: Profile Page
+- [ ] Phase 16.3: Destination Suggestions in Wizard
 - [ ] Phase 1: Visual Discovery MVP
 - [ ] Phase 2: Smart Itinerary Builder MVP
 - [ ] Phase 3: Route Intelligence
@@ -550,6 +631,6 @@ Recommended practical order for implementation:
 - [ ] Phase 5: Affiliate Layer
 - [ ] Phase 6: Travel Agency SaaS
 
-## 17. Final Direction
+## 18. Final Direction
 
 Travel Intelligence should not become "just another itinerary generator." The strongest version of the product is a visual, explainable travel planning platform where AI helps users discover possibilities and deterministic logic helps them trust the outcome.
