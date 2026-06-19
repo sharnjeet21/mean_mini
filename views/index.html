@@ -12,31 +12,51 @@
     <style>
         body {
             scroll-behavior: smooth;
+            color: #f5fbff;
+            background:
+                radial-gradient(circle at 10% 0%, rgba(16, 145, 139, 0.2), transparent 30rem),
+                radial-gradient(circle at 90% 12%, rgba(255, 141, 112, 0.13), transparent 26rem),
+                linear-gradient(145deg, #06131d 0%, #081823 55%, #0b202c 100%);
         }
         .hero {
             background: url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e') no-repeat center center/cover;
-            height: 90vh;
+            min-height: 90vh;
             color: white;
             display: flex;
             align-items: center;
             text-align: center;
         }
         .hero-overlay {
-            background: rgba(0, 0, 0, 0.6);
+            background: linear-gradient(180deg, rgba(4, 19, 30, 0.86), rgba(7, 23, 33, 0.92));
             width: 100%;
-            height: 100%;
+            min-height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
+            padding: 6rem 1rem;
         }
         .section-padding {
-            padding: 60px 0;
+            padding: 72px 0;
+        }
+        .glass-card {
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: rgba(13, 36, 49, 0.72) !important;
+            color: #f5fbff;
+            box-shadow: 0 30px 80px rgba(0, 6, 12, 0.28);
+            backdrop-filter: blur(24px) saturate(135%);
+        }
+        .section-dark {
+            background: transparent !important;
+        }
+        .text-muted {
+            color: #8ea5b0 !important;
         }
         footer {
-            background: #212529;
+            background: #071721;
             color: white;
             padding: 20px 0;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
         }
     </style>
 </head>
@@ -74,12 +94,12 @@
     </div>
 </section>
 
-<section id="features" class="section-padding">
+<section id="features" class="section-padding section-dark">
     <div class="container text-center">
         <h2 class="mb-4">Main Features</h2>
         <div class="row">
             <div class="col-md-4">
-                <div class="card shadow">
+                <div class="card shadow glass-card">
                     <div class="card-body">
                         <h5 class="card-title">Create Itineraries</h5>
                         <p class="card-text">Add destinations, schedules, and activities for your trip.</p>
@@ -87,7 +107,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card shadow">
+                <div class="card shadow glass-card">
                     <div class="card-body">
                         <h5 class="card-title">Manage Trips</h5>
                         <p class="card-text">Edit, update, and organize all your travel plans easily.</p>
@@ -95,7 +115,7 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card shadow">
+                <div class="card shadow glass-card">
                     <div class="card-body">
                         <h5 class="card-title">Share with Friends</h5>
                         <p class="card-text">Collaborate and share itineraries with group members.</p>
@@ -107,7 +127,7 @@
 </section>
 
 
-<section id="how" class="bg-light section-padding">
+<section id="how" class="section-padding section-dark">
     <div class="container text-center">
         <h2 class="mb-4">How It Works</h2>
         <div class="row">
@@ -128,7 +148,7 @@
 </section>
 
 
-<section id="scope" class="section-padding">
+<section id="scope" class="section-padding section-dark">
     <div class="container text-center">
         <h2 class="mb-4">Project Scope</h2>
         <p>

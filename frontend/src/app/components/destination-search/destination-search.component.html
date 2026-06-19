@@ -1,117 +1,65 @@
 <div class="relative w-full">
+  <mat-form-field appearance="outline" class="destination-field w-full">
+    <span matPrefix class="material-symbols-outlined ml-3 mr-2 text-[#7ae0c3]">travel_explore</span>
+    <mat-label>Search a city, island or region</mat-label>
+    <input matInput type="text" [(ngModel)]="query" (ngModelChange)="onInput()" [maxlength]="200"
+           placeholder="Try Kyoto, Santorini or the Swiss Alps" autocomplete="off">
+    <span matSuffix *ngIf="imageLoading" class="mr-4"><mat-spinner diameter="18"></mat-spinner></span>
+  </mat-form-field>
 
-  <!-- Search Input -->
-  <div class="relative">
-    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-      travel_explore
-    </span>
-    <input
-      type="text"
-      [(ngModel)]="query"
-      (ngModelChange)="onInput()"
-      [maxlength]="200"
-      placeholder="Search destinations..."
-      autocomplete="off"
-      class="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-white text-slate-800
-             placeholder-slate-400 text-sm font-medium shadow-sm
-             focus:outline-none focus:ring-2 focus:ring-[#3953bd] focus:border-[#3953bd]
-             transition-all"
-    />
-  </div>
-
-  <!-- Rate Limit Error -->
   <div *ngIf="rateLimitError"
-       class="mt-2 px-4 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-sm font-medium flex items-center gap-2">
-    <span class="material-symbols-outlined text-base">warning</span>
-    {{ rateLimitError }}
+       class="mt-2 flex items-center gap-2 rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 px-4 py-3 text-sm text-[#ffd996]">
+    <span class="material-symbols-outlined text-base">warning</span>{{ rateLimitError }}
   </div>
 
-  <!-- Suggestion Dropdown -->
   <div *ngIf="showSuggestions && suggestions.length > 0"
-       class="absolute z-50 w-full mt-1 bg-white rounded-xl shadow-lg border border-slate-100 overflow-hidden">
-    <ul class="py-1">
-      <li
-        *ngFor="let suggestion of suggestions; let i = index"
-        (click)="selectSuggestion(suggestion)"
-        [class]="i === activeIndex
-          ? 'flex items-center gap-3 px-4 py-2.5 cursor-pointer bg-slate-50 text-slate-800'
-          : 'flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50 text-slate-700 transition-colors'"
-      >
-        <span class="material-symbols-outlined text-base text-slate-400 flex-shrink-0">location_on</span>
-        <span class="text-sm">
-          <ng-container *ngFor="let part of getHighlightedParts(suggestion, query)">
-            <strong *ngIf="part.highlight" class="font-bold text-[#3953bd]">{{ part.text }}</strong>
-            <span *ngIf="!part.highlight">{{ part.text }}</span>
-          </ng-container>
-        </span>
-      </li>
-    </ul>
+       class="glass-panel relative mt-2 w-full overflow-hidden rounded-[20px] p-1">
+    <button type="button" *ngFor="let suggestion of suggestions; let i = index"
+            (click)="selectSuggestion(suggestion, $event)"
+            class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm transition"
+            [class]="i === activeIndex ? 'bg-[#7ae0c3]/15 text-white' : 'text-[#b2c2ca] hover:bg-white/5'">
+      <span class="material-symbols-outlined text-base text-[#7ae0c3]">location_on</span>
+      <span>
+        <ng-container *ngFor="let part of getHighlightedParts(suggestion, query)">
+          <strong *ngIf="part.highlight" class="font-extrabold text-[#a5ecd7]">{{ part.text }}</strong>
+          <span *ngIf="!part.highlight">{{ part.text }}</span>
+        </ng-container>
+      </span>
+    </button>
   </div>
 
-  <!-- Image Preview -->
-  <div *ngIf="imageLoading || imageUrl || imageError" class="mt-4">
-
-    <!-- Loading Skeleton -->
-    <div *ngIf="imageLoading && !imageUrl"
-         class="w-full h-48 rounded-xl bg-slate-200 animate-pulse flex items-center justify-center">
-      <span class="material-symbols-outlined text-4xl text-slate-300">image</span>
+  <div *ngIf="imageLoading || imageUrl || imageError" class="mt-4 overflow-hidden rounded-[22px]">
+    <div *ngIf="imageLoading && !imageUrl" class="h-48 animate-pulse bg-white/5"></div>
+    <div *ngIf="imageUrl && !imageError" class="relative h-52">
+      <img [src]="imageUrl" loading="lazy" alt="Destination preview" (error)="imageError = true; imageUrl = null"
+           class="h-full w-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-[#071721]/80 to-transparent"></div>
+      <p class="absolute bottom-4 left-4 text-xs font-bold uppercase tracking-[0.16em] text-white">A first look at {{ query }}</p>
     </div>
-
-    <!-- Fetched Image -->
-    <img
-      *ngIf="imageUrl && !imageError"
-      [src]="imageUrl"
-      loading="lazy"
-      alt="Destination preview"
-      (error)="imageError = true; imageUrl = null"
-      class="w-full h-48 object-cover rounded-xl shadow-md"
-    />
-
-    <!-- Fallback Placeholder -->
-    <div *ngIf="imageError"
-         class="w-full h-48 rounded-xl bg-slate-200 flex flex-col items-center justify-center gap-2">
-      <span class="material-symbols-outlined text-5xl text-slate-400">travel_explore</span>
-      <span class="text-sm text-slate-500 font-medium">Image unavailable</span>
+    <div *ngIf="imageError" class="grid h-44 place-items-center bg-white/5 text-center text-[#78919d]">
+      <div><span class="material-symbols-outlined text-4xl">image_not_supported</span><p class="mt-2 text-xs">Preview unavailable</p></div>
     </div>
-
   </div>
 
-  <!-- Attractions Section -->
-  <div *ngIf="attractionsLoading || attractions.length > 0 || attractionsError" class="mt-4">
-
-    <!-- Attractions Loading Skeleton -->
-    <div *ngIf="attractionsLoading" class="space-y-3">
-      <div class="h-4 w-32 bg-slate-200 animate-pulse rounded mb-4"></div>
-      <div *ngFor="let _ of [1,2,3]" class="p-4 rounded-xl bg-slate-100 animate-pulse">
-        <div class="h-4 w-2/5 bg-slate-200 rounded mb-2"></div>
-        <div class="h-3 w-4/5 bg-slate-200 rounded"></div>
-      </div>
+  <div *ngIf="attractionsLoading || attractions.length > 0 || attractionsError" class="mt-5">
+    <div *ngIf="attractionsLoading" class="space-y-2">
+      <div *ngFor="let _ of [1,2,3]" class="h-16 animate-pulse rounded-2xl bg-white/5"></div>
     </div>
 
-    <!-- Attraction Error -->
     <div *ngIf="attractionsError && !attractionsLoading"
-         class="px-4 py-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-2">
-      <span class="material-symbols-outlined text-base">error</span>
+         class="rounded-2xl border border-[#ff8d70]/20 bg-[#ff8d70]/10 p-3 text-sm text-[#ffb4a1]">
       {{ attractionsError }}
     </div>
 
-    <!-- Attraction List -->
     <div *ngIf="attractions.length > 0 && !attractionsLoading">
-      <h3 class="text-sm font-bold text-slate-700 uppercase tracking-widest mb-3 flex items-center gap-2">
-        <span class="material-symbols-outlined text-base text-[#3953bd]">star</span>
-        Top Attractions
-      </h3>
-      <ul class="space-y-3">
-        <li
-          *ngFor="let attraction of attractions"
-          class="p-4 rounded-xl bg-white border border-slate-100 shadow-sm hover:shadow-md transition-shadow"
-        >
-          <p class="text-sm font-bold text-slate-800 mb-1">{{ attraction.name }}</p>
-          <p class="text-xs text-slate-500 leading-relaxed">{{ attraction.description }}</p>
-        </li>
-      </ul>
+      <p class="mb-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6f8996]">Signature stops</p>
+      <div class="grid gap-2 sm:grid-cols-3">
+        <article *ngFor="let attraction of attractions" class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <span class="material-symbols-outlined text-lg text-[#ffc96b]">star</span>
+          <p class="mt-3 text-sm font-bold text-white">{{ attraction.name }}</p>
+          <p class="mt-1 text-xs leading-5 text-[#7e96a2]">{{ attraction.description }}</p>
+        </article>
+      </div>
     </div>
-
   </div>
-
 </div>

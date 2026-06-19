@@ -62,7 +62,7 @@ Inputs include date coverage, activities per day, travelers, total and category 
 
 - MongoDB and Mongoose
 - Express.js and Node.js
-- Angular 21, TypeScript, RxJS, and Tailwind CSS
+- Angular 21, Angular Material, TypeScript, RxJS, and Tailwind CSS
 - JWT and bcryptjs
 - Google Gemini and Unsplash APIs
 - Node test runner, fast-check, Vitest, and Angular build tooling
@@ -137,8 +137,10 @@ npm run dev:full         # API and Angular together
 npm run test             # Backend unit, property, and route tests
 npm run test:frontend    # Angular/Vitest tests
 npm run test:all         # Complete backend and frontend verification
+npm run test:ui          # Browser-level desktop/mobile functional audit
 npm run frontend:build   # Angular production build
 npm run init-db          # Seed users and a detailed itinerary
+npm run seed:demo        # Add a richer idempotent demo portfolio and engagement data
 ```
 
 ## API overview
@@ -215,7 +217,7 @@ See [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md) for the problem statement, 
 - Static JavaScript syntax checks passing
 - Production dependency audits: 0 known vulnerabilities
 
-The optimized production bundle is approximately 477 kB before transfer compression.
+The redesigned interface uses Material controls, responsive glassmorphism surfaces, ambient shapes, and optimized Unsplash destination photography. The optimized initial production bundle is approximately 760 kB raw (about 164 kB estimated transfer).
 
 ## Authors
 

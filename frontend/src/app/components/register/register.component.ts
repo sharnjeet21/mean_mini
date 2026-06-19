@@ -2,12 +2,15 @@ import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-register',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   templateUrl: './register.component.html',
 })
 export class RegisterComponent {
@@ -29,7 +32,7 @@ export class RegisterComponent {
     this.loading = true;
     this.auth.register(this.name, this.email, this.password).subscribe({
       next: (res) => { this.loading = false; if (res.success) this.router.navigate(['/dashboard']); },
-      error: (err) => { this.loading = false; this.error = err.error?.message || 'Registration failed.'; }
+      error: (err) => { this.loading = false; this.error = err.error?.message || err.message || 'Registration failed.'; }
     });
   }
 }

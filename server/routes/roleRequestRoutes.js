@@ -5,7 +5,7 @@ const { authenticate, authorize } = require("../middleware/auth");
 
 const router = express.Router();
 
-// Submit role request (Users only)
+// Submit trip-manager request (users only)
 router.post("/", authenticate, authorize('user'), async (req, res) => {
   try {
     const { reason } = req.body;
@@ -26,7 +26,7 @@ router.post("/", authenticate, authorize('user'), async (req, res) => {
     if (existingRequest) {
       return res.status(400).json({ 
         success: false,
-        message: "You already have a pending admin access request." 
+        message: "You already have a pending trip manager request."
       });
     }
 
@@ -34,7 +34,7 @@ router.post("/", authenticate, authorize('user'), async (req, res) => {
     if (req.user.role === 'admin' || req.user.role === 'superadmin') {
       return res.status(400).json({ 
         success: false,
-        message: "You already have admin access or higher privileges." 
+        message: "You already have trip manager access or higher privileges."
       });
     }
 
@@ -48,7 +48,7 @@ router.post("/", authenticate, authorize('user'), async (req, res) => {
 
     return res.status(201).json({
       success: true,
-      message: "Admin access request submitted successfully. You will be notified when it's reviewed.",
+      message: "Trip manager request submitted successfully. You will be notified when it's reviewed.",
       request: {
         id: roleRequest._id,
         status: roleRequest.status,

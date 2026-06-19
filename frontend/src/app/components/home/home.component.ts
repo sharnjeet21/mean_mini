@@ -1,12 +1,14 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, MatButtonModule, MatChipsModule],
   templateUrl: './home.component.html',
 })
 export class HomeComponent {
@@ -16,13 +18,40 @@ export class HomeComponent {
     this.router.navigate([this.auth.isLoggedIn ? '/dashboard' : '/register']);
   }
   featuredCards = [
-    { icon: 'temple_buddhist', title: 'The Zen of Kyoto', subtitle: 'Culture, Cuisine & Traditions', duration: '12 Days', price: '$3,200' },
-    { icon: 'sailing', title: 'Cyclades Serenity', subtitle: 'Luxury Yachting & Island Hopping', duration: '7 Days', price: '$4,850' },
-    { icon: 'landscape', title: 'Alpine Elevation', subtitle: 'Luxury Lodges & Peak Adventures', duration: '9 Days', price: '$5,100' },
+    {
+      title: 'The Zen of Kyoto',
+      subtitle: 'Lantern-lit lanes, temple mornings and a food-first route.',
+      duration: '12 days',
+      price: '$3,200',
+      image: '/images/kyoto.jpg',
+      accent: '#ff9b7d',
+    },
+    {
+      title: 'Cyclades Serenity',
+      subtitle: 'Sun-washed villages, hidden coves and slow island days.',
+      duration: '7 days',
+      price: '$4,850',
+      image: '/images/santorini.jpg',
+      accent: '#7ae0c3',
+    },
+    {
+      title: 'Alpine Elevation',
+      subtitle: 'Glass-blue lakes, mountain rail and cinematic lodges.',
+      duration: '9 days',
+      price: '$5,100',
+      image: '/images/alps.jpg',
+      accent: '#ffc96b',
+    },
   ];
   features = [
-    { icon: 'map', title: 'Professional Itineraries', desc: 'Access expert-level route mapping and time-management schedules tailored to your pace and style.' },
-    { icon: 'bolt', title: 'One-Click Booking', desc: 'Seamlessly transition from planning to reality. Book flights, stays, and activities in a single, unified flow.' },
-    { icon: 'admin_panel_settings', title: 'Admin Management', desc: 'Full-suite controls for agents and group leaders. Manage multiple trips with enterprise-grade visibility.' },
+    { icon: 'route', title: 'Plans that breathe', desc: 'Routes adapt to your pace, budget and travel style without turning every day into a checklist.' },
+    { icon: 'neurology', title: 'Explainable intelligence', desc: 'See feasibility, budget quality and planning risks before they become expensive surprises.' },
+    { icon: 'travel', title: 'One calm workspace', desc: 'Discover, compare, save, book and review itineraries without losing the story of the trip.' },
+  ];
+
+  stats = [
+    { value: '42K+', label: 'routes explored' },
+    { value: '91%', label: 'plan confidence' },
+    { value: '4.9', label: 'traveler rating' },
   ];
 }

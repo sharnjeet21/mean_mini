@@ -16,6 +16,14 @@ const aiRoutes           = require("./routes/aiRoutes");
 
 const app = express();
 
+function requireDatabase(req, res, next) {
+  if (mongoose.connection.readyState === 1) return next();
+  return res.status(503).json({
+    success: false,
+    message: "The database is unavailable. Please wait a moment and try again.",
+  });
+}
+
 // ── Body parsers ──────────────────────────────────────────────────────────────
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -52,10 +60,10 @@ app.get("/api/health", apiCors, (req, res) => {
   });
 });
 
-app.use("/api/auth",          apiCors, authRoutes);
-app.use("/api/itinerary",     apiCors, itineraryRoutes);
-app.use("/api/users",         apiCors, userRoutes);
-app.use("/api/role-requests", apiCors, roleRequestRoutes);
+app.use("/api/auth",          apiCors, requireDatabase, authRoutes);
+app.use("/api/itinerary",     apiCors, requireDatabase, itineraryRoutes);
+app.use("/api/users",         apiCors, requireDatabase, userRoutes);
+app.use("/api/role-requests", apiCors, requireDatabase, roleRequestRoutes);
 app.use("/api",               apiCors, aiRoutes);
 
 app.use("/api/*", (req, res) => {
@@ -112,6 +120,7 @@ async function shutdown(signal) {
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
     }
+    await connectDB.stopDevelopmentDatabase();
   };
 
   if (!server) {

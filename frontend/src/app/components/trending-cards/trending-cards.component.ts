@@ -14,6 +14,11 @@ export class TrendingCardsComponent implements OnInit {
   destinations: TrendingDestination[] = [];
   loading = false;
   error = '';
+  private readonly fallbackImages = [
+    '/images/santorini.jpg',
+    '/images/kyoto.jpg',
+    '/images/alps.jpg',
+  ];
 
   constructor(private aiService: AiService) {}
 
@@ -37,7 +42,12 @@ export class TrendingCardsComponent implements OnInit {
     });
   }
 
-  onCardClick(name: string): void {
+  onCardClick(name: string, event?: MouseEvent): void {
+    event?.stopPropagation();
     this.destinationSelected.emit(name);
+  }
+
+  imageFor(index: number): string {
+    return this.fallbackImages[index % this.fallbackImages.length];
   }
 }

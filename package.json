@@ -20,12 +20,14 @@
     "start": "node server/server.js",
     "build": "node build.js",
     "init-db": "node server/scripts/initializeDB.js",
+    "seed:demo": "node server/scripts/seedDemoData.js",
     "dev": "node server/server.js",
     "dev:full": "concurrently \"npm run dev\" \"cd frontend && npm start\"",
     "test": "node --test server/tests/*.test.js",
     "test:backend": "node --test server/tests/*.test.js",
     "test:frontend": "cd frontend && npm test -- --watch=false",
     "test:all": "npm run test:backend && npm run test:frontend",
+    "test:ui": "node scripts/uiFunctionalAudit.js",
     "frontend": "cd frontend && npm start",
     "frontend:build": "cd frontend && npm run build"
   },
@@ -39,6 +41,8 @@
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
-    "fast-check": "^4.7.0"
+    "fast-check": "^4.7.0",
+    "mongodb-memory-server": "^11.2.0",
+    "playwright-core": "^1.61.0"
   }
 }

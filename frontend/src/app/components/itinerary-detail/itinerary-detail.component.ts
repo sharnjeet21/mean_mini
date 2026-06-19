@@ -5,7 +5,7 @@ import { RouterModule, ActivatedRoute } from '@angular/router';
 import { finalize } from 'rxjs/operators';
 import { ApiService, TripAnalysis } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
-import { AiService } from '../../services/ai.service';
+import { getItineraryImage } from '../../utils/itinerary-image';
 
 @Component({
   selector: 'app-itinerary-detail',
@@ -32,7 +32,6 @@ export class ItineraryDetailComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private api: ApiService,
-    private ai: AiService,
     public auth: AuthService,
   ) {}
 
@@ -64,8 +63,8 @@ export class ItineraryDetailComponent implements OnInit {
           this.reviewRating = ownReview.rating;
           this.reviewComment = ownReview.comment || '';
         }
+        this.imageUrl = getItineraryImage(res);
         this.loading = false;
-        this.loadDestinationImage(res.destination);
       },
       error: (err) => {
         this.errorMessage = err?.error?.message || 'This itinerary could not be loaded.';
@@ -82,14 +81,6 @@ export class ItineraryDetailComponent implements OnInit {
         next: (analysis) => { this.analysis = analysis; },
         error: () => { this.analysis = null; },
       });
-  }
-
-  loadDestinationImage(destination: string) {
-    if (!destination) return;
-    this.ai.getDestinationImage(destination).subscribe({
-      next: (res) => { this.imageUrl = res.url; },
-      error: () => { this.imageUrl = ''; },
-    });
   }
 
   toggleDay(index: number) {
@@ -149,14 +140,14 @@ export class ItineraryDetailComponent implements OnInit {
   }
 
   scoreTone(score: number): string {
-    if (score >= 80) return 'text-emerald-700 bg-emerald-50 border-emerald-200';
-    if (score >= 60) return 'text-amber-700 bg-amber-50 border-amber-200';
-    return 'text-rose-700 bg-rose-50 border-rose-200';
+    if (score >= 80) return 'bg-emerald-500/10 text-emerald-200 border-emerald-400/20';
+    if (score >= 60) return 'bg-amber-500/10 text-amber-100 border-amber-300/20';
+    return 'bg-rose-500/10 text-rose-100 border-rose-300/20';
   }
 
   riskTone(severity: string): string {
     return severity === 'high'
-      ? 'bg-rose-50 border-rose-200 text-rose-800'
-      : 'bg-amber-50 border-amber-200 text-amber-800';
+      ? 'bg-rose-500/10 border-rose-300/20 text-rose-100'
+      : 'bg-amber-500/10 border-amber-300/20 text-amber-100';
   }
 }

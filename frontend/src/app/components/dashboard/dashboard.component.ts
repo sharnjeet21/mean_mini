@@ -1,18 +1,30 @@
 import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { finalize, timeout } from 'rxjs/operators';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 import { environment } from '../../../environments/environment';
 import { DestinationSearchComponent } from '../destination-search/destination-search.component';
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
+import { getItineraryImage } from '../../utils/itinerary-image';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, DestinationSearchComponent, TrendingCardsComponent],
+  imports: [
+    CommonModule,
+    RouterModule,
+    FormsModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+    DestinationSearchComponent,
+    TrendingCardsComponent,
+  ],
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit {
@@ -22,6 +34,7 @@ export class DashboardComponent implements OnInit {
   filters = ['Date', 'Budget', 'Duration'];
   activeView: 'explore' | 'saved' | 'bookings' = 'explore';
   rateLimitMessage = '';
+  loadError = '';
   private platformId = inject(PLATFORM_ID);
 
   showModal = false;
@@ -70,7 +83,12 @@ export class DashboardComponent implements OnInit {
     return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  constructor(public auth: AuthService, private http: HttpClient, private api: ApiService) {}
+  constructor(
+    public auth: AuthService,
+    private http: HttpClient,
+    private api: ApiService,
+    private route: ActivatedRoute,
+  ) {}
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -78,23 +96,35 @@ export class DashboardComponent implements OnInit {
       return;
     }
     this.loadItineraries();
+    if (this.route.snapshot.queryParamMap.get('create') === '1') {
+      this.openModal();
+    }
   }
 
   loadItineraries() {
     this.loading = true;
+    this.loadError = '';
     const request = this.activeView === 'saved'
       ? this.api.getFavorites()
       : this.activeView === 'bookings'
         ? this.api.getUserBookings()
         : this.api.getItineraries();
-    request.subscribe({
+    request.pipe(
+      timeout(12000),
+      finalize(() => { this.loading = false; }),
+    ).subscribe({
       next: (res) => {
         this.itineraries = Array.isArray(res) ? res : [];
-        this.loading = false;
       },
-      error: () => {
+      error: (error) => {
         this.itineraries = [];
-        this.loading = false;
+        if (error?.status === 401) {
+          this.loadError = 'Your session expired. Redirecting you to sign in…';
+        } else if (error?.name === 'TimeoutError') {
+          this.loadError = 'The itinerary service took too long to respond. Please retry.';
+        } else {
+          this.loadError = error?.error?.message || error?.message || 'Itineraries could not be loaded.';
+        }
       }
     });
   }
@@ -154,6 +184,10 @@ export class DashboardComponent implements OnInit {
   setView(view: 'explore' | 'saved' | 'bookings') {
     this.activeView = view;
     this.loadItineraries();
+  }
+
+  getCardImage(item: any): string {
+    return getItineraryImage(item);
   }
 
   updateDuration() {

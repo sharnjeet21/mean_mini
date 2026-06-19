@@ -50,9 +50,8 @@ function validateItinerary(payload, requireAll = false) {
   return null;
 }
 
-function canManageItinerary(user, itinerary) {
-  const creatorId = itinerary.createdBy?._id || itinerary.createdBy;
-  return ['admin', 'superadmin'].includes(user.role) || creatorId?.toString() === user._id.toString();
+function canManageItinerary(user) {
+  return ['admin', 'superadmin'].includes(user.role);
 }
 
 function getEngagement(itinerary, userId) {
@@ -196,8 +195,8 @@ router.get('/analytics/overview', authenticate, authorize('admin', 'superadmin')
   }
 });
 
-// Create an itinerary.
-router.post('/', authenticate, async (req, res) => {
+// Trip managers can publish itineraries.
+router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
     const payload = pickItineraryFields(req.body);
     const validationError = validateItinerary(payload, true);
@@ -397,12 +396,12 @@ router.get('/:id', authenticate, ensureValidId, async (req, res) => {
   }
 });
 
-// Owners can edit their work; administrators can edit any itinerary.
+// Trip managers can edit any itinerary.
 router.put('/:id', authenticate, ensureValidId, async (req, res) => {
   try {
     const itinerary = await Itinerary.findById(req.params.id);
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
-    if (!canManageItinerary(req.user, itinerary)) return res.status(403).json({ message: 'Insufficient permissions.' });
+    if (!canManageItinerary(req.user)) return res.status(403).json({ message: 'Insufficient permissions.' });
 
     const payload = pickItineraryFields(req.body);
     if (req.user.role === 'user') delete payload.isActive;
@@ -424,12 +423,12 @@ router.put('/:id', authenticate, ensureValidId, async (req, res) => {
   }
 });
 
-// Owners can remove their work; administrators can remove any itinerary.
+// Trip managers can remove any itinerary.
 router.delete('/:id', authenticate, ensureValidId, async (req, res) => {
   try {
     const itinerary = await Itinerary.findById(req.params.id);
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
-    if (!canManageItinerary(req.user, itinerary)) return res.status(403).json({ message: 'Insufficient permissions.' });
+    if (!canManageItinerary(req.user)) return res.status(403).json({ message: 'Insufficient permissions.' });
 
     await itinerary.deleteOne();
     return res.json({ message: 'Itinerary deleted.' });
