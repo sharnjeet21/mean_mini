@@ -8,6 +8,9 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, switchMap } from 'rxjs/operators';
 import { AiService, Attraction } from '../../services/ai.service';
@@ -20,7 +23,7 @@ interface HighlightPart {
 @Component({
   selector: 'app-destination-search',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatFormFieldModule, MatInputModule, MatProgressSpinnerModule],
   templateUrl: './destination-search.component.html',
 })
 export class DestinationSearchComponent implements OnInit, OnDestroy {
@@ -163,7 +166,8 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
     }
   }
 
-  selectSuggestion(place: string): void {
+  selectSuggestion(place: string, event?: MouseEvent): void {
+    event?.stopPropagation();
     this.query = place;
     this.showSuggestions = false;
     this.activeIndex = -1;

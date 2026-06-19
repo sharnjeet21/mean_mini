@@ -8,6 +8,7 @@ const {
 } = require('../middleware/auth');
 
 const router = express.Router();
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 // Task 9: Register with bcrypt password hashing
 router.post('/register', async (req, res) => {
@@ -19,6 +20,16 @@ router.post('/register', async (req, res) => {
     }
 
     const cleanEmail = String(email).trim().toLowerCase();
+    const cleanName = String(name).trim();
+    if (cleanName.length < 2 || cleanName.length > 80) {
+      return res.status(400).json({ success: false, message: 'Name must be between 2 and 80 characters.' });
+    }
+    if (!EMAIL_PATTERN.test(cleanEmail)) {
+      return res.status(400).json({ success: false, message: 'Please enter a valid email address.' });
+    }
+    if (String(password).length < 8 || String(password).length > 128) {
+      return res.status(400).json({ success: false, message: 'Password must be between 8 and 128 characters.' });
+    }
 
     const existing = await User.findOne({ email: cleanEmail });
     if (existing) {
@@ -28,7 +39,7 @@ router.post('/register', async (req, res) => {
     const hashed = await hashPassword(password);
 
     const user = await User.create({
-      name: String(name).trim(),
+      name: cleanName,
       email: cleanEmail,
       password: hashed,
       role: 'user',

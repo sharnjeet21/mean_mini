@@ -39,8 +39,55 @@ const suggestionsCache = new InMemoryCache(ONE_HOUR_MS);
 const trendingCache    = new InMemoryCache(TWENTY_FOUR_HOURS_MS);
 const itineraryCache   = new InMemoryCache(ONE_HOUR_MS);
 
+const FALLBACK_DESTINATIONS = [
+  { name: 'Kyoto, Japan', description: 'Temple mornings, craft traditions, and thoughtful neighborhood food.' },
+  { name: 'Santorini, Greece', description: 'Caldera paths, volcanic sailing, and slow Aegean evenings.' },
+  { name: 'Ladakh, India', description: 'High-altitude landscapes, monasteries, and carefully paced road trips.' },
+  { name: 'Swiss Alps', description: 'Panoramic rail journeys, mountain villages, and glass-blue lakes.' },
+  { name: 'Kerala, India', description: 'Tea hills, backwater cruises, heritage towns, and restorative stays.' },
+];
+
+const FALLBACK_PLACE_NAMES = [
+  'Kyoto, Japan',
+  'Santorini, Greece',
+  'Leh, Ladakh, India',
+  'Lucerne, Switzerland',
+  'Munnar, Kerala, India',
+  'Jaipur, Rajasthan, India',
+  'Ubud, Bali, Indonesia',
+  'Paros, Greece',
+];
+
+function fallbackImage(place) {
+  const normalized = String(place || '').toLowerCase();
+  if (normalized.includes('japan') || normalized.includes('kyoto')) return '/images/kyoto.jpg';
+  if (normalized.includes('greece') || normalized.includes('santorini') || normalized.includes('paros')) {
+    return '/images/santorini.jpg';
+  }
+  return '/images/alps.jpg';
+}
+
+function fallbackSuggestions(query) {
+  const normalized = String(query || '').toLowerCase();
+  const matches = FALLBACK_PLACE_NAMES.filter((place) => place.toLowerCase().includes(normalized));
+  return (matches.length ? matches : FALLBACK_PLACE_NAMES).slice(0, 8);
+}
+
+function fallbackAttractions(destination) {
+  return [
+    { name: `${destination} Old Quarter`, description: 'Begin with a guided orientation through the historic center and its everyday local life.' },
+    { name: 'Signature viewpoint', description: `Choose a sunrise or golden-hour viewpoint that reveals the landscape around ${destination}.` },
+    { name: 'Local food market', description: 'Taste regional specialties with time to speak to vendors and learn what is in season.' },
+    { name: 'Craft and culture studio', description: 'Meet local makers through a small workshop or independently run cultural space.' },
+    { name: 'Slow neighborhood walk', description: 'Leave one unhurried afternoon for cafés, side streets, and spontaneous discoveries.' },
+  ];
+}
+
 // ── Gemini helper ─────────────────────────────────────────────────────────────
 async function callGemini(prompt) {
+  if (!GEMINI_API_KEY) {
+    throw new Error('GEMINI_API_KEY is not configured');
+  }
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
     {
@@ -50,7 +97,11 @@ async function callGemini(prompt) {
     }
   );
   const data = await response.json();
-  const text = data.candidates[0].content.parts[0].text;
+  if (!response.ok) {
+    throw new Error(data?.error?.message || `Gemini request failed with status ${response.status}`);
+  }
+  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) throw new Error('Gemini returned an empty response');
   return text;
 }
 
@@ -63,11 +114,19 @@ router.get('/image', rateLimiter, validateQueryParam('place'), async (req, res) 
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ url: cached });
 
   try {
+    if (!UNSPLASH_ACCESS_KEY) {
+      const url = fallbackImage(place);
+      imageCache.set(cacheKey, url);
+      return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ url });
+    }
     const response = await fetch(
       `https://api.unsplash.com/search/photos?query=${encodeURIComponent(place)}&per_page=1&orientation=landscape`,
       { headers: { Authorization: `Client-ID ${UNSPLASH_ACCESS_KEY}` } }
     );
     const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data?.errors?.[0] || `Unsplash request failed with status ${response.status}`);
+    }
 
     if (!data.results || data.results.length === 0) {
       return res.status(404).json({ message: `No image found for '${place}'.` });
@@ -78,7 +137,9 @@ router.get('/image', rateLimiter, validateQueryParam('place'), async (req, res) 
     return res.set('X-Cache', 'MISS').json({ url });
   } catch (err) {
     console.error('[aiRoutes] Unsplash error:', err.message);
-    return res.status(502).json({ message: 'Image service unavailable.' });
+    const url = fallbackImage(place);
+    imageCache.set(cacheKey, url);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ url });
   }
 });
 
@@ -98,7 +159,10 @@ router.get('/suggestions', rateLimiter, validateQueryParam('q'), async (req, res
     const prompt = `Suggest up to 8 real place names matching '${query}'. Return ONLY a JSON array of strings, no markdown.`;
     const text   = await callGemini(prompt);
     const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
-    const suggestions = JSON.parse(cleaned);
+    const parsed = JSON.parse(cleaned);
+    const suggestions = Array.isArray(parsed)
+      ? parsed.map((item) => String(item).trim()).filter(Boolean).slice(0, 8)
+      : [];
 
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
       return res.set('X-Cache', 'MISS').json({ suggestions: [] });
@@ -108,7 +172,9 @@ router.get('/suggestions', rateLimiter, validateQueryParam('q'), async (req, res
     return res.set('X-Cache', 'MISS').json({ suggestions });
   } catch (err) {
     console.error('[aiRoutes] Gemini suggestions error:', err.message);
-    return res.status(502).json({ message: 'AI service unavailable.' });
+    const suggestions = fallbackSuggestions(query);
+    suggestionsCache.set(cacheKey, suggestions);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ suggestions });
   }
 });
 
@@ -121,14 +187,17 @@ router.get('/trending', rateLimiter, async (req, res) => {
 
   try {
     const prompt =
-      'Suggest 5 trending travel destinations in 2026 with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.';
-    const text    = await callGemini(prompt);
+      `Suggest 5 trending travel destinations in ${new Date().getFullYear()} with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.`;
+    const text = await callGemini(prompt);
     const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
     const parsed  = JSON.parse(cleaned);
 
     if (!Array.isArray(parsed) || parsed.length < 5) {
       console.error('[aiRoutes] Trending: invalid response shape from Gemini');
-      return res.status(502).json({ message: 'AI service unavailable.' });
+      trendingCache.set(cacheKey, FALLBACK_DESTINATIONS);
+      return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({
+        destinations: FALLBACK_DESTINATIONS,
+      });
     }
 
     const destinations = parsed.slice(0, 5).map((d) => ({
@@ -138,14 +207,20 @@ router.get('/trending', rateLimiter, async (req, res) => {
 
     if (destinations.length < 5) {
       console.error('[aiRoutes] Trending: fewer than 5 valid destinations after normalisation');
-      return res.status(502).json({ message: 'AI service unavailable.' });
+      trendingCache.set(cacheKey, FALLBACK_DESTINATIONS);
+      return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({
+        destinations: FALLBACK_DESTINATIONS,
+      });
     }
 
     trendingCache.set(cacheKey, destinations);
     return res.set('X-Cache', 'MISS').json({ destinations });
   } catch (err) {
     console.error('[aiRoutes] Gemini trending error:', err.message);
-    return res.status(502).json({ message: 'AI service unavailable.' });
+    trendingCache.set(cacheKey, FALLBACK_DESTINATIONS);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({
+      destinations: FALLBACK_DESTINATIONS,
+    });
   }
 });
 
@@ -165,7 +240,9 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
 
     if (!Array.isArray(parsed) || parsed.length < 5) {
       console.error('[aiRoutes] Itinerary: invalid response shape from Gemini');
-      return res.status(502).json({ message: 'AI service unavailable.' });
+      const attractions = fallbackAttractions(destination);
+      itineraryCache.set(cacheKey, attractions);
+      return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
     }
 
     const attractions = parsed.slice(0, 5).map((a) => ({
@@ -175,14 +252,18 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
 
     if (attractions.length < 5) {
       console.error('[aiRoutes] Itinerary: fewer than 5 valid attractions after normalisation');
-      return res.status(502).json({ message: 'AI service unavailable.' });
+      const fallback = fallbackAttractions(destination);
+      itineraryCache.set(cacheKey, fallback);
+      return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions: fallback });
     }
 
     itineraryCache.set(cacheKey, attractions);
     return res.set('X-Cache', 'MISS').json({ attractions });
   } catch (err) {
     console.error('[aiRoutes] Gemini itinerary error:', err.message);
-    return res.status(502).json({ message: 'AI service unavailable.' });
+    const attractions = fallbackAttractions(destination);
+    itineraryCache.set(cacheKey, attractions);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
   }
 });
 

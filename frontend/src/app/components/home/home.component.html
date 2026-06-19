@@ -1,371 +1,210 @@
-<!-- ══════════════════════════════════════════════════════════════════
-     HERO SECTION — Crossfade Slideshow
-══════════════════════════════════════════════════════════════════ -->
-<section class="relative min-h-screen flex items-center overflow-hidden">
+<main class="overflow-hidden">
+  <section class="relative min-h-[860px] px-5 pb-20 pt-32 sm:px-8 lg:px-12 lg:pt-36">
+    <div class="absolute left-[8%] top-28 h-64 w-64 rounded-full bg-[#0e9b91]/20 blur-[100px]"></div>
+    <div class="absolute right-[4%] top-24 h-56 w-56 rounded-full bg-[#ff8d70]/15 blur-[90px]"></div>
 
-  <!-- Slide layers (crossfade via opacity) -->
-  <div *ngFor="let url of slideUrls; let i = index"
-       class="absolute inset-0 transition-opacity duration-1000"
-       [class.opacity-100]="i === activeSlide"
-       [class.opacity-0]="i !== activeSlide"
-       [ngStyle]="url
-         ? {'background-image': 'url(' + url + ')', 'background-size': 'cover', 'background-position': 'center'}
-         : {'background': 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'}">
-  </div>
-  <!-- Fallback gradient shown before any image loads -->
-  <div *ngIf="slideUrls.length === 0"
-       class="absolute inset-0"
-       style="background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)">
-  </div>
-
-  <!-- Dark overlay -->
-  <div class="absolute inset-0 bg-gradient-to-b from-slate-900/70 via-slate-900/40 to-slate-900/80 z-10"></div>
-  <!-- Decorative orbs -->
-  <div class="absolute top-32 right-24 w-72 h-72 bg-[#667eea]/20 rounded-full blur-[100px] z-10"></div>
-  <div class="absolute bottom-20 left-16 w-64 h-64 bg-[#764ba2]/20 rounded-full blur-[80px] z-10"></div>
-
-  <!-- Hero content -->
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 w-full relative z-20 py-32">
-    <!-- Badge -->
-    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur border border-white/20 text-white text-[10px] uppercase tracking-widest font-bold mb-8">
-      <span class="material-symbols-outlined text-[13px] text-[#a5b4fc]">auto_awesome</span>
-      AI-Powered Travel Planning
-    </div>
-
-    <div class="max-w-3xl">
-      <h1 class="text-6xl lg:text-8xl font-extrabold tracking-tight text-white leading-[1.05] mb-6" style="font-family:Manrope,sans-serif">
-        Discover Your<br>
-        Next <span class="bg-gradient-to-r from-[#a5b4fc] via-[#c084fc] to-[#e879f9] bg-clip-text text-transparent">Great</span><br>
-        <span class="bg-gradient-to-r from-[#e879f9] to-[#a5b4fc] bg-clip-text text-transparent">Adventure</span>
-      </h1>
-      <p class="text-white/70 text-xl max-w-xl leading-relaxed mb-10">
-        Precision-crafted itineraries for the modern explorer. We blend editorial aesthetics with AI-powered logistics to curate your perfect journey.
-      </p>
-      <div class="flex flex-wrap gap-4">
-        <button (click)="onStartPlanning()"
-                class="group signature-gradient text-white px-8 py-4 rounded-xl font-bold flex items-center gap-3 active:scale-95 transition-all shadow-2xl shadow-indigo-500/30"
-                style="font-family:Manrope,sans-serif">
-          Start Planning
-          <span class="material-symbols-outlined group-hover:translate-x-1 transition-transform">arrow_forward</span>
-        </button>
-        <button routerLink="/dashboard"
-                class="bg-white/10 backdrop-blur border border-white/20 text-white px-8 py-4 rounded-xl font-bold hover:bg-white/20 transition-colors"
-                style="font-family:Manrope,sans-serif">
-          View Dashboard
-        </button>
-      </div>
-    </div>
-
-    <!-- Stats strip -->
-    <div class="mt-20 grid grid-cols-3 gap-6 max-w-lg">
-      <div class="text-center">
-        <p class="text-3xl font-extrabold text-white" style="font-family:Manrope,sans-serif">50K+</p>
-        <p class="text-white/50 text-xs uppercase tracking-widest mt-1">Explorers</p>
-      </div>
-      <div class="text-center border-x border-white/10">
-        <p class="text-3xl font-extrabold text-white" style="font-family:Manrope,sans-serif">180+</p>
-        <p class="text-white/50 text-xs uppercase tracking-widest mt-1">Destinations</p>
-      </div>
-      <div class="text-center">
-        <p class="text-3xl font-extrabold text-white" style="font-family:Manrope,sans-serif">4.9★</p>
-        <p class="text-white/50 text-xs uppercase tracking-widest mt-1">Rating</p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Slideshow dot indicators -->
-  <div class="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2">
-    <button *ngFor="let url of slideUrls; let i = index"
-            (click)="goToSlide(i)"
-            class="transition-all duration-300 rounded-full"
-            [class.w-6]="i === activeSlide"
-            [class.w-2]="i !== activeSlide"
-            [class.h-2]="true"
-            [class.bg-white]="i === activeSlide"
-            [class.bg-white\\/40]="i !== activeSlide"
-            [class.hover:bg-white\\/70]="i !== activeSlide">
-    </button>
-  </div>
-
-  <!-- Scroll hint -->
-  <div class="absolute bottom-8 right-8 z-20 flex flex-col items-center gap-1 text-white/30 animate-bounce">
-    <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
-  </div>
-</section>
-
-
-<!-- ══════════════════════════════════════════════════════════════════
-     TRENDING DESTINATIONS (AI-powered)
-══════════════════════════════════════════════════════════════════ -->
-<section class="py-16 bg-white border-b border-slate-100">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12">
-    <div class="flex items-end justify-between mb-8">
-      <div>
-        <span class="text-[#754aa1] font-bold text-xs uppercase tracking-[0.2em] mb-2 block">Live AI Feed</span>
-        <h2 class="text-3xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Trending Right Now</h2>
-      </div>
-      <span class="inline-flex items-center gap-1.5 text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-full font-medium">
-        <span class="material-symbols-outlined text-sm text-[#667eea]">bolt</span>
-        Powered by Gemini
-      </span>
-    </div>
-    <!-- Trending cards — clicking opens the preview modal, NOT the create modal -->
-    <app-trending-cards (destinationSelected)="onTrendingSelect($event)"></app-trending-cards>
-  </div>
-</section>
-
-
-<!-- ══════════════════════════════════════════════════════════════════
-     CURATED COLLECTIONS — click to open full itinerary preview
-══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 bg-[#f3f4f5]">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12">
-    <div class="flex justify-between items-end mb-12">
-      <div class="space-y-2">
-        <span class="text-[#3953bd] font-bold text-xs uppercase tracking-[0.2em] block">Hand-Picked Experiences</span>
-        <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Curated Collections</h2>
-        <p class="text-[#444653]">Click any journey to see the full AI-generated itinerary.</p>
-      </div>
-      <button routerLink="/dashboard" class="text-[#3953bd] font-semibold flex items-center gap-1 hover:underline text-sm">
-        All itineraries <span class="material-symbols-outlined text-sm">arrow_outward</span>
-      </button>
-    </div>
-    <div class="grid md:grid-cols-3 gap-8">
-      <div
-        *ngFor="let card of featuredCards"
-        (click)="openPreview(card)"
-        class="group bg-white rounded-2xl overflow-hidden transition-all duration-300 hover:-translate-y-3 hover:shadow-2xl hover:shadow-slate-300/50 cursor-pointer relative"
-      >
-        <!-- Photo -->
-        <div class="aspect-[4/3] overflow-hidden relative"
-             [ngStyle]="card.imageUrl
-               ? {'background-image': 'url(' + card.imageUrl + ')', 'background-size': 'cover', 'background-position': 'center'}
-               : {'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
-          <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 via-slate-900/20 to-transparent"></div>
-          <!-- Duration badge -->
-          <div class="absolute top-4 right-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-tight z-10">
-            {{ card.duration }}
+    <div class="relative mx-auto grid max-w-7xl items-center gap-16 lg:grid-cols-[1.02fr_.98fr]">
+      <div class="relative z-10">
+        <div class="eyebrow mb-7">
+          <span class="h-2 w-2 rounded-full bg-[#7ae0c3] shadow-[0_0_18px_#7ae0c3]"></span>
+          AI-assisted travel intelligence
+        </div>
+        <h1 class="max-w-3xl text-5xl font-extrabold leading-[1.02] tracking-[-0.055em] text-white sm:text-6xl lg:text-[76px]">
+          Travel plans with a little more <span class="text-gradient">soul.</span>
+        </h1>
+        <p class="mt-7 max-w-xl text-base leading-8 text-[#9db0bd] sm:text-lg">
+          Build cinematic itineraries that are beautiful to imagine and sensible to actually take.
+          Your budget, pace, risks and favorite discoveries stay in one calm workspace.
+        </p>
+        <div class="mt-9 flex flex-wrap gap-3">
+          <button mat-flat-button class="primary-action" (click)="onStartPlanning()">
+            Design my journey
+            <span class="material-symbols-outlined ml-2 text-[19px]">arrow_outward</span>
+          </button>
+          <a mat-stroked-button class="ghost-action" routerLink="/about">
+            See how it works
+            <span class="material-symbols-outlined ml-2 text-[19px]">play_circle</span>
+          </a>
+        </div>
+        <div class="mt-12 flex flex-wrap items-center gap-x-8 gap-y-5 border-t border-white/10 pt-7">
+          <div *ngFor="let stat of stats">
+            <p class="font-headline text-xl font-extrabold text-white">{{ stat.value }}</p>
+            <p class="mt-0.5 text-[10px] font-bold uppercase tracking-[0.18em] text-[#718996]">{{ stat.label }}</p>
           </div>
-          <!-- Hover overlay: View Itinerary -->
-          <div class="absolute inset-0 bg-[#667eea]/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-            <div class="text-center text-white">
-              <span class="material-symbols-outlined text-4xl block mb-2">open_in_new</span>
-              <span class="font-bold text-sm uppercase tracking-widest">View Itinerary</span>
+          <div class="flex -space-x-2">
+            <span *ngFor="let card of featuredCards" class="h-9 w-9 overflow-hidden rounded-full border-2 border-[#0a1b26]">
+              <img [src]="card.image" [alt]="card.title" class="h-full w-full object-cover">
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <div class="relative mx-auto h-[540px] w-full max-w-[570px] sm:h-[620px]">
+        <div class="absolute inset-8 rotate-3 rounded-[44px] border border-white/10 bg-gradient-to-br from-[#0c716f]/30 to-[#ff8d70]/10"></div>
+        <div class="glass-panel absolute inset-x-4 bottom-2 top-2 overflow-hidden rounded-[42px] p-3 sm:inset-x-8">
+          <img [src]="currentHeroUrl || '/images/santorini.jpg'"
+               alt="Rotating destination inspiration"
+               class="h-full w-full rounded-[34px] object-cover transition duration-1000">
+          <div class="absolute inset-3 rounded-[34px] bg-gradient-to-t from-[#04131e]/95 via-[#071721]/10 to-transparent"></div>
+          <div class="absolute bottom-8 left-8 right-8">
+            <div class="mb-4 flex flex-wrap gap-2">
+              <mat-chip class="soft-chip">Slow travel</mat-chip>
+              <mat-chip class="soft-chip">AI curated</mat-chip>
+            </div>
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#9ee5d0]">Current inspiration</p>
+            <h2 class="mt-2 font-headline text-3xl font-bold text-white">Aegean, unhurried.</h2>
+            <p class="mt-1 text-sm text-white/65">Santorini · Milos · Paros</p>
+            <div class="mt-5 flex gap-2">
+              <button *ngFor="let slide of slideUrls; let i = index" type="button" (click)="goToSlide(i)"
+                      class="h-2 rounded-full transition-all"
+                      [class.w-8]="i === activeSlide" [class.w-2]="i !== activeSlide"
+                      [class.bg-[#7ae0c3]]="i === activeSlide" [class.bg-white/30]="i !== activeSlide"
+                      [attr.aria-label]="'Show inspiration ' + (i + 1)"></button>
             </div>
           </div>
-          <!-- Bottom title on photo -->
-          <div class="absolute bottom-0 left-0 right-0 p-5 z-10">
-            <h3 class="text-xl font-bold text-white mb-1" style="font-family:Manrope,sans-serif">{{ card.title }}</h3>
-            <p class="text-white/70 text-sm">{{ card.subtitle }}</p>
-          </div>
         </div>
-        <!-- Card footer -->
-        <div class="p-5 flex items-center justify-between">
-          <span class="text-[#3953bd] font-bold text-lg">{{ card.price }} <span class="text-[#757684] font-normal text-xs">/ person</span></span>
-          <div class="flex items-center gap-2 text-xs text-slate-500 font-medium">
-            <span class="material-symbols-outlined text-sm text-[#754aa1]">auto_awesome</span>
-            AI itinerary ready
+        <div class="glass-panel absolute -left-2 top-12 hidden w-48 rounded-[24px] p-3 shadow-2xl sm:block">
+          <img [src]="featuredCards[0].image" alt="Kyoto temple" class="h-24 w-full rounded-[17px] object-cover">
+          <p class="mt-3 text-xs font-bold text-white">Kyoto after rain</p>
+          <p class="mt-1 text-[10px] text-[#88a0ad]">Culture match · 96%</p>
+        </div>
+        <div class="glass-panel absolute -right-3 bottom-16 hidden w-52 rounded-[24px] p-4 sm:block">
+          <span class="grid h-9 w-9 place-items-center rounded-xl bg-[#7ae0c3]/15 text-[#7ae0c3]">
+            <span class="material-symbols-outlined text-xl">insights</span>
+          </span>
+          <p class="mt-4 font-headline text-3xl font-extrabold text-white">92</p>
+          <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+            <div class="h-full w-[92%] rounded-full bg-gradient-to-r from-[#7ae0c3] to-[#ff9b7d]"></div>
+          </div>
+          <p class="mt-2 text-[10px] text-[#88a0ad]">Excellent pace and budget balance</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-5 py-20 sm:px-8 lg:px-12">
+    <div class="glass-panel mx-auto max-w-7xl rounded-[34px] p-7 sm:p-10">
+      <div class="mb-7 flex flex-col justify-between gap-4 md:flex-row md:items-end">
+        <div>
+          <p class="eyebrow">Live AI feed</p>
+          <h2 class="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-white">Trending right now.</h2>
+        </div>
+        <p class="max-w-md text-sm leading-6 text-[#829aa6]">Fresh destination ideas remain available through curated fallbacks when external AI services are offline.</p>
+      </div>
+      <app-trending-cards (destinationSelected)="onTrendingSelect($event)"></app-trending-cards>
+    </div>
+  </section>
+
+  <section class="px-5 py-24 sm:px-8 lg:px-12">
+    <div class="mx-auto max-w-7xl">
+      <div class="mb-10 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+        <div>
+          <p class="eyebrow">Curated departures</p>
+          <h2 class="mt-4 max-w-2xl text-4xl font-extrabold tracking-[-0.04em] text-white sm:text-5xl">Places worth lingering in.</h2>
+        </div>
+        <a mat-button routerLink="/dashboard" class="!self-start !rounded-full !text-[#9ee5d0] md:!self-auto">
+          Browse every route <span class="material-symbols-outlined ml-2 text-lg">arrow_forward</span>
+        </a>
+      </div>
+      <div class="grid gap-6 md:grid-cols-3">
+        <article *ngFor="let card of featuredCards"
+                 (click)="openPreview(card)"
+                 class="group glass-panel cursor-pointer overflow-hidden rounded-[30px] transition duration-500 hover:-translate-y-2">
+          <div class="relative h-72 overflow-hidden">
+            <img [src]="card.image" [alt]="card.title" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-transparent to-transparent"></div>
+            <span class="absolute right-4 top-4 rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white backdrop-blur-xl">{{ card.duration }}</span>
+          </div>
+          <div class="p-6">
+            <div class="mb-4 h-1 w-10 rounded-full" [style.background]="card.accent"></div>
+            <h3 class="text-xl font-bold text-white">{{ card.title }}</h3>
+            <p class="mt-2 min-h-12 text-sm leading-6 text-[#8fa5b0]">{{ card.subtitle }}</p>
+            <div class="mt-6 flex items-center justify-between border-t border-white/10 pt-5">
+              <span class="text-sm text-[#8096a1]">From <strong class="ml-1 text-white">{{ card.price }}</strong></span>
+              <span class="grid h-9 w-9 place-items-center rounded-full bg-white/5 text-white transition group-hover:bg-[#7ae0c3] group-hover:text-[#05201f]">
+                <span class="material-symbols-outlined text-lg">arrow_outward</span>
+              </span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-5 py-24 sm:px-8 lg:px-12">
+    <div class="glass-panel relative mx-auto max-w-7xl overflow-hidden rounded-[38px] p-7 sm:p-12 lg:p-16">
+      <div class="absolute -right-24 -top-24 h-72 w-72 rounded-full border-[54px] border-[#7ae0c3]/5"></div>
+      <div class="relative grid gap-12 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
+        <div>
+          <p class="eyebrow">Designed around decisions</p>
+          <h2 class="mt-4 text-4xl font-extrabold tracking-[-0.045em] text-white sm:text-5xl">A beautiful plan is only useful if it works.</h2>
+          <p class="mt-6 max-w-lg text-base leading-8 text-[#91a7b2]">The platform reads your route like a thoughtful travel editor: what is missing, what feels rushed, and where your money has room to breathe.</p>
+        </div>
+        <div class="grid gap-4 sm:grid-cols-3">
+          <div *ngFor="let feature of features; let i = index"
+               class="rounded-[26px] border border-white/10 bg-white/[0.035] p-6"
+               [class.sm:translate-y-6]="i === 1">
+            <span class="grid h-11 w-11 place-items-center rounded-2xl"
+                  [class]="i === 0 ? 'bg-[#7ae0c3]/15 text-[#7ae0c3]' : i === 1 ? 'bg-[#ff8d70]/15 text-[#ff9d83]' : 'bg-[#ffc96b]/15 text-[#ffc96b]'">
+              <span class="material-symbols-outlined">{{ feature.icon }}</span>
+            </span>
+            <h3 class="mt-6 text-lg font-bold text-white">{{ feature.title }}</h3>
+            <p class="mt-3 text-sm leading-6 text-[#849ba7]">{{ feature.desc }}</p>
           </div>
         </div>
       </div>
     </div>
-  </div>
-</section>
+  </section>
 
-
-<!-- ══════════════════════════════════════════════════════════════════
-     FEATURES
-══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 bg-white">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 text-center mb-16">
-    <span class="text-[#754aa1] font-bold text-xs uppercase tracking-[0.2em] mb-4 block">The Ecosystem</span>
-    <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Designed for the Discerning Traveler</h2>
-  </div>
-  <div class="max-w-7xl mx-auto px-6 lg:px-12 grid md:grid-cols-3 gap-8">
-    <div *ngFor="let f of features"
-         class="p-8 rounded-2xl border border-slate-100 hover:border-[#667eea]/30 hover:shadow-xl hover:shadow-indigo-100/50 transition-all duration-500 group">
-      <div class="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform"
-           [ngStyle]="{'background': f.bg, 'color': f.color}">
-        <span class="material-symbols-outlined text-3xl">{{ f.icon }}</span>
-      </div>
-      <h3 class="text-xl font-bold mb-3 text-[#191c1d]" style="font-family:Manrope,sans-serif">{{ f.title }}</h3>
-      <p class="text-[#444653] leading-relaxed text-sm">{{ f.desc }}</p>
-    </div>
-  </div>
-</section>
-
-
-<!-- ══════════════════════════════════════════════════════════════════
-     TESTIMONIALS
-══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 bg-[#f3f4f5]">
-  <div class="max-w-7xl mx-auto px-6 lg:px-12">
-    <div class="text-center mb-16">
-      <span class="text-[#3953bd] font-bold text-xs uppercase tracking-[0.2em] mb-4 block">Social Proof</span>
-      <h2 class="text-4xl font-bold text-[#191c1d]" style="font-family:Manrope,sans-serif">Trusted by World Travelers</h2>
-      <p class="text-[#444653] mt-3">Join over 50,000+ adventurers who have elevated their travel game.</p>
-    </div>
-    <div class="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-      <div class="p-8 bg-white rounded-2xl shadow-sm border border-slate-100 relative">
-        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 left-6 opacity-60">format_quote</span>
-        <p class="italic text-[#444653] leading-relaxed mb-6">
-          "The Elevated Navigator changed how I travel. No more messy spreadsheets—just pure editorial joy and perfect timing on every leg of my trip."
-        </p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full signature-gradient flex items-center justify-center text-white font-bold text-sm">EV</div>
-          <div>
-            <p class="text-sm font-bold text-[#191c1d]">Eleanor Vance</p>
-            <p class="text-xs text-[#757684]">Solo Luxury Traveler</p>
-          </div>
-        </div>
-      </div>
-      <div class="p-8 bg-white rounded-2xl shadow-sm border border-slate-100 relative md:mt-10">
-        <span class="material-symbols-outlined text-5xl text-[#b9c3ff] absolute -top-4 left-6 opacity-60">format_quote</span>
-        <p class="italic text-[#444653] leading-relaxed mb-6">
-          "The management tools are a godsend for my travel agency. We can deliver high-end itineraries in half the time it used to take."
-        </p>
-        <div class="flex items-center gap-3">
-          <div class="w-10 h-10 rounded-full bg-gradient-to-br from-[#835100] to-[#c07800] flex items-center justify-center text-white font-bold text-sm">MT</div>
-          <div>
-            <p class="text-sm font-bold text-[#191c1d]">Marcus Thorne</p>
-            <p class="text-xs text-[#757684]">Lead Agent, Thorne Travel</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-
-<!-- ══════════════════════════════════════════════════════════════════
-     FINAL CTA
-══════════════════════════════════════════════════════════════════ -->
-<section class="py-24 bg-white">
-  <div class="max-w-5xl mx-auto px-6 lg:px-12">
-    <div class="signature-gradient rounded-[2.5rem] p-12 lg:p-20 text-center text-white space-y-8 relative overflow-hidden shadow-2xl shadow-indigo-200">
-      <div class="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-32 -mt-32"></div>
-      <div class="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32"></div>
-      <h2 class="text-4xl lg:text-5xl font-extrabold relative z-10" style="font-family:Manrope,sans-serif">Ready to Elevate Your Journey?</h2>
-      <p class="text-white/80 text-lg max-w-2xl mx-auto relative z-10">
-        Join the community of explorers who don't just visit places — they experience them through perfectly planned stories.
-      </p>
-      <div class="flex justify-center relative z-10">
-        <button (click)="onStartPlanning()" class="bg-white text-[#3953bd] px-10 py-5 rounded-xl font-bold text-lg active:scale-95 transition-all shadow-xl shadow-black/10" style="font-family:Manrope,sans-serif">
-          Get Started Now
+  <section class="px-5 pb-24 pt-12 sm:px-8 lg:px-12">
+    <div class="relative mx-auto max-w-6xl overflow-hidden rounded-[38px] bg-[#79dfc2] px-7 py-16 text-center text-[#06211f] sm:px-12">
+      <div class="absolute -left-16 -top-24 h-72 w-72 rounded-full border-[58px] border-white/20"></div>
+      <div class="relative">
+        <p class="text-[11px] font-extrabold uppercase tracking-[0.2em]">Your next chapter is waiting</p>
+        <h2 class="mx-auto mt-4 max-w-3xl text-4xl font-extrabold tracking-[-0.045em] sm:text-5xl">Less spreadsheet. More story.</h2>
+        <button mat-flat-button (click)="onStartPlanning()" class="!mt-8 !min-h-12 !rounded-full !bg-[#071721] !px-7 !font-bold !text-white">
+          Start a free itinerary <span class="material-symbols-outlined ml-2 text-lg">east</span>
         </button>
       </div>
     </div>
-  </div>
-</section>
+  </section>
+</main>
 
-
-<!-- ══════════════════════════════════════════════════════════════════
-     FOOTER
-══════════════════════════════════════════════════════════════════ -->
-<footer class="w-full border-t border-slate-100 bg-white">
-  <div class="flex flex-col md:flex-row justify-between items-center py-8 px-6 lg:px-12 max-w-7xl mx-auto">
-    <div class="text-xs text-slate-500 order-2 md:order-1 mt-6 md:mt-0">
-      <span class="font-bold text-slate-900 mr-2">The Elevated Navigator</span>
-      © 2025 The Elevated Navigator. All rights reserved.
-    </div>
-    <div class="flex gap-8 text-xs text-slate-500 order-1 md:order-2">
-      <a href="#" class="hover:text-slate-900 transition-colors">Privacy Policy</a>
-      <a href="#" class="hover:text-slate-900 transition-colors">Terms of Service</a>
-      <a href="#" class="hover:text-slate-900 transition-colors">Contact Us</a>
-    </div>
-  </div>
-</footer>
-
-
-<!-- ══════════════════════════════════════════════════════════════════
-     ITINERARY PREVIEW MODAL
-══════════════════════════════════════════════════════════════════ -->
 <div *ngIf="showPreviewModal && previewCard"
-     class="fixed inset-0 z-[100] flex items-end md:items-center justify-center p-0 md:p-6"
+     class="fixed inset-0 z-[100] flex items-end justify-center bg-[#020a0f]/80 p-0 backdrop-blur-xl md:items-center md:p-6"
      (click)="closePreview()">
-
-  <!-- Backdrop -->
-  <div class="absolute inset-0 bg-slate-900/70 backdrop-blur-sm"></div>
-
-  <!-- Modal panel -->
-  <div class="relative bg-white rounded-t-3xl md:rounded-3xl w-full md:max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl"
-       (click)="$event.stopPropagation()">
-
-    <!-- Hero photo header -->
-    <div class="relative h-56 overflow-hidden rounded-t-3xl md:rounded-t-3xl"
-         [ngStyle]="previewCard.imageUrl
-           ? {'background-image': 'url(' + previewCard.imageUrl + ')', 'background-size': 'cover', 'background-position': 'center'}
-           : {'background': 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}">
-      <div class="absolute inset-0 bg-gradient-to-t from-slate-900/80 to-transparent"></div>
-      <!-- Close button -->
-      <button (click)="closePreview()"
-              class="absolute top-4 right-4 w-9 h-9 bg-white/20 backdrop-blur rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors">
-        <span class="material-symbols-outlined text-lg">close</span>
+  <section class="glass-panel relative max-h-[92vh] w-full overflow-y-auto rounded-t-[30px] md:max-w-2xl md:rounded-[30px]"
+           (click)="$event.stopPropagation()">
+    <div class="relative h-60 overflow-hidden">
+      <img [src]="previewCard.imageUrl || previewCard.image" [alt]="previewCard.title" class="h-full w-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
+      <button type="button" (click)="closePreview()" class="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-black/30 text-white backdrop-blur-xl" aria-label="Close preview">
+        <span class="material-symbols-outlined">close</span>
       </button>
-      <!-- Title -->
-      <div class="absolute bottom-0 left-0 right-0 p-6">
-        <div class="flex flex-wrap gap-2 mb-2">
-          <span *ngIf="previewCard.duration !== '—'" class="bg-white/20 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-semibold border border-white/30">{{ previewCard.duration }}</span>
-          <span *ngIf="previewCard.price !== '—'" class="bg-white/20 backdrop-blur text-white px-3 py-1 rounded-full text-xs font-semibold border border-white/30">from {{ previewCard.price }}</span>
-        </div>
-        <h2 class="text-2xl font-bold text-white" style="font-family:Manrope,sans-serif">{{ previewCard.title }}</h2>
-        <p class="text-white/70 text-sm mt-1">{{ previewCard.subtitle }}</p>
+      <div class="absolute bottom-5 left-6 right-6">
+        <p class="text-xs font-bold uppercase tracking-[0.18em] text-[#a3eed9]">{{ previewCard.duration }} · {{ previewCard.price }}</p>
+        <h2 class="mt-2 text-3xl font-extrabold text-white">{{ previewCard.title }}</h2>
       </div>
     </div>
-
-    <!-- Modal body -->
     <div class="p-6">
-      <!-- AI badge -->
-      <div class="flex items-center gap-2 mb-5">
-        <span class="material-symbols-outlined text-base text-[#667eea]">auto_awesome</span>
-        <span class="text-xs font-bold uppercase tracking-widest text-[#667eea]">AI-Generated Highlights</span>
-        <span class="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-[#3953bd]">Gemini</span>
+      <p class="eyebrow">AI-generated highlights</p>
+      <div *ngIf="previewCard.attractionsLoading" class="mt-5 space-y-3">
+        <div *ngFor="let item of [1,2,3]" class="h-20 animate-pulse rounded-2xl bg-white/5"></div>
       </div>
-
-      <!-- Loading skeleton -->
-      <div *ngIf="previewCard.attractionsLoading" class="space-y-3">
-        <div *ngFor="let _ of [1,2,3,4,5]" class="flex gap-4 p-4 rounded-xl bg-slate-50">
-          <div class="w-8 h-8 rounded-lg bg-slate-200 animate-pulse flex-shrink-0"></div>
-          <div class="flex-1">
-            <div class="h-4 w-2/5 bg-slate-200 animate-pulse rounded mb-2"></div>
-            <div class="h-3 w-4/5 bg-slate-200 animate-pulse rounded"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Attractions list -->
-      <div *ngIf="!previewCard.attractionsLoading && previewCard.attractions.length > 0" class="space-y-3">
-        <div *ngFor="let attraction of previewCard.attractions; let i = index"
-             class="flex gap-4 p-4 rounded-xl bg-slate-50 hover:bg-indigo-50/50 transition-colors">
-          <div class="w-8 h-8 rounded-lg signature-gradient flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
-            {{ i + 1 }}
-          </div>
+      <div *ngIf="!previewCard.attractionsLoading" class="mt-5 space-y-3">
+        <article *ngFor="let attraction of previewCard.attractions; let i = index"
+                 class="flex gap-4 rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <span class="grid h-9 w-9 flex-none place-items-center rounded-xl bg-[#7ae0c3] text-xs font-extrabold text-[#05201f]">{{ i + 1 }}</span>
           <div>
-            <p class="font-bold text-[#191c1d] text-sm mb-1">{{ attraction.name }}</p>
-            <p class="text-xs text-[#444653] leading-relaxed">{{ attraction.description }}</p>
+            <h3 class="text-sm font-bold text-white">{{ attraction.name }}</h3>
+            <p class="mt-1 text-xs leading-5 text-[#8fa5b0]">{{ attraction.description }}</p>
           </div>
-        </div>
+        </article>
       </div>
-
-      <!-- Empty state -->
-      <div *ngIf="!previewCard.attractionsLoading && previewCard.attractions.length === 0"
-           class="text-center py-8 text-slate-400">
-        <span class="material-symbols-outlined text-4xl block mb-2">travel_explore</span>
-        <p class="text-sm">Attractions will appear here</p>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="flex gap-3 mt-6 pt-5 border-t border-slate-100">
-        <button (click)="closePreview()"
-                class="flex-1 py-3 border border-slate-200 rounded-xl text-sm font-semibold text-slate-600 hover:bg-slate-50 transition-colors">
-          Close
-        </button>
-        <button (click)="planThisTrip()"
-                class="flex-1 py-3 signature-gradient text-white rounded-xl text-sm font-bold transition-all hover:opacity-90 active:scale-95 flex items-center justify-center gap-2">
-          <span class="material-symbols-outlined text-base">add_circle</span>
-          Plan This Trip
-        </button>
+      <div class="mt-6 flex gap-3 border-t border-white/10 pt-5">
+        <button mat-stroked-button class="ghost-action flex-1" (click)="closePreview()">Close</button>
+        <button mat-flat-button class="primary-action flex-1" (click)="planThisTrip()">Plan this trip</button>
       </div>
     </div>
-  </div>
+  </section>
 </div>

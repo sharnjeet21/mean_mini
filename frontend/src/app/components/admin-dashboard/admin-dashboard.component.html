@@ -1,105 +1,120 @@
-<div class="flex min-h-screen bg-surface">
+<div class="min-h-screen bg-[#04131e] text-white">
 
   <!-- Sidebar -->
-  <aside class="h-screen w-64 fixed left-0 top-0 z-40 bg-slate-50 flex flex-col p-4 gap-2 border-r border-slate-100">
+  <aside class="fixed left-0 top-0 z-40 flex h-screen w-64 flex-col gap-2 border-r border-white/10 bg-[#071721]/95 p-4 backdrop-blur-xl">
     <div class="mb-8 px-2 flex items-center gap-3 pt-4">
-      <div class="w-10 h-10 rounded-xl signature-gradient flex items-center justify-center text-white flex-shrink-0">
+      <div class="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl bg-[#7ae0c3] text-[#05201f]">
         <span class="material-symbols-outlined">travel_explore</span>
       </div>
       <div>
-        <h2 class="text-lg font-bold text-slate-900 leading-tight font-headline">Admin Suite</h2>
-        <p class="text-xs text-slate-500">Management Portal</p>
+        <h2 class="text-lg font-bold leading-tight text-white font-headline">Trip Manager Suite</h2>
+        <p class="text-xs text-[#7f98a6]">Management Portal</p>
       </div>
     </div>
 
     <nav class="flex-1 flex flex-col gap-1">
       <a routerLink="/dashboard"
-         class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-100 transition-all rounded-lg text-sm">
+         class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white">
         <span class="material-symbols-outlined">dashboard</span><span>Overview</span>
       </a>
       <a routerLink="/admin"
-         class="flex items-center gap-3 px-3 py-2 bg-white text-indigo-600 rounded-lg shadow-sm font-semibold text-sm">
-        <span class="material-symbols-outlined">map</span><span>Itineraries</span>
+         class="flex items-center gap-3 rounded-lg bg-white/10 px-3 py-2 text-sm font-semibold text-white shadow-sm">
+        <span class="material-symbols-outlined">map</span><span>Trips</span>
       </a>
-      <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-100 transition-all rounded-lg text-sm">
-        <span class="material-symbols-outlined">confirmation_number</span><span>Bookings</span>
-      </a>
-      <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-100 transition-all rounded-lg text-sm">
-        <span class="material-symbols-outlined">group</span><span>Users</span>
-      </a>
-      <a href="#" class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-100 transition-all rounded-lg text-sm">
-        <span class="material-symbols-outlined">settings</span><span>Settings</span>
-      </a>
+      <div class="mt-5 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f8996]">Operations</div>
+      <div class="px-3 py-2 text-xs leading-5 text-[#8aa1ac]">Booking demand, saves, reviews, and portfolio health are consolidated on this screen.</div>
     </nav>
 
-    <div class="mt-auto pt-4 border-t border-slate-200 flex flex-col gap-1">
-      <button class="mb-3 w-full py-2.5 px-4 rounded-xl signature-gradient text-white font-semibold text-sm
-                     flex items-center justify-center gap-2 shadow-md hover:opacity-90 transition-opacity">
+    <div class="mt-auto flex flex-col gap-1 border-t border-white/10 pt-4">
+      <a routerLink="/dashboard" [queryParams]="{ create: 1 }" class="primary-action mb-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-md hover:opacity-90 transition-opacity">
         <span class="material-symbols-outlined text-sm">add</span> New Trip
-      </button>
+      </a>
       <button (click)="auth.logout()"
-              class="flex items-center gap-3 px-3 py-2 text-slate-500 hover:bg-slate-100 transition-all rounded-lg w-full text-sm">
+              class="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white">
         <span class="material-symbols-outlined">logout</span><span>Logout</span>
       </button>
     </div>
   </aside>
 
   <!-- Main Content -->
-  <main class="ml-64 flex-1 p-8 lg:p-12">
+  <main class="ml-64 flex-1 p-6 sm:p-8 lg:p-12">
 
     <!-- Header -->
     <header class="mb-10">
-      <nav class="flex mb-4 items-center gap-2 text-xs font-medium text-outline uppercase tracking-wider">
-        <a routerLink="/dashboard" class="hover:text-primary transition-colors">Admin</a>
+      <nav class="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#6f8996]">
+        <a routerLink="/dashboard" class="transition-colors hover:text-white">Manager</a>
         <span class="material-symbols-outlined text-sm">chevron_right</span>
-        <span class="text-on-surface-variant">Itineraries</span>
+        <span class="text-[#a9bac2]">Itineraries</span>
       </nav>
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
-          <h1 class="text-4xl font-bold tracking-tight text-on-surface mb-2 font-headline">Manage Itineraries</h1>
-          <p class="text-on-surface-variant max-w-2xl">Curate and oversee travel experiences. Monitor engagement and manage destinations.</p>
+          <h1 class="mb-2 text-4xl font-bold tracking-[-0.045em] text-white font-headline">Manage Trips</h1>
+          <p class="max-w-2xl text-[#8ea5b0]">Curate, publish, and oversee travel experiences. Monitor engagement and manage destinations.</p>
         </div>
-        <button class="inline-flex items-center justify-center gap-2 px-6 py-3 signature-gradient
-                       text-white font-semibold rounded-xl shadow-lg hover:opacity-90 transition-all active:scale-95">
-          <span class="material-symbols-outlined">add</span> Create New Itinerary
-        </button>
+        <a routerLink="/dashboard" [queryParams]="{ create: 1 }" class="primary-action inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold shadow-lg hover:opacity-90 transition-all active:scale-95">
+          <span class="material-symbols-outlined">add</span> Create New Trip
+        </a>
       </div>
     </header>
 
     <!-- Stats Bento -->
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
       <div *ngFor="let s of stats"
-           class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 shadow-sm">
+           class="glass-panel rounded-[28px] border border-white/10 p-6 shadow-sm">
         <div class="flex justify-between items-start mb-4">
           <div class="w-10 h-10 rounded-lg flex items-center justify-center"
                [style]="s.iconStyle">
             <span class="material-symbols-outlined">{{ s.icon }}</span>
           </div>
-          <span *ngIf="s.badge" class="text-xs font-bold px-2 py-1 rounded-full"
-                [style]="s.badgeStyle">{{ s.badge }}</span>
+          <span class="rounded-full bg-white/5 px-2 py-1 text-[10px] font-bold text-[#7f98a6]">{{ s.detail }}</span>
         </div>
-        <h3 class="text-on-surface-variant text-xs font-bold uppercase tracking-widest mb-1">{{ s.label }}</h3>
-        <p class="text-3xl font-bold text-on-surface font-headline">{{ s.value }}</p>
+        <h3 class="mb-1 text-xs font-bold uppercase tracking-widest text-[#7f98a6]">{{ s.label }}</h3>
+        <p class="text-3xl font-bold text-white font-headline">{{ s.value }}</p>
       </div>
     </div>
 
+    <div *ngIf="analytics.topDestinations?.length" class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-10">
+      <div class="lg:col-span-2 glass-panel rounded-[30px] border border-white/10 p-6">
+        <div class="flex items-center justify-between mb-5">
+          <div><h2 class="text-lg font-bold text-white">Destination demand</h2><p class="text-xs text-[#7f98a6]">Ranked by bookings, saves, and reviews</p></div>
+          <span class="material-symbols-outlined text-[#7ae0c3]">insights</span>
+        </div>
+        <div class="space-y-4">
+          <div *ngFor="let destination of analytics.topDestinations; let i = index" class="flex items-center gap-4">
+            <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-[#7ae0c3]/15 text-sm font-bold text-[#7ae0c3]">{{ i + 1 }}</span>
+            <div class="flex-1"><div class="mb-1 flex justify-between text-sm"><span class="font-semibold text-white">{{ destination.destination }}</span><span class="text-[#8ea5b0]">{{ destination.engagement }} interactions</span></div>
+              <div class="h-2 overflow-hidden rounded-full bg-white/10"><div class="h-full rounded-full bg-gradient-to-r from-[#7ae0c3] via-[#8cbcff] to-[#ff8d70]" [style.width.%]="(destination.engagement / (analytics.topDestinations[0].engagement || 1)) * 100"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-panel rounded-[30px] border border-white/10 p-6 text-white">
+        <span class="material-symbols-outlined text-3xl text-[#8cbcff]">monitoring</span>
+        <h2 class="font-bold text-xl mt-4">Portfolio pulse</h2>
+        <p class="mt-2 text-sm leading-6 text-[#8ea5b0]">The platform currently tracks {{ analytics.summary.totalItineraries || 0 }} travel plans and {{ (analytics.summary.totalBookings || 0) + (analytics.summary.totalFavorites || 0) + (analytics.summary.totalReviews || 0) }} engagement events.</p>
+        <div class="mt-6 border-t border-white/10 pt-5 text-xs text-[#7f98a6]">Live values from MongoDB aggregation pipelines</div>
+      </div>
+    </div>
+
+    <div *ngIf="errorMessage" class="mb-6 rounded-xl border border-[#ff8d70]/20 bg-[#ff8d70]/10 p-4 text-[#ffb4a1]">{{ errorMessage }}</div>
+    <div *ngIf="loading" class="mb-6 rounded-xl border border-white/10 bg-white/5 p-10 text-center text-[#8ea5b0]">Loading live portfolio data…</div>
+
     <!-- Table Card -->
-    <div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/20 overflow-hidden">
+    <div *ngIf="!loading" class="glass-panel overflow-hidden rounded-[30px] border border-white/10 shadow-sm">
 
       <!-- Toolbar -->
-      <div class="p-4 border-b border-outline-variant/10 flex flex-col md:flex-row gap-4 justify-between bg-surface-container-low/30">
+      <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.03] p-4 md:flex-row">
         <div class="relative flex-1 max-w-md">
-          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
-          <input class="w-full pl-10 pr-4 py-2 bg-transparent border-0 border-b border-outline-variant/40
-                        focus:ring-0 focus:border-primary transition-all placeholder:text-outline/60 text-sm outline-none"
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
+          <input [(ngModel)]="searchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
                  placeholder="Search itineraries...">
         </div>
-        <div class="flex items-center bg-surface-container rounded-lg p-1 gap-1">
+        <div class="flex items-center gap-1 rounded-lg bg-white/5 p-1">
           <button *ngFor="let t of tabs"
                   (click)="activeTab = t"
                   [class]="t === activeTab
-                    ? 'px-4 py-1.5 text-xs font-semibold bg-white text-primary rounded-md shadow-sm'
-                    : 'px-4 py-1.5 text-xs font-semibold text-on-surface-variant hover:text-on-surface transition-colors'">
+                    ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm'
+                    : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">
             {{ t }}
           </button>
         </div>
@@ -109,58 +124,52 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-surface-container-low/50">
-              <th class="py-4 px-6 w-12"><input type="checkbox" class="rounded border-outline-variant"></th>
-              <th class="py-4 px-6 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Itinerary</th>
-              <th class="py-4 px-6 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Destination</th>
-              <th class="py-4 px-6 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Date</th>
-              <th class="py-4 px-6 text-xs font-bold text-on-surface-variant uppercase tracking-widest">Status</th>
-              <th class="py-4 px-6 text-xs font-bold text-on-surface-variant uppercase tracking-widest text-right">Actions</th>
+            <tr class="bg-white/[0.03]">
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#7f98a6]">Itinerary</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#7f98a6]">Destination</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#7f98a6]">Date</th>
+              <th class="px-6 py-4 text-xs font-bold uppercase tracking-widest text-[#7f98a6]">Status</th>
+              <th class="px-6 py-4 text-right text-xs font-bold uppercase tracking-widest text-[#7f98a6]">Actions</th>
             </tr>
           </thead>
-          <tbody class="divide-y divide-outline-variant/10">
+          <tbody class="divide-y divide-white/10">
             <tr *ngFor="let item of filteredItineraries"
-                class="hover:bg-surface-container-low/30 transition-colors">
-              <td class="py-5 px-6"><input type="checkbox" class="rounded border-outline-variant"></td>
-              <td class="py-5 px-6">
+                class="transition-colors hover:bg-white/[0.03]">
+              <td class="px-6 py-5">
                 <div class="flex items-center gap-4">
-                  <div class="w-12 h-12 rounded-lg bg-gradient-to-br from-[#667eea]/20 to-[#764ba2]/20
-                              flex items-center justify-center flex-shrink-0">
-                    <span class="material-symbols-outlined text-outline-variant">travel_explore</span>
+                  <div class="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-[#7ae0c3]/15 to-[#ff8d70]/15">
+                    <span class="material-symbols-outlined text-[#7ae0c3]">travel_explore</span>
                   </div>
                   <div>
-                    <p class="font-semibold text-on-surface">{{ item.title }}</p>
-                    <p class="text-xs text-on-surface-variant">{{ item.subtitle || '' }}</p>
+                    <p class="font-semibold text-white">{{ item.title }}</p>
+                    <p class="text-xs text-[#8ea5b0]">{{ item.engagement?.bookingCount || 0 }} bookings · {{ item.engagement?.favoriteCount || 0 }} saves · {{ item.engagement?.averageRating || 0 }} rating</p>
                   </div>
                 </div>
               </td>
-              <td class="py-5 px-6">
+              <td class="px-6 py-5">
                 <div class="flex items-center gap-2">
-                  <span class="material-symbols-outlined text-outline text-lg">location_on</span>
-                  <span class="text-sm font-medium">{{ item.destination }}</span>
+                  <span class="material-symbols-outlined text-lg text-[#7f98a6]">location_on</span>
+                  <span class="text-sm font-medium text-white">{{ item.destination }}</span>
                 </div>
               </td>
-              <td class="py-5 px-6">
-                <span class="text-sm text-on-surface-variant">{{ item.createdAt | date:'MMM d, y' }}</span>
+              <td class="px-6 py-5">
+                <span class="text-sm text-[#8ea5b0]">{{ item.createdAt | date:'MMM d, y' }}</span>
               </td>
-              <td class="py-5 px-6">
-                <span [class]="item.status === 'inactive'
-                  ? 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-surface-container-highest text-on-surface-variant uppercase tracking-wider'
-                  : 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-primary-fixed text-on-primary-fixed uppercase tracking-wider'">
-                  {{ item.status === 'inactive' ? 'Inactive' : 'Active' }}
-                </span>
+              <td class="px-6 py-5">
+                <button (click)="toggleActive(item)" [class]="!item.isActive
+                  ? 'inline-flex items-center rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[#9fb0ba]'
+                  : 'inline-flex items-center rounded-full bg-[#7ae0c3] px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-[#05201f]'">
+                  {{ item.isActive ? 'Active' : 'Inactive' }}
+                </button>
               </td>
-              <td class="py-5 px-6 text-right">
+              <td class="px-6 py-5 text-right">
                 <div class="flex items-center justify-end gap-1">
                   <a [routerLink]="['/itinerary', item._id]"
-                     class="p-2 text-outline hover:text-primary hover:bg-primary-fixed rounded-lg transition-all" title="View">
+                     class="rounded-lg p-2 text-[#8ea5b0] transition-all hover:bg-white/5 hover:text-white" title="View">
                     <span class="material-symbols-outlined text-xl">visibility</span>
                   </a>
-                  <button class="p-2 text-outline hover:text-primary hover:bg-primary-fixed rounded-lg transition-all" title="Edit">
-                    <span class="material-symbols-outlined text-xl">edit</span>
-                  </button>
                   <button (click)="delete(item._id)"
-                          class="p-2 text-outline hover:text-error hover:bg-error-container rounded-lg transition-all" title="Delete">
+                          class="rounded-lg p-2 text-[#8ea5b0] transition-all hover:bg-[#ff8d70]/10 hover:text-[#ffb4a1]" title="Delete">
                     <span class="material-symbols-outlined text-xl">delete</span>
                   </button>
                 </div>
@@ -168,20 +177,14 @@
             </tr>
           </tbody>
         </table>
+        <div *ngIf="filteredItineraries.length === 0" class="p-12 text-center text-sm text-[#8ea5b0]">
+          No itineraries match the current filter.
+        </div>
       </div>
 
-      <!-- Pagination -->
-      <div class="p-4 bg-surface-container-low/50 flex items-center justify-between">
-        <span class="text-xs font-semibold text-on-surface-variant">{{ filteredItineraries.length }} items</span>
-        <div class="flex items-center gap-2">
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/40 text-outline hover:bg-white transition-colors">
-            <span class="material-symbols-outlined text-lg">chevron_left</span>
-          </button>
-          <span class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-on-primary text-xs font-bold">1</span>
-          <button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/40 text-outline hover:bg-white transition-colors">
-            <span class="material-symbols-outlined text-lg">chevron_right</span>
-          </button>
-        </div>
+      <div class="flex items-center justify-between bg-white/[0.03] p-4">
+        <span class="text-xs font-semibold text-[#a9bac2]">{{ filteredItineraries.length }} items</span>
+        <span class="text-xs text-[#6f8996]">Filtered in real time</span>
       </div>
     </div>
 

@@ -2,18 +2,50 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Request Admin Access | Travel Itinerary Planner</title>
+  <title>Request Trip Manager Access | Travel Itinerary Planner</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     body {
-      background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 60%);
       min-height: 100vh;
+      color: #f5fbff;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(16, 145, 139, 0.2), transparent 30rem),
+        radial-gradient(circle at 90% 12%, rgba(255, 141, 112, 0.13), transparent 26rem),
+        linear-gradient(145deg, #06131d 0%, #081823 55%, #0b202c 100%);
     }
     .request-card {
-      border: none;
-      box-shadow: 0 10px 30px rgba(15, 23, 42, 0.12);
-      border-radius: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(13, 36, 49, 0.78);
+      box-shadow: 0 30px 80px rgba(0, 6, 12, 0.28);
+      border-radius: 20px;
+      backdrop-filter: blur(24px) saturate(135%);
+      color: #f5fbff;
+    }
+    .form-control {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.14);
+      color: #f5fbff;
+    }
+    .form-control:focus {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: #7ae0c3;
+      box-shadow: 0 0 0 0.2rem rgba(122, 224, 195, 0.12);
+      color: #f5fbff;
+    }
+    .form-label,
+    .text-muted {
+      color: #8ea5b0 !important;
+    }
+    .alert-info {
+      background: rgba(122, 224, 195, 0.08);
+      border-color: rgba(122, 224, 195, 0.22);
+      color: #dff9ef;
+    }
+    .toast {
+      background: rgba(13, 36, 49, 0.92);
+      color: #f5fbff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
     }
   </style>
 </head>
@@ -33,8 +65,8 @@
     <div class="col-12 col-md-8 col-lg-6">
       <div class="card request-card p-4">
         <div class="card-body">
-          <h3 class="card-title fw-bold mb-3 text-center">Request Admin Access</h3>
-          <p class="text-muted text-center mb-4">Submit a request to become an admin and create travel itineraries</p>
+          <h3 class="card-title fw-bold mb-3 text-center text-white">Request Trip Manager Access</h3>
+          <p class="text-muted text-center mb-4">Submit a request to become a trip manager and publish travel itineraries</p>
 
           <div id="requestStatus" class="d-none mb-4">
             <!-- Status will be shown here -->
@@ -42,27 +74,27 @@
 
           <form id="requestForm">
             <div class="mb-3">
-              <label for="reason" class="form-label">Why do you want admin access?</label>
+              <label for="reason" class="form-label">Why do you want trip manager access?</label>
               <textarea 
                 class="form-control" 
                 id="reason" 
                 name="reason" 
                 rows="4" 
                 required
-                placeholder="Please explain why you need admin access to create and manage travel itineraries..."
+                placeholder="Please explain why you need trip manager access to create and manage travel itineraries..."
               ></textarea>
               <div class="form-text">
                 <small class="text-muted">
-                  Provide a detailed explanation of your qualifications and reasons for requesting admin access.
+                  Provide a detailed explanation of your qualifications and reasons for requesting trip manager access.
                 </small>
               </div>
             </div>
             
             <div class="alert alert-info">
-              <h6 class="alert-heading">Admin Privileges Include:</h6>
+              <h6 class="alert-heading">Trip Manager Privileges Include:</h6>
               <ul class="mb-0">
                 <li>Create detailed travel itineraries</li>
-                <li>Manage existing itineraries</li>
+                <li>Manage and publish existing itineraries</li>
                 <li>View booking information</li>
                 <li>Update itinerary details and pricing</li>
               </ul>
@@ -141,9 +173,9 @@
         // Update UI
         document.getElementById('userInfo').textContent = `${currentUser.name} (${currentUser.role})`;
         
-        // Check if user is already admin or superadmin
+        // Check if user is already a trip manager or superadmin
         if (currentUser.role === 'admin' || currentUser.role === 'superadmin') {
-          showStatus('info', 'You already have admin access or higher privileges.');
+          showStatus('info', 'You already have trip manager access or higher privileges.');
           document.getElementById('requestForm').style.display = 'none';
         }
       } catch (error) {
@@ -177,9 +209,9 @@
       };
       
       const statusText = {
-        pending: 'Your admin access request is pending review.',
-        approved: 'Your admin access request has been approved!',
-        rejected: 'Your admin access request was rejected.'
+        pending: 'Your trip manager request is pending review.',
+        approved: 'Your trip manager request has been approved!',
+        rejected: 'Your trip manager request was rejected.'
       };
 
       showStatus(statusColors[request.status], statusText[request.status]);

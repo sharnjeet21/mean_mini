@@ -1,91 +1,159 @@
-# Travel Itinerary Planner - Advanced MEAN Stack Application
+# Travel Intelligence & Itinerary Management Platform
 
-A premium, AI-enhanced travel planning application built with MongoDB, Express.js, Angular 21, and Node.js. Featuring deep Gemini AI integration, dynamic Unsplash imagery, and a robust client-side caching architecture.
+A full-stack MEAN application for discovering, designing, evaluating, publishing, saving, booking, and reviewing travel itineraries. It combines Angular Material glassmorphism, role-based workflows, AI-assisted discovery, deterministic trip analysis, community engagement, and live MongoDB analytics.
 
-## 🚀 Key Modern Features
+## Highlights
 
-### 🤖 AI-Powered Intelligence
-*   **Gemini Integration**: Generates attraction lists, local tips, and full itinerary suggestions in seconds.
-*   **Dynamic Unsplash Hero**: Interactive homepage with an AI-driven crossfade slideshow of world destinations.
-*   **Itinerary Preview Modal**: Instantly view rich, AI-generated previews of curated trips before planning.
-*   **Smart Search**: Real-time destination autocomplete and suggestion engine.
+- Four-step itinerary wizard with automatic duration, budget allocation, and multi-stop planning.
+- Dashboard, detail, saved, and booking views backed by live MongoDB data.
+- Shared deterministic destination imagery so dashboard cards and detail heroes always match.
+- Destination autocomplete, trending places, attraction suggestions, and destination previews.
+- Graceful local fallbacks when Gemini, Unsplash, DNS, or an external MongoDB deployment is unavailable.
+- Trip Intelligence scores for feasibility, completeness, pace, budget quality, and sustainability.
+- Risk register and explainable recommendations derived from itinerary data.
+- Wishlist, booking, cancellation, ratings, reviews, and administrator analytics.
+- JWT authentication, automatic expired-session cleanup, role authorization, rate limiting, and input validation.
+- Responsive Angular Material interface with glass surfaces, ambient shapes, and local optimized travel images.
 
-### 🧭 Advanced Planning Tools
-*   **4-Step Creation Wizard**: Guided flow for planning basics, dates, budget, and stops.
-*   **Multi-Stop Support**: Add unlimited extra destinations and notes to a single itinerary.
-*   **Auto-Duration Calculation**: Real-time "Days & Nights" calculation based on your selected travel dates.
-*   **Social Proof**: Live trending destinations feed showing what the global community is exploring.
+## Architecture
 
-### ⚡ Performance & Reliability
-*   **Smart AI Caching**: Client-side `localStorage` caching layer with TTL (Time-To-Live) to reduce API latency and protect rate limits.
-*   **Fault-Tolerant UI**: Curated mock data fallbacks ensure the app stays beautiful even if external APIs are unreachable.
-*   **Auto-Healing Auth**: Automatic logout and session cleanup upon JWT token expiry (prevents 401 loops).
-*   **Forced Reactivity**: Change detection optimization ensures the UI always reflects async AI data arrival.
-
-## 📁 Project Structure
-
-```
-├── server/                 # Backend (Express.js + MongoDB)
-│   ├── config/            # Database & Environment configuration
-│   ├── models/            # Mongoose schemas (User, Itinerary, etc.)
-│   ├── routes/            # API endpoints (Auth, Itinerary, AI)
-│   ├── middleware/        # JWT Authentication & Role-based guards
-│   └── server.js          # Entry point
-├── frontend/              # Frontend (Angular 21 + Tailwind/Custom CSS)
-│   ├── src/app/
-│   │   ├── components/    # Smart components (Wizard, Slideshow, Search)
-│   │   └── services/      # API wrappers & LocalStorage Cache logic
-│   └── package.json
-└── README.md
+```mermaid
+flowchart LR
+    U[Angular 21 SPA] -->|JWT + REST| E[Express API]
+    E --> A[Authentication and RBAC]
+    E --> I[Itinerary and engagement domain]
+    E --> T[Trip Intelligence engine]
+    E --> X[AI integration layer]
+    I --> M[(MongoDB)]
+    A --> M
+    T --> I
+    X --> G[Google Gemini]
+    X --> P[Unsplash]
+    E --> C[TTL caches and deterministic fallbacks]
 ```
 
-## 🛠️ Quick Start
+## Technology
 
-### 1. Prerequisites
-- Node.js (v20+ recommended)
-- MongoDB (Local or Atlas)
-- Unsplash Developer Access Key
-- Google Gemini API Key
+- MongoDB and Mongoose
+- Express.js and Node.js 24
+- Angular 21, Angular Material, TypeScript, RxJS, Tailwind CSS
+- JWT and bcryptjs
+- Google Gemini and Unsplash APIs
+- Node test runner, fast-check, Vitest, Playwright, and Puppeteer
 
-### 2. Installation & Setup
+## Local setup
+
+Requirements: Node.js 24 and either MongoDB or permission to use the development in-memory fallback.
 
 ```bash
-# Clone the repo
-git clone https://github.com/sharnjeet21/mean_mini.git
-cd mean_mini
-
-# Install all dependencies (Backend + Frontend)
 npm install
-cd frontend && npm install && cd ..
+cd frontend
+npm install
+cd ..
+copy .env.example .env
 ```
 
-### 3. Environment Configuration
-Create a `.env` file in the root directory:
+Configure `.env`:
+
 ```env
-MONGO_URI=mongodb+srv://... (or localhost)
+MONGO_URI=mongodb://127.0.0.1:27017/travel_intelligence
+JWT_SECRET=replace-with-a-long-secret
 PORT=5000
-JWT_SECRET=your_secret_key
-UNSPLASH_ACCESS_KEY=your_key
-GEMINI_API_KEY=your_key
+GEMINI_API_KEY=
+UNSPLASH_ACCESS_KEY=
 ```
 
-### 4. Running the Application
+Seed and run:
+
 ```bash
-# Run the full stack concurrently
+npm run seed:demo
 npm run dev:full
 ```
-*   **Frontend**: http://localhost:4200
-*   **Backend API**: http://localhost:5000
 
-## 🛡️ Role-Based Access Control
+- Angular development server: `http://localhost:4200`
+- Express API: `http://localhost:5000`
+- Health endpoint: `http://localhost:5000/api/health`
 
-*   **User**: Browse, search, and preview itineraries.
-*   **Admin**: Create complex multi-stop itineraries and manage bookings.
-*   **Superadmin**: Full user management and role delegation controls.
+## Commands
 
----
+```bash
+npm run dev
+npm run frontend
+npm run dev:full
+npm run test
+npm run test:frontend
+npm run test:all
+npm run test:ui
+npm run frontend:build
+npm run init-db
+npm run seed:demo
+```
 
-**Built with ❤️ using the Modern MEAN Stack**
+## Roles
 
-Contributors: [sharnjeet21](https://github.com/sharnjeet21), [yuvsingh716](https://github.com/yuvsingh716)  
-Support: sharn.ss123@gmail.com, yuvsingh716@gmail.com
+- User: browse, search, save, book, cancel, and review published itineraries.
+- Admin: publish and manage itineraries and booking workflows.
+- Superadmin: administrator capabilities plus user and role governance.
+
+## API overview
+
+### Authentication
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `GET /api/auth/profile`
+
+### Itineraries and intelligence
+
+- `GET /api/itinerary`
+- `POST /api/itinerary`
+- `GET /api/itinerary/:id`
+- `PUT /api/itinerary/:id`
+- `DELETE /api/itinerary/:id`
+- `GET /api/itinerary/:id/analysis`
+
+### Engagement
+
+- `POST /api/itinerary/:id/favorite`
+- `GET /api/itinerary/user/favorites`
+- `POST /api/itinerary/:id/book`
+- `DELETE /api/itinerary/:id/book`
+- `GET /api/itinerary/user/bookings`
+- `POST /api/itinerary/:id/reviews`
+
+### Administration
+
+- `GET /api/itinerary/analytics/overview`
+- `PATCH /api/itinerary/:id/bookings/:bookingId/status`
+- `GET /api/users`
+- `PUT /api/users/:id/role`
+- `PUT /api/users/:id/status`
+- `GET /api/role-requests`
+- `PUT /api/role-requests/:id/review`
+
+### AI assistance
+
+- `GET /api/image?place=...`
+- `GET /api/suggestions?q=...`
+- `GET /api/trending`
+- `GET /api/itinerary-suggestions?place=...`
+
+## Deployment
+
+The repository includes Docker, Jenkins, and Render configuration. For Render, use:
+
+```text
+Runtime: Node
+Build Command: npm ci --omit=dev && npm run build
+Start Command: npm start
+Health Check Path: /api/health
+Node Version: 24.17.0
+```
+
+See [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md) for the data model, scoring method, security design, testing strategy, limitations, and viva-oriented notes.
+
+## Authors
+
+Contact: sharn.ss123@gmail.com, yuvsingh716@gmail.com
+
+License: ISC

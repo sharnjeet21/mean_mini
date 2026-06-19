@@ -1,4 +1,4 @@
-import { Injectable, PLATFORM_ID, inject } from '@angular/core';
+import { Inject, Injectable, PLATFORM_ID } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 import { map, catchError, tap } from 'rxjs/operators';
@@ -46,10 +46,14 @@ interface CacheEntry<T> {
 @Injectable({ providedIn: 'root' })
 export class AiService {
   private baseUrl = `${environment.apiUrl}/api`;
-  private platformId = inject(PLATFORM_ID);
-  private isBrowser = isPlatformBrowser(this.platformId);
+  private isBrowser: boolean;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) platformId: Object = 'server',
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
 
   // ── localStorage helpers ──────────────────────────────────────────────────────
   private lsGet<T>(key: string): T | null {
@@ -88,7 +92,12 @@ export class AiService {
     const params = new HttpParams().set('place', place);
     return this.http.get<{ url: string }>(`${this.baseUrl}/image`, { params }).pipe(
       tap(res => this.lsSet(key, res, TTL_IMAGES)),
-      catchError(() => of({ url: '' }))   // silent fallback — no image shown
+      catchError((err) => {
+        if (err?.status === 429) {
+          return throwError(() => new Error('Too many requests — please wait a moment before trying again.'));
+        }
+        return throwError(() => err);
+      }),
     );
   }
 

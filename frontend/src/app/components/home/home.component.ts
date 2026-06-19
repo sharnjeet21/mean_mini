@@ -1,8 +1,10 @@
 import { Component, OnInit, OnDestroy, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatChipsModule } from '@angular/material/chips';
 import { AuthService } from '../../services/auth.service';
-import { AiService, Attraction, TrendingDestination } from '../../services/ai.service';
+import { AiService, Attraction } from '../../services/ai.service';
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 
 export interface FeaturedCard {
@@ -12,7 +14,9 @@ export interface FeaturedCard {
   subtitle: string;
   duration: string;
   price: string;
+  image: string;
   imageUrl: string;
+  accent: string;
   attractions: Attraction[];
   attractionsLoading: boolean;
 }
@@ -29,7 +33,7 @@ const SLIDE_QUERIES = [
 @Component({
   selector: 'app-home',
   standalone: true,
-  imports: [CommonModule, RouterModule, TrendingCardsComponent],
+  imports: [CommonModule, RouterModule, MatButtonModule, MatChipsModule, TrendingCardsComponent],
   templateUrl: './home.component.html',
 })
 export class HomeComponent implements OnInit, OnDestroy {
@@ -43,15 +47,21 @@ export class HomeComponent implements OnInit, OnDestroy {
   readonly SLIDE_INTERVAL_MS = 5000;
 
   featuredCards: FeaturedCard[] = [
-    { key: 'Kyoto Japan',  icon: 'temple_buddhist', title: 'The Zen of Kyoto',   subtitle: 'Culture, Cuisine & Traditions',    duration: '12 Days', price: '$3,200', imageUrl: '', attractions: [], attractionsLoading: false },
-    { key: 'Santorini',    icon: 'sailing',          title: 'Cyclades Serenity', subtitle: 'Luxury Yachting & Island Hopping', duration: '7 Days',  price: '$4,850', imageUrl: '', attractions: [], attractionsLoading: false },
-    { key: 'Swiss Alps',   icon: 'landscape',        title: 'Alpine Elevation',  subtitle: 'Luxury Lodges & Peak Adventures',  duration: '9 Days',  price: '$5,100', imageUrl: '', attractions: [], attractionsLoading: false },
+    { key: 'Kyoto Japan', icon: 'temple_buddhist', title: 'The Zen of Kyoto', subtitle: 'Lantern-lit lanes, temple mornings and a food-first route.', duration: '12 days', price: '$3,200', image: '/images/kyoto.jpg', imageUrl: '/images/kyoto.jpg', accent: '#ff9b7d', attractions: [], attractionsLoading: false },
+    { key: 'Santorini', icon: 'sailing', title: 'Cyclades Serenity', subtitle: 'Sun-washed villages, hidden coves and slow island days.', duration: '7 days', price: '$4,850', image: '/images/santorini.jpg', imageUrl: '/images/santorini.jpg', accent: '#7ae0c3', attractions: [], attractionsLoading: false },
+    { key: 'Swiss Alps', icon: 'landscape', title: 'Alpine Elevation', subtitle: 'Glass-blue lakes, mountain rail and cinematic lodges.', duration: '9 days', price: '$5,100', image: '/images/alps.jpg', imageUrl: '/images/alps.jpg', accent: '#ffc96b', attractions: [], attractionsLoading: false },
   ];
 
   features = [
-    { icon: 'map',                  color: '#3953bd', bg: '#dde1ff', title: 'Professional Itineraries', desc: 'Expert-level route mapping and time-management schedules tailored to your pace and style.' },
-    { icon: 'auto_awesome',         color: '#754aa1', bg: '#f0dbff', title: 'AI-Powered Suggestions',   desc: 'Gemini AI curates top attractions, local tips, and personalised recommendations in seconds.' },
-    { icon: 'admin_panel_settings', color: '#835100', bg: '#ffddb9', title: 'Admin Management',          desc: 'Full-suite controls for agents and group leaders. Manage multiple trips with enterprise-grade visibility.' },
+    { icon: 'route', title: 'Plans that breathe', desc: 'Routes adapt to your pace, budget and travel style without turning every day into a checklist.' },
+    { icon: 'neurology', title: 'Explainable intelligence', desc: 'See feasibility, budget quality and planning risks before they become expensive surprises.' },
+    { icon: 'travel', title: 'One calm workspace', desc: 'Discover, compare, save, book and review itineraries without losing the story of the trip.' },
+  ];
+
+  stats = [
+    { value: '42K+', label: 'routes explored' },
+    { value: '91%', label: 'plan confidence' },
+    { value: '4.9', label: 'traveler rating' },
   ];
 
   // ── Preview modal ─────────────────────────────────────────────────────────────
@@ -124,7 +134,11 @@ export class HomeComponent implements OnInit, OnDestroy {
   private loadCardImages(): void {
     this.featuredCards.forEach((card, i) => {
       this.aiService.getDestinationImage(card.key).subscribe(res => {
-        if (res.url) { this.featuredCards[i].imageUrl = res.url; this.cdr.detectChanges(); }
+        if (res.url) {
+          this.featuredCards[i].imageUrl = res.url;
+          this.featuredCards[i].image = res.url;
+          this.cdr.detectChanges();
+        }
       });
     });
   }
@@ -167,7 +181,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       subtitle: 'Trending in 2026',
       duration: '—',
       price: '—',
+      image: '/images/alps.jpg',
       imageUrl: '',
+      accent: '#7ae0c3',
       attractions: [],
       attractionsLoading: true,
     };
@@ -178,6 +194,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.aiService.getDestinationImage(destination).subscribe(res => {
       if (this.previewCard?.key === destination && res.url) {
         this.previewCard.imageUrl = res.url;
+        this.previewCard.image = res.url;
         this.cdr.detectChanges();
       }
     });
