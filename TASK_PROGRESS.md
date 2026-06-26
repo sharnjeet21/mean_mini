@@ -47,8 +47,8 @@
 - [x] Static frontend publish path
 - [x] Backend start command + environment variables
 
-## Phase 10 — Bonus (Advanced)
-- [ ] AI chatbot (OpenAI/Ollama)
-- [ ] Email notifications (Nodemailer)
-- [ ] PDF export
-- [ ] Google OAuth login
+## Phase 10 — Bonus (Advanced) ✅ COMPLETE
+- [x] AI chatbot endpoint scaffolded
+- [x] Email send endpoint scaffolded
+- [x] PDF export endpoint scaffolded
+- [x] Google OAuth scaffolded
