@@ -38,6 +38,11 @@ const imageCache = new InMemoryCache(ONE_HOUR_MS);
 const suggestionsCache = new InMemoryCache(ONE_HOUR_MS);
 const trendingCache = new InMemoryCache(TWENTY_FOUR_HOURS_MS);
 const itineraryCache = new InMemoryCache(ONE_HOUR_MS);
+const routePlanCache = new InMemoryCache(ONE_HOUR_MS);
+const hotelCache = new InMemoryCache(ONE_HOUR_MS);
+const budgetCache = new InMemoryCache(ONE_HOUR_MS);
+const flightCache = new InMemoryCache(TWENTY_FOUR_HOURS_MS);
+const smartPlanCache = new InMemoryCache(ONE_HOUR_MS);
 
 const FALLBACK_DESTINATIONS = [
   { name: 'Kyoto, Japan', description: 'Temple mornings, craft traditions, and thoughtful neighborhood food.' },
@@ -342,6 +347,494 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
     const attractions = fallbackAttractions(destination);
     itineraryCache.set(cacheKey, attractions);
     return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
+  }
+});
+
+// ── GET /route-plan ──────────────────────────────────────────────────────────
+/**
+ * Returns an AI-generated route plan between destinations or within a region.
+ *
+ * Query params:
+ *   origin (required) — starting point
+ *   destination (required) — end point
+ *   stops (optional) — comma-separated intermediate stops
+ *
+ * Responses:
+ *   200 { route }         — route plan with waypoints, distances, times
+ *   400 { message }       — missing/invalid params
+ *   429                   — rate limit exceeded
+ *   502 { message }       — Gemini API error
+ */
+router.get('/route-plan', rateLimiter, validateQueryParam('origin'), validateQueryParam('destination'), async (req, res) => {
+  const origin = req.sanitized.origin;
+  const destination = req.sanitized.destination;
+  const stops = req.query.stops ? String(req.query.stops).split(',').map(s => s.trim()).filter(Boolean) : [];
+
+  const cacheKey = `route:${origin.toLowerCase()}|${destination.toLowerCase()}|${stops.join(',')}`;
+  const cached = routePlanCache.get(cacheKey);
+  if (cached !== null) {
+    return res.set('X-Cache', 'HIT').json({ route: cached });
+  }
+
+  try {
+    const stopsText = stops.length ? ` with stops at: ${stops.join(', ')}` : '';
+    const prompt =
+      `Plan a travel route from "${origin}" to "${destination}"${stopsText}. ` +
+      'Return ONLY a JSON object, no markdown, with these fields:\n' +
+      '- origin (string)\n' +
+      '- destination (string)\n' +
+      '- waypoints (array of {name, description})\n' +
+      '- totalDistance (string, e.g. "350 km")\n' +
+      '- estimatedTravelTime (string, e.g. "4 hours 30 minutes")\n' +
+      '- bestTransportMode (string, e.g. "train", "car", "flight", "mixed")\n' +
+      '- highlights (array of strings, up to 3)\n' +
+      '- routingAdvice (string, max 150 chars)';
+    const text = await callGemini(prompt);
+    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
+    const route = JSON.parse(cleaned);
+
+    if (!route.origin || !route.destination) {
+      return res.status(502).json({ message: 'Gemini returned an incomplete route plan.' });
+    }
+
+    // Normalize fields
+    route.waypoints = Array.isArray(route.waypoints) ? route.waypoints.slice(0, 10) : [];
+    route.highlights = Array.isArray(route.highlights) ? route.highlights.slice(0, 3) : [];
+    route.totalDistance = String(route.totalDistance || '').trim();
+    route.estimatedTravelTime = String(route.estimatedTravelTime || '').trim();
+    route.bestTransportMode = String(route.bestTransportMode || 'mixed').trim();
+    route.routingAdvice = String(route.routingAdvice || '').trim().slice(0, 150);
+
+    routePlanCache.set(cacheKey, route);
+    return res.set('X-Cache', 'MISS').json({ route });
+  } catch (err) {
+    console.error('[aiRoutes] Route-plan error:', err.message);
+    // Provide a sensible fallback
+    const fallback = {
+      origin,
+      destination,
+      waypoints: [{ name: `${origin} → ${destination}`, description: `Direct route from ${origin} to ${destination}.` }],
+      totalDistance: 'Travel distance unknown',
+      estimatedTravelTime: 'Travel time unknown',
+      bestTransportMode: 'mixed',
+      highlights: [`Explore ${origin}`, `Journey to ${destination}`],
+      routingAdvice: `Plan your route from ${origin} to ${destination} and check local transport schedules.`,
+    };
+    routePlanCache.set(cacheKey, fallback);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ route: fallback });
+  }
+});
+
+// ── GET /hotel-suggestions ──────────────────────────────────────────────────
+/**
+ * Returns AI-recommended hotel options for a destination.
+ *
+ * Query params:
+ *   place (required) — destination name
+ *   budget (optional) — max budget per night
+ *
+ * Responses:
+ *   200 { hotels }             — array of hotel objects
+ *   400 { message }            — missing/invalid params
+ *   429                        — rate limit exceeded
+ *   502 { message }            — Gemini API error
+ */
+router.get('/hotel-suggestions', rateLimiter, validateQueryParam('place'), async (req, res) => {
+  const place = req.sanitized.place;
+  const budget = req.query.budget ? Number(req.query.budget) : null;
+
+  const cacheKey = `hotels:${place.toLowerCase()}:${budget || 'any'}`;
+  const cached = hotelCache.get(cacheKey);
+  if (cached !== null) {
+    return res.set('X-Cache', 'HIT').json({ hotels: cached });
+  }
+
+  try {
+    const budgetText = budget ? ` with a max budget of $${budget} per night` : '';
+    const prompt =
+      `Suggest 4 hotel options in "${place}"${budgetText}. ` +
+      'Return ONLY a JSON array of objects, no markdown, each with:\n' +
+      '- name (string)\n' +
+      '- type (string: "budget", "mid-range", "luxury", "boutique")\n' +
+      '- estimatedPricePerNight (number in USD)\n' +
+      '- rating (number 1-5, one decimal place)\n' +
+      '- description (string, max 120 chars)\n' +
+      '- location (string, neighborhood/area)\n' +
+      '- amenities (array of strings, up to 5)';
+    const text = await callGemini(prompt);
+    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return res.status(502).json({ message: 'Gemini returned no hotel suggestions.' });
+    }
+
+    const hotels = parsed.slice(0, 6).map((h) => ({
+      name: String(h.name || '').trim(),
+      type: String(h.type || 'mid-range').trim(),
+      estimatedPricePerNight: Math.round(Number(h.estimatedPricePerNight) || 0),
+      rating: Math.min(5, Math.max(0, Number(h.rating) || 0)),
+      description: String(h.description || '').trim().slice(0, 120),
+      location: String(h.location || '').trim(),
+      amenities: Array.isArray(h.amenities) ? h.amenities.slice(0, 5).map(a => String(a).trim()) : [],
+    })).filter((h) => h.name.length > 0);
+
+    if (hotels.length === 0) {
+      return res.status(502).json({ message: 'No valid hotel data returned.' });
+    }
+
+    hotelCache.set(cacheKey, hotels);
+    return res.set('X-Cache', 'MISS').json({ hotels });
+  } catch (err) {
+    console.error('[aiRoutes] Hotel error:', err.message);
+    const fallback = [
+      {
+        name: `${place} Central Hotel`,
+        type: 'mid-range',
+        estimatedPricePerNight: budget ? Math.round(budget * 0.8) : 120,
+        rating: 4.0,
+        description: `Conveniently located in the heart of ${place} with easy access to major attractions.`,
+        location: 'City Center',
+        amenities: ['Free WiFi', 'Breakfast', 'Air conditioning', '24-hour front desk'],
+      },
+      {
+        name: `${place} Boutique Stay`,
+        type: 'boutique',
+        estimatedPricePerNight: budget ? Math.round(budget * 1.2) : 180,
+        rating: 4.5,
+        description: `A charming boutique option reflecting the character of ${place}.`,
+        location: 'Historic District',
+        amenities: ['Free WiFi', 'Concierge', 'Air conditioning', 'Room service'],
+      },
+    ];
+    hotelCache.set(cacheKey, fallback);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ hotels: fallback });
+  }
+});
+
+// ── POST /budget-estimate ───────────────────────────────────────────────────
+/**
+ * Returns an AI-powered budget estimate for a trip.
+ *
+ * Body params (JSON):
+ *   destination (required)
+ *   duration (required) — number of days
+ *   travelerCount (required)
+ *   travelStyle (optional) — "budget", "balanced", "premium"
+ *   transportMode (optional)
+ *   accommodationType (optional)
+ *
+ * Responses:
+ *   200 { estimate } — budget breakdown object
+ *   400 { message }  — missing/invalid body params
+ *   429              — rate limit exceeded
+ *   502 { message }  — Gemini API error
+ */
+router.post('/budget-estimate', rateLimiter, async (req, res) => {
+  const { destination, duration, travelerCount, travelStyle, transportMode, accommodationType } = req.body || {};
+
+  if (!destination || !duration || !travelerCount) {
+    return res.status(400).json({ message: 'Please provide destination, duration, and travelerCount.' });
+  }
+
+  const numDuration = Number(duration) || 1;
+  const numTravelers = Number(travelerCount) || 1;
+  const style = String(travelStyle || 'balanced').trim();
+
+  const cacheKey = `budget:${destination.toLowerCase()}:${numDuration}:${numTravelers}:${style}`;
+  const cached = budgetCache.get(cacheKey);
+  if (cached !== null) {
+    return res.set('X-Cache', 'HIT').json({ estimate: cached });
+  }
+
+  try {
+    const prompt =
+      `Provide a budget estimate for a ${numDuration}-day trip to "${destination}" for ${numTravelers} traveler(s), ${style} travel style. ` +
+      'Return ONLY a JSON object, no markdown, with these fields (all numbers in USD):\n' +
+      '- totalEstimated (number)\n' +
+      '- breakdown: { transport (number), accommodation (number), food (number), activities (number), miscellaneous (number) }\n' +
+      '- perPerson (number)\n' +
+      '- currency (string, e.g. "USD")\n' +
+      '- costLevel (string: "budget", "moderate", "expensive")\n' +
+      '- tips (array of strings, up to 3)';
+    const text = await callGemini(prompt);
+    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
+    const estimate = JSON.parse(cleaned);
+
+    if (!estimate.totalEstimated || !estimate.breakdown) {
+      return res.status(502).json({ message: 'Gemini returned an incomplete budget estimate.' });
+    }
+
+    // Normalize
+    estimate.totalEstimated = Math.round(Number(estimate.totalEstimated) || 0);
+    estimate.perPerson = Math.round(Number(estimate.perPerson) || 0);
+    estimate.currency = String(estimate.currency || 'USD').trim();
+    estimate.costLevel = String(estimate.costLevel || 'moderate').trim();
+    estimate.tips = Array.isArray(estimate.tips) ? estimate.tips.slice(0, 3).map(t => String(t).trim()) : [];
+
+    const bd = estimate.breakdown;
+    if (bd) {
+      estimate.breakdown = {
+        transport: Math.round(Number(bd.transport) || 0),
+        accommodation: Math.round(Number(bd.accommodation) || 0),
+        food: Math.round(Number(bd.food) || 0),
+        activities: Math.round(Number(bd.activities) || 0),
+        miscellaneous: Math.round(Number(bd.miscellaneous) || 0),
+      };
+    }
+
+    budgetCache.set(cacheKey, estimate);
+    return res.set('X-Cache', 'MISS').json({ estimate });
+  } catch (err) {
+    console.error('[aiRoutes] Budget error:', err.message);
+    // Fallback estimate
+    const baseDaily = style === 'budget' ? 100 : style === 'premium' ? 400 : 200;
+    const total = baseDaily * numDuration * numTravelers;
+    const fallback = {
+      totalEstimated: total,
+      perPerson: Math.round(total / numTravelers),
+      currency: 'USD',
+      costLevel: style === 'budget' ? 'budget' : style === 'premium' ? 'expensive' : 'moderate',
+      breakdown: {
+        transport: Math.round(total * 0.25),
+        accommodation: Math.round(total * 0.35),
+        food: Math.round(total * 0.2),
+        activities: Math.round(total * 0.12),
+        miscellaneous: Math.round(total * 0.08),
+      },
+      tips: [
+        `Consider traveling during off-peak season to ${destination} for better rates.`,
+        'Look for combo deals on accommodation and activities.',
+        `Allocate 10-15% of your budget for unexpected expenses.`,
+      ],
+    };
+    budgetCache.set(cacheKey, fallback);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ estimate: fallback });
+  }
+});
+
+// ── GET /flight-info ────────────────────────────────────────────────────────
+/**
+ * Returns AI-simulated flight options between two cities.
+ *
+ * Query params:
+ *   from (required) — departure city
+ *   to (required) — arrival city
+ *   date (optional) — departure date (YYYY-MM-DD)
+ *
+ * Responses:
+ *   200 { flights }           — array of flight objects
+ *   400 { message }           — missing/invalid params
+ *   429                       — rate limit exceeded
+ *   502 { message }           — Gemini API error
+ */
+router.get('/flight-info', rateLimiter, validateQueryParam('from'), validateQueryParam('to'), async (req, res) => {
+  const from = req.sanitized.from;
+  const to = req.sanitized.to;
+  const date = req.query.date ? String(req.query.date).trim() : '';
+
+  const cacheKey = `flights:${from.toLowerCase()}:${to.toLowerCase()}:${date || 'any'}`;
+  const cached = flightCache.get(cacheKey);
+  if (cached !== null) {
+    return res.set('X-Cache', 'HIT').json({ flights: cached });
+  }
+
+  try {
+    const dateText = date ? ` on ${date}` : '';
+    const prompt =
+      `Provide 4 realistic flight options from "${from}" to "${to}"${dateText}. ` +
+      'Return ONLY a JSON array of objects, no markdown, each with:\n' +
+      '- airline (string)\n' +
+      '- flightNumber (string)\n' +
+      '- departureTime (string, e.g. "08:30")\n' +
+      '- arrivalTime (string)\n' +
+      '- duration (string, e.g. "2h 45m")\n' +
+      '- stops (number, 0 for non-stop)\n' +
+      '- estimatedPrice (number in USD)\n' +
+      '- cabinClass (string: "economy", "premium", "business")\n' +
+      '- notes (string, max 100 chars)';
+    const text = await callGemini(prompt);
+    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
+    const parsed = JSON.parse(cleaned);
+
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      return res.status(502).json({ message: 'Gemini returned no flight data.' });
+    }
+
+    const flights = parsed.slice(0, 6).map((f) => ({
+      airline: String(f.airline || '').trim(),
+      flightNumber: String(f.flightNumber || '').trim(),
+      departureTime: String(f.departureTime || '').trim(),
+      arrivalTime: String(f.arrivalTime || '').trim(),
+      duration: String(f.duration || '').trim(),
+      stops: Math.max(0, Number(f.stops) || 0),
+      estimatedPrice: Math.round(Number(f.estimatedPrice) || 0),
+      cabinClass: String(f.cabinClass || 'economy').trim(),
+      notes: String(f.notes || '').trim().slice(0, 100),
+    })).filter((f) => f.airline.length > 0 && f.estimatedPrice > 0);
+
+    if (flights.length === 0) {
+      return res.status(502).json({ message: 'No valid flight data returned.' });
+    }
+
+    flightCache.set(cacheKey, flights);
+    return res.set('X-Cache', 'MISS').json({ flights });
+  } catch (err) {
+    console.error('[aiRoutes] Flight error:', err.message);
+    const fallback = [
+      {
+        airline: 'Major Airways',
+        flightNumber: 'MA-101',
+        departureTime: '08:30',
+        arrivalTime: '11:15',
+        duration: '2h 45m',
+        stops: 0,
+        estimatedPrice: 350,
+        cabinClass: 'economy',
+        notes: `Non-stop service from ${from} to ${to}.`,
+      },
+      {
+        airline: 'SkyLink Airlines',
+        flightNumber: 'SL-204',
+        departureTime: '14:00',
+        arrivalTime: '18:30',
+        duration: '4h 30m',
+        stops: 1,
+        estimatedPrice: 220,
+        cabinClass: 'economy',
+        notes: 'One stop connection — a budget-friendly option.',
+      },
+    ];
+    flightCache.set(cacheKey, fallback);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ flights: fallback });
+  }
+});
+
+// ── POST /smart-plan ────────────────────────────────────────────────────────
+/**
+ * Generates a complete AI-powered day-by-day travel itinerary.
+ *
+ * Body params (JSON):
+ *   destination (required)
+ *   duration (required) — number of days
+ *   travelerCount (optional, default 1)
+ *   travelStyle (optional) — "budget", "balanced", "premium"
+ *   interests (optional) — array of strings (e.g. ["history", "food", "nature"])
+ *
+ * Responses:
+ *   200 { plan }              — full day-by-day itinerary plan
+ *   400 { message }           — missing/invalid body params
+ *   429                       — rate limit exceeded
+ *   502 { message }           — Gemini API error
+ */
+router.post('/smart-plan', rateLimiter, async (req, res) => {
+  const { destination, duration, travelerCount, travelStyle, interests } = req.body || {};
+
+  if (!destination || !duration) {
+    return res.status(400).json({ message: 'Please provide destination and duration.' });
+  }
+
+  const numDuration = Math.min(30, Math.max(1, Number(duration) || 1));
+  const numTravelers = Math.min(50, Math.max(1, Number(travelerCount) || 1));
+  const style = String(travelStyle || 'balanced').trim();
+  const interestList = Array.isArray(interests) ? interests.slice(0, 5).map(s => String(s).trim()).filter(Boolean) : [];
+
+  const cacheKey = `smartplan:${destination.toLowerCase()}:${numDuration}:${numTravelers}:${style}:${interestList.join(',')}`;
+  const cached = smartPlanCache.get(cacheKey);
+  if (cached !== null) {
+    return res.set('X-Cache', 'HIT').json({ plan: cached });
+  }
+
+  try {
+    const interestText = interestList.length ? ` with interests in ${interestList.join(', ')}` : '';
+    const prompt =
+      `Create a detailed ${numDuration}-day travel itinerary for "${destination}" for ${numTravelers} traveler(s)` +
+      ` with a ${style} travel style${interestText}. ` +
+      'Return ONLY a JSON object, no markdown, with these fields:\n' +
+      '- destination (string)\n' +
+      '- duration (number)\n' +
+      '- travelStyle (string)\n' +
+      '- dailyPlan (array of objects, one per day. Each has:\n' +
+      '    day (number),\n' +
+      '    title (string),\n' +
+      '    meals: { breakfast, lunch, dinner } (strings),\n' +
+      '    activities (array of { time, activity, description, location }))\n' +
+      '- estimatedBudget (object with total (number), currency (string))\n' +
+      '- recommendations (array of strings, up to 4)\n' +
+      '- packingTips (array of strings, up to 3)';
+    const text = await callGemini(prompt);
+    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
+    const plan = JSON.parse(cleaned);
+
+    if (!plan.dailyPlan || !Array.isArray(plan.dailyPlan) || plan.dailyPlan.length === 0) {
+      return res.status(502).json({ message: 'Gemini returned an incomplete itinerary plan.' });
+    }
+
+    // Normalize plan
+    plan.destination = String(plan.destination || destination).trim();
+    plan.duration = numDuration;
+    plan.travelStyle = style;
+    plan.dailyPlan = plan.dailyPlan.slice(0, numDuration).map((day) => ({
+      day: Number(day.day) || 1,
+      title: String(day.title || '').trim(),
+      meals: {
+        breakfast: String(day.meals?.breakfast || '').trim(),
+        lunch: String(day.meals?.lunch || '').trim(),
+        dinner: String(day.meals?.dinner || '').trim(),
+      },
+      activities: Array.isArray(day.activities) ? day.activities.slice(0, 8).map((a) => ({
+        time: String(a.time || '').trim(),
+        activity: String(a.activity || '').trim(),
+        description: String(a.description || '').trim().slice(0, 200),
+        location: String(a.location || '').trim(),
+      })) : [],
+    }));
+    plan.estimatedBudget = plan.estimatedBudget ? {
+      total: Math.round(Number(plan.estimatedBudget.total) || 0),
+      currency: String(plan.estimatedBudget.currency || 'USD').trim(),
+    } : { total: 0, currency: 'USD' };
+    plan.recommendations = Array.isArray(plan.recommendations) ? plan.recommendations.slice(0, 4).map(r => String(r).trim()) : [];
+    plan.packingTips = Array.isArray(plan.packingTips) ? plan.packingTips.slice(0, 3).map(t => String(t).trim()) : [];
+
+    smartPlanCache.set(cacheKey, plan);
+    return res.set('X-Cache', 'MISS').json({ plan });
+  } catch (err) {
+    console.error('[aiRoutes] Smart plan error:', err.message);
+    // Fallback: generate a simple plan
+    const fallbackDays = [];
+    for (let d = 1; d <= numDuration; d++) {
+      fallbackDays.push({
+        day: d,
+        title: d === 1 ? `Arrival and Orientation in ${destination}` : d === numDuration ? `Departure from ${destination}` : `Day ${d} — Explore ${destination}`,
+        meals: { breakfast: 'Hotel breakfast', lunch: 'Local restaurant', dinner: 'City center dining' },
+        activities: [
+          { time: '09:00', activity: 'Morning exploration', description: `Discover the highlights of ${destination}.`, location: `${destination} City Center` },
+          { time: '12:30', activity: 'Lunch break', description: 'Enjoy local cuisine at a nearby restaurant.', location: 'Downtown' },
+          { time: '15:00', activity: 'Afternoon sightseeing', description: 'Visit cultural landmarks and attractions.', location: `${destination}` },
+          { time: '19:00', activity: 'Evening leisure', description: 'Dinner and evening walk.', location: 'City Center' },
+        ],
+      });
+    }
+    const fallback = {
+      destination,
+      duration: numDuration,
+      travelStyle: style,
+      dailyPlan: fallbackDays,
+      estimatedBudget: { total: 200 * numDuration * numTravelers, currency: 'USD' },
+      recommendations: [
+        `Try local specialties and street food in ${destination}.`,
+        'Book major attractions in advance to skip queues.',
+        'Learn a few basic phrases in the local language.',
+        'Check travel advisories and visa requirements before departure.',
+      ],
+      packingTips: [
+        'Pack comfortable walking shoes for sightseeing.',
+        'Bring a universal power adapter.',
+        'Carry a reusable water bottle.',
+      ],
+    };
+    smartPlanCache.set(cacheKey, fallback);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ plan: fallback });
   }
 });
 

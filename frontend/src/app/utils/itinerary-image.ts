@@ -1,20 +1,59 @@
-const ITINERARY_IMAGES = [
-  '/images/santorini.jpg',
-  '/images/kyoto.jpg',
-  '/images/alps.jpg',
-] as const;
+/**
+ * Returns a deterministic fallback image path for an itinerary.
+ * Best-effort matching based on destination name.
+ */
+
+const FALLBACK_IMAGES: Record<string, string> = {
+  japan: '/images/kyoto.jpg',
+  kyoto: '/images/kyoto.jpg',
+  greece: '/images/santorini.jpg',
+  santorini: '/images/santorini.jpg',
+  alps: '/images/alps.jpg',
+  switzerland: '/images/alps.jpg',
+};
+
+const DEFAULT_IMAGE = '/images/alps.jpg';
+
+function matchFallback(destination: string): string {
+  const key = (destination || '').toLowerCase().trim();
+  for (const [keyword, image] of Object.entries(FALLBACK_IMAGES)) {
+    if (key.includes(keyword)) return image;
+  }
+  return DEFAULT_IMAGE;
+}
 
 export function getItineraryImage(itinerary: {
   _id?: string;
   title?: string;
   destination?: string;
 }): string {
-  const identity = `${itinerary._id || ''}|${itinerary.title || ''}|${itinerary.destination || ''}`;
-  let hash = 0;
-
-  for (let index = 0; index < identity.length; index += 1) {
-    hash = ((hash << 5) - hash + identity.charCodeAt(index)) | 0;
+  if (itinerary?.destination) {
+    return matchFallback(itinerary.destination);
   }
+  return DEFAULT_IMAGE;
+}
 
-  return ITINERARY_IMAGES[Math.abs(hash) % ITINERARY_IMAGES.length];
+/**
+ * Fetches a destination image from the AI-powered /api/image endpoint.
+ * Falls back to the deterministic fallback on error.
+ *
+ * @param destination - The place name to look up
+ * @returns Promise resolving to an image URL string
+ */
+export async function fetchItineraryImage(destination: string): Promise<string> {
+  const fallback = matchFallback(destination);
+  try {
+    const baseUrl = (
+      (typeof window !== 'undefined' && (window as any).__env?.apiUrl)
+      || 'http://localhost:5000'
+    );
+    const response = await fetch(`${baseUrl}/api/image?place=${encodeURIComponent(destination)}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return fallback;
+    const data = await response.json();
+    return data?.url || fallback;
+  } catch {
+    return fallback;
+  }
 }
