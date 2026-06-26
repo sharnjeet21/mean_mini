@@ -13,6 +13,7 @@ const itineraryRoutes    = require("./routes/itineraryRoutes");
 const userRoutes         = require("./routes/userRoutes");
 const roleRequestRoutes  = require("./routes/roleRequestRoutes");
 const aiRoutes           = require("./routes/aiRoutes");
+const { notFound, globalErrorHandler } = require("./middleware/errorHandler");
 
 const app = express();
 
@@ -88,13 +89,8 @@ app.get("*", (req, res) => {
   }
 });
 
-// ── Global error handler ──────────────────────────────────────────────────────
-app.use((err, req, res, next) => {
-  console.error("Express error:", err.message);
-  res.status(500).json({
-    error: process.env.NODE_ENV === "production" ? "Internal server error." : err.message,
-  });
-});
+app.use(notFound);
+app.use(globalErrorHandler);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
