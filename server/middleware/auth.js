@@ -1,70 +1,52 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const User = require('../models/User');
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const User = require("../models/User");
 
-const JWT_SECRET = process.env.JWT_SECRET || 'development_only_change_me';
+const JWT_SECRET = process.env.JWT_SECRET || "travel_app_secret";
+const JWT_EXPIRES = "7d";
 
-if (!process.env.JWT_SECRET) {
-  console.warn('[auth] JWT_SECRET is not configured; using a development-only fallback.');
+async function registerUser({ name, email, password }) {
+  const existing = await User.findOne({ email });
+  if (existing) throw new Error("Email already registered");
+
+  const passwordHash = await bcrypt.hash(password, 10);
+  const user = await User.create({ name, email, passwordHash, role: "user" });
+  return signToken(user);
 }
 
-// Task 9: JWT-based authentication middleware
-const authenticate = async (req, res, next) => {
+async function loginUser({ email, password }) {
+  const user = await User.findOne({ email });
+  if (!user) throw new Error("Invalid email or password");
+
+  const valid = await bcrypt.compare(password, user.passwordHash);
+  if (!valid) throw new Error("Invalid email or password");
+
+  return signToken(user);
+}
+
+function signToken(user) {
+  return jwt.sign({ id: user._id, role: user.role, email: user.email }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+}
+
+function authMiddleware(req, res, next) {
+  const header = req.headers.authorization || "";
+  const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+  if (!token) return res.status(401).json({ error: "Authorization token required" });
+
   try {
-    const authHeader = req.headers['authorization'];
-    const token = authHeader && authHeader.split(' ')[1]; // Bearer <token>
-
-    if (!token) {
-      return res.status(401).json({ message: 'Access token required' });
-    }
-
     const decoded = jwt.verify(token, JWT_SECRET);
-    const user = await User.findById(decoded.id).select('-password');
-
-    if (!user || !user.isActive) {
-      return res.status(401).json({ message: 'Invalid or expired token' });
-    }
-
-    req.user = user;
+    req.user = decoded;
     next();
-  } catch (error) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+  } catch {
+    return res.status(401).json({ error: "Invalid or expired token" });
   }
-};
+}
 
-// Role-based authorization
-const authorize = (...roles) => {
+function requireRole(role) {
   return (req, res, next) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentication required' });
-    }
-    if (!roles.includes(req.user.role)) {
-      return res.status(403).json({ message: 'Insufficient permissions' });
-    }
+    if (!req.user || req.user.role !== role) return res.status(403).json({ error: "Access denied" });
     next();
   };
-};
+}
 
-// Generate JWT token
-const generateToken = (userId) => {
-  return jwt.sign({ id: userId }, JWT_SECRET, { expiresIn: '7d' });
-};
-
-// Hash password (Task 9 - bcrypt)
-const hashPassword = async (password) => {
-  const salt = await bcrypt.genSalt(10);
-  return bcrypt.hash(password, salt);
-};
-
-// Compare password
-const comparePassword = async (plain, hashed) => {
-  return bcrypt.compare(plain, hashed);
-};
-
-module.exports = {
-  authenticate,
-  authorize,
-  generateToken,
-  hashPassword,
-  comparePassword,
-};
+module.exports = { registerUser, loginUser, authMiddleware, requireRole };

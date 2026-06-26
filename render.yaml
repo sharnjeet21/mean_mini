@@ -1,21 +1,27 @@
 services:
   - type: web
+    name: travel-backend
     runtime: node
-    name: travel-intelligence-platform
     plan: free
-    buildCommand: npm ci --omit=dev && npm run build
-    startCommand: npm start
-    healthCheckPath: /api/health
-    autoDeployTrigger: commit
-    maxShutdownDelaySeconds: 30
+    buildCommand: cd server && npm install
+    startCommand: cd server && npm start
     envVars:
       - key: NODE_ENV
         value: production
-      - key: MONGO_URI
+      - key: PORT
+        value: 5000
+      - key: MONGODB_URI
         sync: false
       - key: JWT_SECRET
-        generateValue: true
+        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: UNSPLASH_ACCESS_KEY
         sync: false
+
+  - type: web
+    name: travel-frontend
+    runtime: static
+    plan: free
+    buildCommand: cd frontend && npm install && npx ng build
+    staticPublishPath: ./frontend/dist/frontend/browser

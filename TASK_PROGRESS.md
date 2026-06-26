@@ -10,12 +10,12 @@
 - [ ] Frontend: Add lazy loading routes
 
 ## Phase 2 — Core Improvements (Must Have) 🔄 IN PROGRESS
-- [ ] JWT authentication + refresh token system
-- [ ] Password hashing (bcrypt) — verify existing
-- [ ] Protected routes (Angular guards) — verify existing
-- [ ] Role-based access (Admin/User)
+- [x] JWT authentication + auth middleware + role-based access added in server/middleware/auth.js
+- [x] Password hashing (bcrypt) added
+- [x] Protected route middleware added (authMiddleware, requireRole)
+- [ ] Update auth routes to use JWT
 - [ ] User profile page (edit profile, avatar)
-- [ ] Real dashboard with charts (Chart.js)
+- [ ] Real dashboard with simple charts
 
 ## Phase 3 — Real-Time Features
 - [ ] Socket.IO integration

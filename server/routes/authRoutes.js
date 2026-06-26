@@ -1,26 +1,19 @@
 const express = require('express');
 const User = require('../models/User');
-const {
-  authenticate,
-  generateToken,
-  hashPassword,
-  comparePassword,
-} = require('../middleware/auth');
+const { loginUser, registerUser, authMiddleware, requireRole } = require('../middleware/auth');
 
 const router = express.Router();
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-// Task 9: Register with bcrypt password hashing
-router.post('/register', async (req, res) => {
+router.post('/register', async (req, res, next) => {
   try {
     const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ success: false, message: 'All fields are required.' });
-    }
-
     const cleanEmail = String(email).trim().toLowerCase();
     const cleanName = String(name).trim();
+
+    if (!cleanName || !cleanEmail || !password) {
+      return res.status(400).json({ success: false, message: 'Name, email, and password are required.' });
+    }
     if (cleanName.length < 2 || cleanName.length > 80) {
       return res.status(400).json({ success: false, message: 'Name must be between 2 and 80 characters.' });
     }
@@ -31,36 +24,21 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Password must be between 8 and 128 characters.' });
     }
 
-    const existing = await User.findOne({ email: cleanEmail });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'User already exists. Please login.' });
-    }
-
-    const hashed = await hashPassword(password);
-
-    const user = await User.create({
-      name: cleanName,
-      email: cleanEmail,
-      password: hashed,
-      role: 'user',
-    });
-
-    const token = generateToken(user._id);
+    const result = await registerUser({ name: cleanName, email: cleanEmail, password });
+    const user = await User.findById(result.id).select('-passwordHash');
 
     return res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token,
+      token: result.token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
-    console.error('Register error:', error.message);
-    return res.status(500).json({ success: false, message: 'Server error during registration.' });
+    next(error);
   }
 });
 
-// Task 9: Login with bcrypt comparison + JWT
-router.post('/login', async (req, res) => {
+router.post('/login', async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
@@ -68,43 +46,52 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
-    const user = await User.findOne({ email: String(email).trim().toLowerCase() });
-
-    if (!user || !user.isActive) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-    }
-
-    const isMatch = await comparePassword(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password.' });
-    }
-
-    const token = generateToken(user._id);
+    const result = await loginUser({ email: String(email).trim().toLowerCase(), password });
+    const user = await User.findById(result.id).select('-passwordHash');
 
     return res.json({
       success: true,
       message: 'Login successful',
-      token,
+      token: result.token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
-    console.error('Login error:', error.message);
-    return res.status(500).json({ success: false, message: 'Server error during login.' });
+    next(error);
   }
 });
 
-// Get current user profile
-router.get('/profile', authenticate, (req, res) => {
+router.get('/profile', authMiddleware, (req, res) => {
   return res.json({
     success: true,
     user: {
-      id: req.user._id,
-      name: req.user.name,
+      id: req.user.id,
       email: req.user.email,
       role: req.user.role,
-      createdAt: req.user.createdAt,
     },
   });
+});
+
+router.put('/profile', authMiddleware, async (req, res, next) => {
+  try {
+    const { name } = req.body;
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found.' });
+
+    if (name) user.name = String(name).trim();
+    await user.save();
+
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      user: { id: user._id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/admin-only', authMiddleware, requireRole('admin'), (req, res) => {
+  return res.json({ success: true, message: 'Admin area accessed' });
 });
 
 module.exports = router;

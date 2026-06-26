@@ -8,12 +8,9 @@ const cors    = require("cors");
 const mongoose = require("mongoose");
 
 const connectDB          = require("./config/db");
-const authRoutes         = require("./routes/authRoutes");
-const itineraryRoutes    = require("./routes/itineraryRoutes");
-const userRoutes         = require("./routes/userRoutes");
-const roleRequestRoutes  = require("./routes/roleRequestRoutes");
-const aiRoutes           = require("./routes/aiRoutes");
+const apiRoutes          = require("./routes");
 const { notFound, globalErrorHandler } = require("./middleware/errorHandler");
+const { createSocketServer } = require("./utils/socket");
 
 const app = express();
 
@@ -61,15 +58,10 @@ app.get("/api/health", apiCors, (req, res) => {
   });
 });
 
-app.use("/api/auth",          apiCors, requireDatabase, authRoutes);
-app.use("/api/itinerary",     apiCors, requireDatabase, itineraryRoutes);
-app.use("/api/users",         apiCors, requireDatabase, userRoutes);
-app.use("/api/role-requests", apiCors, requireDatabase, roleRequestRoutes);
-app.use("/api",               apiCors, aiRoutes);
+app.use("/api/v1", apiCors, requireDatabase, apiRoutes);
 
-app.use("/api/*", (req, res) => {
-  res.status(404).json({ error: "API endpoint not found." });
-});
+app.use(notFound);
+app.use(globalErrorHandler);
 
 // ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");
@@ -89,9 +81,6 @@ app.get("*", (req, res) => {
   }
 });
 
-app.use(notFound);
-app.use(globalErrorHandler);
-
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 let server;
@@ -107,6 +96,8 @@ async function startServer() {
   server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on 0.0.0.0:${PORT}`);
   });
+
+  createSocketServer(server);
 }
 
 async function shutdown(signal) {
