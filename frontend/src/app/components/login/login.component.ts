@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
@@ -13,14 +13,25 @@ import { AuthService } from '../../services/auth.service';
   imports: [CommonModule, FormsModule, RouterModule, MatButtonModule, MatFormFieldModule, MatInputModule],
   templateUrl: './login.component.html',
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   email = '';
   password = '';
   showPassword = false;
   error = '';
   loading = false;
+  logoutToast = '';
 
-  constructor(private auth: AuthService, private router: Router) {}
+  constructor(public auth: AuthService, private router: Router) {}
+
+  ngOnInit(): void {
+    const msg = this.auth.logoutMessage();
+    if (msg) {
+      this.logoutToast = msg;
+      this.auth.logoutMessage.set(null);
+      // Auto-dismiss after 5 s
+      setTimeout(() => { this.logoutToast = ''; }, 5000);
+    }
+  }
 
   onSubmit() {
     if (!this.email || !this.password) return;

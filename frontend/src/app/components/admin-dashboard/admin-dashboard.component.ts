@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
@@ -21,7 +21,20 @@ export class AdminDashboardComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
-  constructor(public auth: AuthService, private api: ApiService) {}
+  constructor(
+    public auth: AuthService,
+    private api: ApiService,
+    private location: Location,
+    private router: Router,
+  ) {}
+
+  goBack(): void {
+    if (history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
+  }
 
   ngOnInit() {
     this.loadDashboard();

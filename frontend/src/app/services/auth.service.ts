@@ -23,6 +23,9 @@ export class AuthService {
   // Reactive signal for current user
   currentUser = signal<AuthUser | null>(this.loadUser());
 
+  // Toast shown on the login page after logout
+  logoutMessage = signal<string | null>(null);
+
   constructor(private http: HttpClient, private router: Router) {}
 
   private get storage(): Storage | null {
@@ -97,6 +100,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.logoutMessage.set('You have been signed out successfully.');
     this.clearSession();
     this.router.navigate(['/login']);
   }

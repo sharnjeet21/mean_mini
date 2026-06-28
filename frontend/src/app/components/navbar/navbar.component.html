@@ -27,6 +27,7 @@
         <a mat-flat-button routerLink="/register" class="primary-action !min-h-10 !px-5">Start planning</a>
       </ng-container>
 
+      <!-- Logged-in: avatar + dropdown -->
       <ng-container *ngIf="auth.isLoggedIn">
         <div class="hidden text-right lg:block">
           <p class="text-xs font-bold text-white">{{ auth.currentUser()?.name }}</p>
@@ -34,10 +35,54 @@
             {{ auth.currentUser()?.role === 'admin' ? 'trip manager' : auth.currentUser()?.role }}
           </p>
         </div>
-        <button mat-button matTooltip="Sign out" (click)="auth.logout()"
-                class="!h-10 !min-w-10 !rounded-full !bg-[#7ae0c3] !p-0 !font-extrabold !text-[#05201f]">
-          {{ initials }}
-        </button>
+
+        <!-- Avatar button with dropdown -->
+        <div id="profile-menu-wrapper" class="relative">
+          <button
+            (click)="toggleDropdown()"
+            [attr.aria-expanded]="profileDropdownOpen"
+            aria-haspopup="true"
+            aria-label="Open profile menu"
+            class="!h-10 !min-w-10 !rounded-full !bg-[#7ae0c3] !p-0 !font-extrabold !text-[#05201f] transition-transform hover:scale-105"
+            style="display:inline-flex;align-items:center;justify-content:center;border:none;cursor:pointer;font-size:0.85rem;">
+            {{ initials }}
+          </button>
+
+          <!-- Dropdown menu -->
+          <div *ngIf="profileDropdownOpen" class="profile-dropdown" role="menu">
+            <!-- User info header -->
+            <div class="mb-1 px-3 pb-3 pt-2 border-b border-white/8">
+              <p class="text-xs font-bold text-white truncate">{{ auth.currentUser()?.name }}</p>
+              <p class="text-[10px] text-[#6f8a98] truncate">{{ auth.currentUser()?.email }}</p>
+            </div>
+
+            <button class="profile-dropdown-item" role="menuitem"
+                    (click)="navigateTo('/profile')" aria-label="Go to My Profile">
+              <span class="material-symbols-outlined">person</span>My Profile
+            </button>
+            <button class="profile-dropdown-item" role="menuitem"
+                    (click)="navigateTo('/dashboard')" aria-label="Go to Dashboard">
+              <span class="material-symbols-outlined">dashboard</span>Dashboard
+            </button>
+            <button class="profile-dropdown-item" role="menuitem"
+                    (click)="navigateTo('/dashboard', { view: 'bookings' })" aria-label="View my bookings">
+              <span class="material-symbols-outlined">confirmation_number</span>My Bookings
+            </button>
+            <button class="profile-dropdown-item" role="menuitem"
+                    (click)="navigateTo('/dashboard', { view: 'saved' })" aria-label="View wishlist">
+              <span class="material-symbols-outlined">bookmark</span>Wishlist
+            </button>
+            <button *ngIf="auth.isAdmin" class="profile-dropdown-item" role="menuitem"
+                    (click)="navigateTo('/admin')" aria-label="Go to Trip Manager">
+              <span class="material-symbols-outlined">admin_panel_settings</span>Trip Manager
+            </button>
+
+            <button class="profile-dropdown-item profile-dropdown-item--danger profile-dropdown-item--divider"
+                    role="menuitem" (click)="logout()" aria-label="Sign out">
+              <span class="material-symbols-outlined">logout</span>Sign Out
+            </button>
+          </div>
+        </div>
       </ng-container>
 
       <button mat-button class="!h-10 !min-w-10 !rounded-full !p-0 !text-white md:!hidden"
@@ -47,11 +92,24 @@
     </div>
   </div>
 
+  <!-- Mobile menu -->
   <div *ngIf="mobileOpen" class="glass-panel mx-auto mt-2 max-w-7xl rounded-[22px] p-3 md:hidden">
     <a mat-button routerLink="/home" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Home</a>
     <a mat-button routerLink="/dashboard" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Trips</a>
     <a mat-button routerLink="/about" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Platform</a>
     <a *ngIf="auth.isAdmin" mat-button routerLink="/admin" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Trip Manager</a>
+    <ng-container *ngIf="auth.isLoggedIn">
+      <div class="my-2 border-t border-white/10"></div>
+      <a mat-button routerLink="/profile" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">
+        <span class="material-symbols-outlined mr-2 text-base">person</span>My Profile
+      </a>
+      <button mat-button (click)="navigateTo('/dashboard', { view: 'bookings' })" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">
+        <span class="material-symbols-outlined mr-2 text-base">confirmation_number</span>My Bookings
+      </button>
+      <button mat-button (click)="logout()" class="!w-full !justify-start !rounded-xl !text-[#ffb0a0]">
+        <span class="material-symbols-outlined mr-2 text-base">logout</span>Sign Out
+      </button>
+    </ng-container>
     <a *ngIf="!auth.isLoggedIn" mat-button routerLink="/login" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Sign in</a>
   </div>
 </nav>

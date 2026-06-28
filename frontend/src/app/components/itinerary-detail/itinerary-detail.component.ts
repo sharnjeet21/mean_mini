@@ -1,7 +1,7 @@
 import { Component, OnInit, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AiService, BudgetEstimate, Flight, Hotel, RoutePlan, SmartPlan } from '../../services/ai.service';
 import { ApiService, TripAnalysis } from '../../services/api.service';
@@ -66,10 +66,20 @@ export class ItineraryDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private api: ApiService,
     public auth: AuthService,
     private ai: AiService,
+    private location: Location,
   ) {}
+
+  goBack(): void {
+    if (history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
+  }
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {

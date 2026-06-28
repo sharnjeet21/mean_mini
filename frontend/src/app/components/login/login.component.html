@@ -34,6 +34,9 @@
         </div>
 
         <form (ngSubmit)="onSubmit()" class="space-y-4">
+          <div *ngIf="logoutToast" class="toast-success">
+            <span class="material-symbols-outlined">check_circle</span>{{ logoutToast }}
+          </div>
           <div *ngIf="error" class="flex items-center gap-3 rounded-2xl border border-[#ff8d70]/25 bg-[#ff8d70]/10 p-3 text-sm text-[#ffb4a1]">
             <span class="material-symbols-outlined text-lg">error</span>{{ error }}
           </div>
