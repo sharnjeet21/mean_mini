@@ -23,6 +23,8 @@
     "seed:demo": "node server/scripts/seedDemoData.js",
     "dev": "node server/server.js",
     "dev:full": "concurrently \"npm run dev\" \"cd frontend && npm start\"",
+    "build:all": "npm --prefix frontend run build && echo Angular build done",
+    "start:all": "concurrently --names \"API,Angular-Watch\" --prefix-colors \"cyan,magenta\" \"node server/server.js\" \"npm --prefix frontend run watch\"",
     "test": "node --test server/tests/*.test.js",
     "test:backend": "node --test server/tests/*.test.js",
     "test:frontend": "cd frontend && npm test -- --watch=false",
