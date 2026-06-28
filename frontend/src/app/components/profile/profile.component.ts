@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
-import { Location } from '@angular/common';
 import { forkJoin, of } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { AuthService } from '../../services/auth.service';
@@ -15,7 +14,12 @@ import { ApiService } from '../../services/api.service';
 })
 export class ProfileComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
+  public auth       = inject(AuthService);
+  private api       = inject(ApiService);
+  private location  = inject(Location);
+  private router    = inject(Router);
 
+  // Resolved after injection — safe to call auth here
   user = this.auth.currentUser();
 
   // Stats
@@ -25,12 +29,6 @@ export class ProfileComponent implements OnInit {
   statsLoading = true;
   statsError = '';
 
-  constructor(
-    public auth: AuthService,
-    private api: ApiService,
-    private location: Location,
-    private router: Router,
-  ) {}
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) return;
