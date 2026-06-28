@@ -1,21 +1,8 @@
-/**
- * AI Travel Enhancement Routes
- *
- * Endpoints:
- *   GET /image                  — Unsplash destination image
- *   GET /suggestions            — Gemini AI place autocomplete
- *   GET /trending               — Gemini AI trending destinations
- *   GET /itinerary-suggestions  — Gemini AI attraction suggestions
- *
- * All routes use rateLimiter middleware.
- * Query-param routes also use validateQueryParam middleware.
- * Results are cached in-memory to reduce external API calls.
- */
-
-const express = require('express');
-const { rateLimiter } = require('../middleware/rateLimiter');
-const { validateQueryParam } = require('../middleware/inputValidator');
-const { InMemoryCache } = require('../utils/inMemoryCache');
+const express = require("express");
+const { rateLimiter } = require("../middleware/rateLimiter");
+const { validateQueryParam } = require("../middleware/inputValidator");
+const { InMemoryCache } = require("../utils/inMemoryCache");
+const aiController = require("../controllers/aiController");
 
 const router = express.Router();
 
@@ -265,6 +252,32 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
     itineraryCache.set(cacheKey, attractions);
     return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
   }
+});
+
+// New routes from origin/main
+router.get("/route-plan", rateLimiter, (req, res, next) => {
+  if (!req.query.origin || !req.query.destination) return res.status(400).json({ error: "origin and destination are required" });
+  aiController.handleRoutePlan(req, res, next);
+});
+
+router.get("/hotel-suggestions", rateLimiter, (req, res, next) => {
+  if (!req.query.place) return res.status(400).json({ error: "place is required" });
+  aiController.handleHotels(req, res, next);
+});
+
+router.post("/budget-estimate", rateLimiter, (req, res, next) => {
+  if (!req.body.destination || !req.body.duration) return res.status(400).json({ error: "destination and duration are required" });
+  aiController.handleBudgetEstimate(req, res, next);
+});
+
+router.get("/flight-info", rateLimiter, (req, res, next) => {
+  if (!req.query.from || !req.query.to) return res.status(400).json({ error: "from and to are required" });
+  aiController.handleFlightInfo(req, res, next);
+});
+
+router.post("/smart-plan", rateLimiter, (req, res, next) => {
+  if (!req.body.destination) return res.status(400).json({ error: "destination is required" });
+  aiController.handleSmartPlan(req, res, next);
 });
 
 module.exports = router;

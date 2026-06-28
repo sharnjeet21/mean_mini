@@ -1,27 +1,22 @@
 <div *ngIf="itinerary" class="min-h-screen text-[#f5fbff]">
-  <nav class="px-6 lg:px-12 py-4 max-w-7xl mx-auto flex items-center gap-2 text-xs text-[#8ea5b0] font-medium pt-20">
-    <a routerLink="/dashboard" class="hover:text-[#a6ebd7] transition-colors">Dashboard</a>
+  <nav class="flex items-center gap-2 px-6 pt-20 pb-4 text-xs font-medium text-[#8ea5b0] mx-auto max-w-7xl lg:px-12">
+    <a routerLink="/dashboard" class="transition-colors hover:text-[#a6ebd7]">Dashboard</a>
     <span class="material-symbols-outlined text-xs">chevron_right</span>
     <span class="text-white">{{ itinerary.title }}</span>
   </nav>
 
+  <!-- Hero -->
   <section class="relative min-h-[430px] w-full overflow-hidden bg-gradient-to-br from-[#0f8f8a] via-[#0b1d29] to-[#ff8d70]">
     <img *ngIf="imageUrl" [src]="imageUrl" [alt]="itinerary.destination"
          class="absolute inset-0 w-full h-full object-cover">
     <div class="absolute inset-0 bg-gradient-to-t from-[#06131d]/92 via-[#06131d]/62 to-[#06131d]/18"></div>
-    <div class="relative z-10 flex flex-col justify-end min-h-[430px] px-6 lg:px-12 pb-12 max-w-7xl mx-auto">
+    <div class="relative z-10 flex flex-col justify-end min-h-[430px] max-w-7xl mx-auto px-6 lg:px-12 pb-12">
       <div class="flex flex-wrap items-center gap-3 mb-5">
-        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">
-          {{ itinerary.duration }}
-        </span>
-        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">
-          ${{ itinerary.budget | number }} total
-        </span>
-        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 capitalize">
-          {{ itinerary.travelStyle || 'balanced' }}
-        </span>
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">{{ itinerary.duration }}</span>
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">${{ itinerary.budget | number }} total</span>
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 capitalize">{{ itinerary.travelStyle || 'balanced' }}</span>
       </div>
-      <h1 class="text-4xl lg:text-6xl font-bold text-white tracking-tight mb-3">{{ itinerary.title }}</h1>
+      <h1 class="mb-3 text-4xl font-bold tracking-tight text-white lg:text-6xl">{{ itinerary.title }}</h1>
       <div class="flex flex-wrap items-center gap-5 text-white/80">
         <span class="flex items-center gap-1.5"><span class="material-symbols-outlined">location_on</span>{{ itinerary.destination }}</span>
         <span class="flex items-center gap-1.5"><span class="material-symbols-outlined">group</span>{{ itinerary.travelerCount || 1 }} travelers</span>
@@ -31,30 +26,30 @@
   </section>
 
   <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
-    <div *ngIf="actionMessage" class="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-400/20 text-emerald-100 flex gap-3 backdrop-blur-md shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+    <!-- Feedback messages -->
+    <div *ngIf="actionMessage" class="mb-6 flex gap-3 rounded-2xl border border-emerald-400/20 bg-emerald-500/10 p-4 text-emerald-100 shadow-[0_16px_40px_rgba(0,0,0,0.18)] backdrop-blur-md">
       <span class="material-symbols-outlined">check_circle</span>{{ actionMessage }}
     </div>
-    <div *ngIf="errorMessage" class="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-400/20 text-rose-100 flex gap-3 backdrop-blur-md shadow-[0_16px_40px_rgba(0,0,0,0.18)]">
+    <div *ngIf="errorMessage" class="mb-6 flex gap-3 rounded-2xl border border-rose-400/20 bg-rose-500/10 p-4 text-rose-100 shadow-[0_16px_40px_rgba(0,0,0,0.18)] backdrop-blur-md">
       <span class="material-symbols-outlined">error</span>{{ errorMessage }}
     </div>
 
-    <section class="grid grid-cols-1 lg:grid-cols-3 gap-10 items-start mb-14">
-      <div class="lg:col-span-2 space-y-6">
+    <!-- Overview -->
+    <section class="mb-14 grid grid-cols-1 gap-10 items-start lg:grid-cols-3">
+      <div class="space-y-6 lg:col-span-2">
         <div>
-          <p class="text-xs font-bold tracking-[0.2em] uppercase text-[#a6ebd7] mb-2">Trip brief</p>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Trip brief</p>
           <h2 class="text-3xl font-bold text-white">Itinerary overview</h2>
         </div>
-        <p class="text-[#b0c3cf] leading-8">{{ itinerary.description || 'No description has been added yet.' }}</p>
+        <p class="leading-8 text-[#b0c3cf]">{{ itinerary.description || 'No description has been added yet.' }}</p>
         <div class="flex flex-wrap gap-3 pt-2">
           <button (click)="toggleBooking()" [disabled]="actionLoading === 'booking'"
-                  class="signature-gradient text-white px-7 py-3.5 rounded-xl font-bold active:scale-95 transition-transform shadow-lg disabled:opacity-60">
+                  class="signature-gradient rounded-xl px-7 py-3.5 font-bold text-white shadow-lg transition-transform active:scale-95 disabled:opacity-60">
             {{ actionLoading === 'booking' ? 'Updating...' : (itinerary.engagement?.hasBooked ? 'Cancel Booking' : 'Book This Itinerary') }}
           </button>
           <button (click)="toggleFavorite()" [disabled]="actionLoading === 'favorite'"
-                  class="px-7 py-3.5 rounded-xl font-semibold border transition-colors disabled:opacity-60 backdrop-blur-md"
-                  [class]="itinerary.engagement?.isFavorite
-                    ? 'bg-[#7ae0c3]/12 border-[#7ae0c3]/30 text-[#dff9ef]'
-                    : 'bg-white/6 border-white/12 text-[#f5fbff] hover:bg-white/10'">
+                  class="rounded-xl border px-7 py-3.5 font-semibold backdrop-blur-md transition-colors disabled:opacity-60"
+                  [class]="itinerary.engagement?.isFavorite ? 'bg-[#7ae0c3]/12 border-[#7ae0c3]/30 text-[#dff9ef]' : 'bg-white/6 border-white/12 text-[#f5fbff] hover:bg-white/10'">
             <span class="material-symbols-outlined mr-1">{{ itinerary.engagement?.isFavorite ? 'bookmark_added' : 'bookmark_add' }}</span>
             {{ actionLoading === 'favorite' ? 'Updating...' : (itinerary.engagement?.isFavorite ? 'Saved' : 'Save for Later') }}
           </button>
@@ -65,143 +60,374 @@
           <span>{{ itinerary.engagement?.ratingCount || 0 }} reviews</span>
         </div>
       </div>
-
-      <aside class="glass-panel p-7 rounded-2xl space-y-6">
-        <h3 class="font-bold text-lg text-white">Trip details</h3>
+      <aside class="glass-panel space-y-6 rounded-2xl p-7">
+        <h3 class="text-lg font-bold text-white">Trip details</h3>
         <div class="flex items-start gap-4">
-          <span class="material-symbols-outlined text-[#a6ebd7] p-2 bg-white/8 rounded-lg border border-white/10">calendar_today</span>
-          <div><p class="text-xs text-[#8ea5b0] uppercase font-bold tracking-wider">Travel dates</p><p class="font-semibold text-white">{{ itinerary.startDate | date:'mediumDate' }} – {{ itinerary.endDate | date:'mediumDate' }}</p></div>
+          <span class="material-symbols-outlined rounded-lg border border-white/10 bg-white/8 p-2 text-[#a6ebd7]">calendar_today</span>
+          <div><p class="text-xs font-bold uppercase tracking-wider text-[#8ea5b0]">Travel dates</p><p class="font-semibold text-white">{{ itinerary.startDate | date:'mediumDate' }} – {{ itinerary.endDate | date:'mediumDate' }}</p></div>
         </div>
         <div class="flex items-start gap-4">
-          <span class="material-symbols-outlined text-[#a6ebd7] p-2 bg-white/8 rounded-lg border border-white/10">payments</span>
-          <div><p class="text-xs text-[#8ea5b0] uppercase font-bold tracking-wider">Estimated budget</p><p class="font-semibold text-white">${{ itinerary.budget | number }} · ${{ analysis?.metrics?.budgetPerTraveler | number:'1.0-0' }} pp</p></div>
+          <span class="material-symbols-outlined rounded-lg border border-white/10 bg-white/8 p-2 text-[#a6ebd7]">payments</span>
+          <div><p class="text-xs font-bold uppercase tracking-wider text-[#8ea5b0]">Estimated budget</p><p class="font-semibold text-white">${{ itinerary.budget | number }}</p></div>
         </div>
         <div class="flex items-start gap-4">
-          <span class="material-symbols-outlined text-[#a6ebd7] p-2 bg-white/8 rounded-lg border border-white/10">directions_transit</span>
-          <div><p class="text-xs text-[#8ea5b0] uppercase font-bold tracking-wider">Mobility</p><p class="font-semibold text-white capitalize">{{ (itinerary.transportMode || 'mixed').replace('_', ' ') }}</p></div>
+          <span class="material-symbols-outlined rounded-lg border border-white/10 bg-white/8 p-2 text-[#a6ebd7]">directions_transit</span>
+          <div><p class="text-xs font-bold uppercase tracking-wider text-[#8ea5b0]">Mobility</p><p class="font-semibold text-white capitalize">{{ (itinerary.transportMode || 'mixed').replace('_', ' ') }}</p></div>
         </div>
         <div class="flex items-start gap-4">
-          <span class="material-symbols-outlined text-[#a6ebd7] p-2 bg-white/8 rounded-lg border border-white/10">person_edit</span>
-          <div><p class="text-xs text-[#8ea5b0] uppercase font-bold tracking-wider">Created by</p><p class="font-semibold text-white">{{ itinerary.createdBy?.name || 'Traveler' }}</p></div>
+          <span class="material-symbols-outlined rounded-lg border border-white/10 bg-white/8 p-2 text-[#a6ebd7]">person_edit</span>
+          <div><p class="text-xs font-bold uppercase tracking-wider text-[#8ea5b0]">Created by</p><p class="font-semibold text-white">{{ itinerary.createdBy?.name || 'Traveler' }}</p></div>
         </div>
       </aside>
     </section>
 
+    <!-- Trip Intelligence -->
     <section class="mb-14">
-      <div class="flex flex-col md:flex-row md:items-end justify-between gap-3 mb-7">
+      <div class="mb-7 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
-          <p class="text-xs font-bold tracking-[0.2em] uppercase text-[#a6ebd7] mb-2">Decision support</p>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Decision support</p>
           <h2 class="text-3xl font-bold text-white">Trip Intelligence</h2>
         </div>
-        <p class="text-sm text-[#8ea5b0] max-w-xl">A deterministic feasibility assessment based on schedule coverage, pace, budget structure, and transport impact.</p>
+        <p class="max-w-xl text-sm text-[#8ea5b0]">A deterministic feasibility assessment based on schedule, pace, budget structure, and transport impact.</p>
       </div>
-
       <div *ngIf="analysisLoading" class="glass-panel rounded-2xl p-10 text-center text-[#8ea5b0]">Analyzing this trip…</div>
       <div *ngIf="analysis && !analysisLoading" class="space-y-6">
-        <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div class="grid grid-cols-2 gap-4 md:grid-cols-5">
           <div *ngFor="let score of [
-              { label: 'Feasibility', value: analysis.scores.feasibility },
-              { label: 'Complete', value: analysis.scores.completeness },
-              { label: 'Pace', value: analysis.scores.pace },
-              { label: 'Budget', value: analysis.scores.budget },
-              { label: 'Sustainable', value: analysis.scores.sustainability }
-            ]"
-            class="rounded-2xl border p-5 backdrop-blur-md shadow-[0_16px_40px_rgba(0,0,0,0.16)]" [class]="scoreTone(score.value)">
+            { label: 'Feasibility', value: analysis.scores.feasibility },
+            { label: 'Complete', value: analysis.scores.completeness },
+            { label: 'Pace', value: analysis.scores.pace },
+            { label: 'Budget', value: analysis.scores.budget },
+            { label: 'Sustainable', value: analysis.scores.sustainability }
+          ]" class="rounded-2xl border p-5 shadow-[0_16px_40px_rgba(0,0,0,0.16)] backdrop-blur-md" [class]="scoreTone(score.value)">
             <p class="text-3xl font-bold">{{ score.value }}</p>
-            <p class="text-xs uppercase tracking-wider font-bold mt-1">{{ score.label }}</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-[#8ea5b0] font-bold">Plan coverage</p><p class="text-xl font-bold text-white mt-1">{{ analysis.metrics.plannedDays }}/{{ analysis.metrics.durationDays }} days</p></div>
-          <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-[#8ea5b0] font-bold">Trip pace</p><p class="text-xl font-bold text-white mt-1">{{ analysis.metrics.paceLabel }}</p></div>
-          <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-[#8ea5b0] font-bold">Activities</p><p class="text-xl font-bold text-white mt-1">{{ analysis.metrics.activityCount }} total</p></div>
-          <div class="glass-panel rounded-2xl p-5"><p class="text-xs uppercase tracking-wider text-[#8ea5b0] font-bold">Daily cost / person</p><p class="text-xl font-bold text-white mt-1">${{ analysis.metrics.budgetPerTravelerPerDay | number:'1.0-0' }}</p></div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div class="glass-panel rounded-2xl p-6">
-            <h3 class="font-bold text-white mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-[#ffc96b]">warning</span>Risk register</h3>
-            <p *ngIf="analysis.risks.length === 0" class="text-sm text-emerald-100 bg-emerald-500/10 border border-emerald-400/20 p-4 rounded-xl">No material planning risks were detected.</p>
-            <div class="space-y-3">
-              <div *ngFor="let risk of analysis.risks" class="border rounded-xl p-4" [class]="riskTone(risk.severity)">
-                <p class="font-bold text-sm">{{ risk.title }}</p><p class="text-sm mt-1 opacity-85">{{ risk.message }}</p>
-              </div>
-            </div>
-          </div>
-          <div class="glass-panel rounded-2xl p-6">
-            <h3 class="font-bold text-white mb-4 flex items-center gap-2"><span class="material-symbols-outlined text-[#a6ebd7]">tips_and_updates</span>Recommended actions</h3>
-            <ul class="space-y-3">
-              <li *ngFor="let recommendation of analysis.recommendations" class="flex gap-3 text-sm text-[#b0c3cf]">
-                <span class="material-symbols-outlined text-[#7ae0c3] text-lg">check_circle</span>{{ recommendation }}
-              </li>
-            </ul>
+            <p class="mt-1 text-xs font-bold uppercase tracking-wider">{{ score.label }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="space-y-7 mb-14" *ngIf="itinerary.dailyPlan?.length">
+    <!-- ── Phase 2: Route Planning ────────────────────────────────────────────── -->
+    <section class="mb-14">
+      <div class="mb-7">
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 2</p>
+        <h2 class="text-3xl font-bold text-white">Route Planning</h2>
+        <p class="mt-2 max-w-xl text-sm text-[#8ea5b0]">AI-powered route plan from your origin to this destination, with distance, travel time, and transport recommendations.</p>
+      </div>
+      <div class="glass-panel rounded-2xl p-6">
+        <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Origin
+            <input [(ngModel)]="routeOrigin" type="text" placeholder="e.g. New York" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Destination
+            <input [(ngModel)]="routeDest" type="text" placeholder="{{ itinerary.destination }}" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Stops (optional)
+            <input [(ngModel)]="routeStops" type="text" placeholder="City1, City2" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+        </div>
+        <button (click)="loadRoutePlan()" [disabled]="routePlanLoading" class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-sm font-bold text-[#05201f] disabled:opacity-60">
+          {{ routePlanLoading ? 'Planning route…' : 'Plan Route' }}
+        </button>
+        <div *ngIf="routePlanError" class="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ routePlanError }}</div>
+
+        <div *ngIf="routePlan" class="mt-6 space-y-4">
+          <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div class="rounded-xl bg-white/[0.035] p-4">
+              <p class="text-xs uppercase text-[#8ea5b0]">Distance</p>
+              <p class="mt-1 text-lg font-bold text-white">{{ routePlan.totalDistance }}</p>
+            </div>
+            <div class="rounded-xl bg-white/[0.035] p-4">
+              <p class="text-xs uppercase text-[#8ea5b0]">Travel time</p>
+              <p class="mt-1 text-lg font-bold text-white">{{ routePlan.estimatedTravelTime }}</p>
+            </div>
+            <div class="rounded-xl bg-white/[0.035] p-4">
+              <p class="text-xs uppercase text-[#8ea5b0]">Best transport</p>
+              <p class="mt-1 text-lg font-bold text-white capitalize">{{ routePlan.bestTransportMode }}</p>
+            </div>
+            <div class="rounded-xl bg-white/[0.035] p-4">
+              <p class="text-xs uppercase text-[#8ea5b0]">Advice</p>
+              <p class="mt-1 text-sm text-[#b0c3cf]">{{ routePlan.routingAdvice }}</p>
+            </div>
+          </div>
+          <div *ngIf="routePlan.waypoints?.length" class="rounded-xl bg-white/[0.035] p-4">
+            <p class="mb-2 text-xs font-bold uppercase text-[#a6ebd7]">Waypoints</p>
+            <ul class="space-y-2">
+              <li *ngFor="let wp of routePlan.waypoints" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+                <span class="material-symbols-outlined mt-0.5 text-sm text-[#7ae0c3]">location_on</span>
+                <div><span class="font-semibold text-white">{{ wp.name }}</span> — {{ wp.description }}</div>
+              </li>
+            </ul>
+          </div>
+          <div *ngIf="routePlan.highlights?.length" class="flex flex-wrap gap-2">
+            <span *ngFor="let h of routePlan.highlights" class="rounded-full bg-[#7ae0c3]/15 px-3 py-1 text-xs text-[#a6ebd7]">{{ h }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Phase 3: Hotel Suggestions + Budget ────────────────────────────────── -->
+    <section class="mb-14 grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <!-- Hotels -->
       <div>
-        <p class="text-xs font-bold tracking-[0.2em] uppercase text-[#a6ebd7] mb-2">Execution plan</p>
+        <div class="mb-4">
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 3</p>
+          <h3 class="text-2xl font-bold text-white">Hotel Recommendations</h3>
+        </div>
+        <div class="glass-panel rounded-2xl p-6">
+          <button (click)="loadHotels()" [disabled]="hotelsLoading" class="mb-4 rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-sm font-bold text-[#05201f] disabled:opacity-60">
+            {{ hotelsLoading ? 'Loading…' : 'Suggest Hotels' }}
+          </button>
+          <div *ngIf="hotelsError" class="mb-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ hotelsError }}</div>
+          <div *ngIf="hotels.length > 0" class="space-y-4">
+            <div *ngFor="let hotel of hotels" class="rounded-xl border border-white/10 bg-white/[0.035] p-4">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="font-bold text-white">{{ hotel.name }}</p>
+                  <p class="text-xs text-[#8ea5b0]">{{ hotel.location }} · {{ hotel.type }}</p>
+                </div>
+                <div class="text-right">
+                  <p class="text-lg font-bold text-[#7ae0c3]">${{ hotel.estimatedPricePerNight }}</p>
+                  <p class="text-xs text-[#8ea5b0]">/ night</p>
+                </div>
+              </div>
+              <p class="mt-2 text-sm text-[#b0c3cf]">{{ hotel.description }}</p>
+              <div class="mt-2 flex items-center gap-3">
+                <span class="flex items-center text-sm text-[#ffc96b]">★ {{ hotel.rating }}</span>
+                <div class="flex flex-wrap gap-1.5">
+                  <span *ngFor="let amenity of hotel.amenities" class="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-[#8ea5b0]">{{ amenity }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="!hotels.length && !hotelsLoading" class="text-sm text-[#8ea5b0]">Click "Suggest Hotels" for AI-powered recommendations.</p>
+        </div>
+      </div>
+
+      <!-- Budget -->
+      <div>
+        <div class="mb-4">
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Budget</p>
+          <h3 class="text-2xl font-bold text-white">Budget Estimation</h3>
+        </div>
+        <div class="glass-panel rounded-2xl p-6">
+          <button (click)="loadBudgetEstimate()" [disabled]="budgetLoading" class="mb-4 rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-sm font-bold text-[#05201f] disabled:opacity-60">
+            {{ budgetLoading ? 'Calculating…' : 'Estimate Budget' }}
+          </button>
+          <div *ngIf="budgetError" class="mb-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ budgetError }}</div>
+          <div *ngIf="budgetEstimate" class="space-y-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-xs uppercase text-[#8ea5b0]">Total estimated</p>
+                <p class="text-3xl font-bold text-white">{{ budgetEstimate.currency }} {{ budgetEstimate.totalEstimated | number }}</p>
+              </div>
+              <span class="rounded-full px-3 py-1 text-sm font-bold" [class]="budgetEstimate.costLevel === 'budget' ? 'bg-emerald-500/10 text-emerald-200' : budgetEstimate.costLevel === 'expensive' ? 'bg-rose-500/10 text-rose-200' : 'bg-amber-500/10 text-amber-200'">{{ budgetEstimate.costLevel }}</span>
+            </div>
+            <div *ngIf="budgetEstimate.perPerson" class="text-sm text-[#8ea5b0]">{{ budgetEstimate.currency }} {{ budgetEstimate.perPerson | number }} per person</div>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
+              <div *ngFor="let item of [
+                { key: 'transport', label: 'Transport' },
+                { key: 'accommodation', label: 'Stay' },
+                { key: 'food', label: 'Food' },
+                { key: 'activities', label: 'Activities' },
+                { key: 'miscellaneous', label: 'Misc' }
+              ]" class="rounded-xl bg-white/[0.035] p-3 text-center">
+                <p class="text-lg font-bold text-white">{{ getBudgetField(item.key) }}</p>
+                <p class="text-[10px] uppercase text-[#8ea5b0]">{{ item.label }}</p>
+              </div>
+            </div>
+            <div *ngIf="budgetEstimate.tips?.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
+              <p class="mb-2 text-xs font-bold uppercase text-[#ffd996]">Money tips</p>
+              <ul class="space-y-1">
+                <li *ngFor="let tip of budgetEstimate.tips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+                  <span class="material-symbols-outlined mt-0.5 text-sm text-[#ffc96b]">lightbulb</span>{{ tip }}
+                </li>
+              </ul>
+            </div>
+          </div>
+          <p *ngIf="!budgetEstimate && !budgetLoading" class="text-sm text-[#8ea5b0]">Click "Estimate Budget" for an AI-powered budget breakdown.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── Phase 4: Flight Info ───────────────────────────────────────────────── -->
+    <section class="mb-14">
+      <div class="mb-7">
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 4</p>
+        <h2 class="text-3xl font-bold text-white">Flight Information</h2>
+        <p class="mt-2 max-w-xl text-sm text-[#8ea5b0]">AI-simulated flight options. Set the origin above in Route Planning, then explore flights.</p>
+      </div>
+      <div class="glass-panel rounded-2xl p-6">
+        <div class="flex items-end gap-4">
+          <label class="flex-1 text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">From
+            <input [(ngModel)]="routeOrigin" type="text" placeholder="e.g. New York" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+          <label class="flex-1 text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">To
+            <input readonly value="{{ itinerary.destination }}" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white/50 outline-none">
+          </label>
+          <button (click)="loadFlights()" [disabled]="flightsLoading" class="rounded-xl bg-[#7ae0c3] px-5 py-3 text-sm font-bold text-[#05201f] disabled:opacity-60">
+            {{ flightsLoading ? 'Searching…' : 'Search Flights' }}
+          </button>
+        </div>
+        <div *ngIf="flightsError" class="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ flightsError }}</div>
+        <div *ngIf="flights.length > 0" class="mt-6 space-y-4">
+          <div *ngFor="let flight of flights" class="flex items-start justify-between rounded-xl border border-white/10 bg-white/[0.035] p-4">
+            <div class="flex-1">
+              <p class="font-bold text-white">{{ flight.airline }} <span class="text-xs font-normal text-[#8ea5b0]">{{ flight.flightNumber }}</span></p>
+              <div class="mt-2 flex items-center gap-4 text-sm">
+                <span>{{ flight.departureTime }}</span>
+                <span class="text-[#8ea5b0]">→</span>
+                <span>{{ flight.arrivalTime }}</span>
+                <span class="rounded bg-white/8 px-2 py-0.5 text-xs text-[#8ea5b0]">{{ flight.duration }}</span>
+              </div>
+              <p class="mt-1 text-xs text-[#8ea5b0]">{{ flight.stops === 0 ? 'Non-stop' : flight.stops + ' stop(s)' }} · {{ flight.cabinClass }}</p>
+              <p *ngIf="flight.notes" class="mt-1 text-xs text-[#a6ebd7]">{{ flight.notes }}</p>
+            </div>
+            <div class="text-right">
+              <p class="text-xl font-bold text-[#7ae0c3]">${{ flight.estimatedPrice }}</p>
+            </div>
+          </div>
+        </div>
+        <p *ngIf="!flights.length && !flightsLoading" class="mt-4 text-sm text-[#8ea5b0]">Enter origin and click "Search Flights" for AI-simulated options.</p>
+      </div>
+    </section>
+
+    <!-- ── Phase 4: Smart Plan ────────────────────────────────────────────────── -->
+    <section class="mb-14">
+      <div class="mb-7">
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 4 · Smart Planning</p>
+        <h2 class="text-3xl font-bold text-white">AI-Generated Itinerary</h2>
+        <p class="mt-2 max-w-xl text-sm text-[#8ea5b0]">Generate a complete day-by-day itinerary with meals, activities, and budget, powered by Gemini AI.</p>
+      </div>
+      <div class="glass-panel rounded-2xl p-6">
+        <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Duration (days)
+            <input [(ngModel)]="smartPlanDuration" type="number" min="1" max="30" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Travelers
+            <input [(ngModel)]="smartPlanTravelers" type="number" min="1" max="50" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Travel Style
+            <select [(ngModel)]="smartPlanTravelStyle" class="mt-2 w-full rounded-xl border border-white/10 bg-[#102733] px-4 py-3 text-sm text-white outline-none">
+              <option value="budget">Budget</option>
+              <option value="balanced">Balanced</option>
+              <option value="premium">Premium</option>
+            </select>
+          </label>
+          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Interests
+            <input [(ngModel)]="smartPlanInterests" type="text" placeholder="history, food, nature" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
+          </label>
+        </div>
+        <button (click)="loadSmartPlan()" [disabled]="smartPlanLoading" class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-sm font-bold text-[#05201f] disabled:opacity-60">
+          {{ smartPlanLoading ? 'Generating…' : 'Generate Smart Plan' }}
+        </button>
+        <div *ngIf="smartPlanError" class="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ smartPlanError }}</div>
+
+        <div *ngIf="smartPlan" class="mt-6 space-y-6">
+          <div class="flex flex-wrap items-center gap-4">
+            <span class="rounded-full bg-[#7ae0c3]/15 px-4 py-1.5 text-sm font-bold text-[#a6ebd7]">{{ smartPlan.destination }} · {{ smartPlan.duration }} days</span>
+            <span class="rounded-full bg-white/8 px-3 py-1 text-xs text-[#8ea5b0] capitalize">{{ smartPlan.travelStyle }}</span>
+            <span class="text-sm text-[#8ea5b0]">Budget: {{ smartPlan.estimatedBudget?.currency }} {{ smartPlan.estimatedBudget?.total | number }}</span>
+          </div>
+
+          <div *ngFor="let day of smartPlan.dailyPlan" class="rounded-xl border border-white/10 bg-white/[0.035] overflow-hidden">
+            <div class="flex items-center gap-3 bg-[#7ae0c3]/10 p-4">
+              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-[#7ae0c3] text-sm font-bold text-[#05201f]">{{ day.day }}</span>
+              <div>
+                <p class="font-bold text-white">{{ day.title }}</p>
+                <p *ngIf="day.meals" class="text-xs text-[#8ea5b0]">🍳 {{ day.meals.breakfast }} · 🥗 {{ day.meals.lunch }} · 🍽️ {{ day.meals.dinner }}</p>
+              </div>
+            </div>
+            <div class="space-y-3 p-4">
+              <div *ngFor="let activity of day.activities" class="flex items-start gap-3">
+                <span class="mt-1 text-xs font-bold text-[#7ae0c3]">{{ activity.time }}</span>
+                <div class="flex-1">
+                  <p class="text-sm font-semibold text-white">{{ activity.activity }}</p>
+                  <p class="text-xs text-[#b0c3cf]">{{ activity.description }}</p>
+                  <p *ngIf="activity.location" class="mt-0.5 text-xs text-[#8ea5b0]">📍 {{ activity.location }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="smartPlan.recommendations?.length" class="rounded-xl border border-[#7ae0c3]/20 bg-[#7ae0c3]/5 p-4">
+            <p class="mb-2 text-xs font-bold uppercase text-[#a6ebd7]">Recommendations</p>
+            <ul class="space-y-1">
+              <li *ngFor="let rec of smartPlan.recommendations" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+                <span class="material-symbols-outlined mt-0.5 text-sm text-[#7ae0c3]">check_circle</span>{{ rec }}
+              </li>
+            </ul>
+          </div>
+
+          <div *ngIf="smartPlan.packingTips?.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
+            <p class="mb-2 text-xs font-bold uppercase text-[#ffd996]">Packing tips</p>
+            <ul class="space-y-1">
+              <li *ngFor="let tip of smartPlan.packingTips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+                <span class="material-symbols-outlined mt-0.5 text-sm text-[#ffc96b]">backpack</span>{{ tip }}
+              </li>
+            </ul>
+          </div>
+        </div>
+        <p *ngIf="!smartPlan && !smartPlanLoading" class="mt-4 text-sm text-[#8ea5b0]">Configure parameters and click "Generate Smart Plan" for an AI-powered day-by-day itinerary.</p>
+      </div>
+    </section>
+
+    <!-- Daily Itinerary (existing) -->
+    <section class="mb-14 space-y-7" *ngIf="itinerary.dailyPlan?.length">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Execution plan</p>
         <h2 class="text-3xl font-bold text-white">Daily itinerary</h2>
       </div>
       <div class="space-y-4">
-        <article *ngFor="let day of itinerary.dailyPlan; let i = index"
-                 class="glass-panel rounded-2xl overflow-hidden">
-          <button class="w-full p-6 flex justify-between items-center text-left hover:bg-white/5 transition-colors" (click)="toggleDay(i)">
+        <article *ngFor="let day of itinerary.dailyPlan; let i = index" class="glass-panel overflow-hidden rounded-2xl">
+          <button class="flex w-full items-center justify-between p-6 text-left transition-colors hover:bg-white/5" (click)="toggleDay(i)">
             <div class="flex items-center gap-5">
-              <span class="w-11 h-11 rounded-xl flex items-center justify-center font-bold"
-                    [class]="openDay === i ? 'bg-[#7ae0c3] text-[#041b1a]' : 'bg-white/8 text-[#f5fbff]'">{{ day.day || i + 1 }}</span>
-              <div><h3 class="font-bold text-lg text-white">{{ day.title }}</h3><p class="text-sm text-[#8ea5b0]">{{ day.activities?.length || 0 }} planned activities</p></div>
+              <span class="flex h-11 w-11 items-center justify-center rounded-xl font-bold" [class]="openDay === i ? 'bg-[#7ae0c3] text-[#041b1a]' : 'bg-white/8 text-[#f5fbff]'">{{ day.day || i + 1 }}</span>
+              <div><h3 class="text-lg font-bold text-white">{{ day.title }}</h3><p class="text-sm text-[#8ea5b0]">{{ day.activities?.length || 0 }} planned activities</p></div>
             </div>
             <span class="material-symbols-outlined text-[#8ea5b0] transition-transform" [class.rotate-180]="openDay === i">expand_more</span>
           </button>
           <div *ngIf="openDay === i" class="px-6 pb-6">
-            <div *ngIf="day.activities?.length; else noActivities" class="ml-5 border-l-2 border-white/12 pl-7 space-y-6">
+            <div *ngIf="day.activities?.length; else noActivities" class="ml-5 space-y-6 border-l-2 border-white/12 pl-7">
               <div *ngFor="let activity of day.activities" class="relative">
-                <span class="absolute -left-[34px] top-1 w-3 h-3 rounded-full bg-[#7ae0c3] ring-4 ring-[#7ae0c3]/15"></span>
-                <p class="text-xs font-bold text-[#a6ebd7] uppercase tracking-wider">{{ activity.time || 'Flexible time' }}</p>
-                <p class="font-bold text-white mt-1">{{ activity.activity }}</p>
-                <p class="text-sm text-[#b0c3cf] mt-1">{{ activity.description }}</p>
-                <p *ngIf="activity.location" class="text-xs text-[#8ea5b0] mt-2 flex items-center gap-1"><span class="material-symbols-outlined text-sm">location_on</span>{{ activity.location }}</p>
+                <span class="absolute -left-[34px] top-1 h-3 w-3 rounded-full bg-[#7ae0c3] ring-4 ring-[#7ae0c3]/15"></span>
+                <p class="text-xs font-bold uppercase tracking-wider text-[#a6ebd7]">{{ activity.time || 'Flexible time' }}</p>
+                <p class="mt-1 font-bold text-white">{{ activity.activity }}</p>
+                <p class="mt-1 text-sm text-[#b0c3cf]">{{ activity.description }}</p>
+                <p *ngIf="activity.location" class="mt-2 flex items-center gap-1 text-xs text-[#8ea5b0]"><span class="material-symbols-outlined text-sm">location_on</span>{{ activity.location }}</p>
               </div>
             </div>
-            <ng-template #noActivities><p class="text-sm text-[#8ea5b0] pl-16">No activities have been scheduled for this day.</p></ng-template>
+            <ng-template #noActivities><p class="pl-16 text-sm text-[#8ea5b0]">No activities have been scheduled for this day.</p></ng-template>
           </div>
         </article>
       </div>
     </section>
 
-    <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-10">
-      <div class="glass-panel p-7 rounded-2xl">
-        <h2 class="text-2xl font-bold text-white mb-2">Rate this itinerary</h2>
-        <p class="text-sm text-[#8ea5b0] mb-5">Your review helps other travelers make better decisions.</p>
-        <div class="flex gap-1 mb-4">
-          <button *ngFor="let star of stars" (click)="reviewRating = star" class="text-3xl transition-transform hover:scale-110"
-                  [class]="star <= reviewRating ? 'text-[#ffc96b]' : 'text-white/20'">★</button>
+    <!-- Reviews (existing) -->
+    <section class="mb-10 grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <div class="glass-panel rounded-2xl p-7">
+        <h2 class="mb-2 text-2xl font-bold text-white">Rate this itinerary</h2>
+        <p class="mb-5 text-sm text-[#8ea5b0]">Your review helps other travelers make better decisions.</p>
+        <div class="mb-4 flex gap-1">
+          <button *ngFor="let star of stars" (click)="reviewRating = star" class="text-3xl transition-transform hover:scale-110" [class]="star <= reviewRating ? 'text-[#ffc96b]' : 'text-white/20'">★</button>
         </div>
-        <textarea [(ngModel)]="reviewComment" rows="4" maxlength="500" placeholder="What worked well? What should travelers know?"
-                  class="w-full p-4 rounded-xl border border-white/12 focus:border-[#7ae0c3] outline-none resize-none text-sm bg-white/6 text-white placeholder:text-[#708995]"></textarea>
-        <div class="flex items-center justify-between mt-3">
+        <textarea [(ngModel)]="reviewComment" rows="4" maxlength="500" placeholder="What worked well?"
+                  class="w-full resize-none rounded-xl border border-white/12 bg-white/6 p-4 text-sm text-white outline-none transition focus:border-[#7ae0c3] placeholder:text-[#708995]"></textarea>
+        <div class="mt-3 flex items-center justify-between">
           <span class="text-xs text-[#8ea5b0]">{{ reviewComment.length }}/500</span>
-          <button (click)="submitReview()" [disabled]="actionLoading === 'review'"
-                  class="signature-gradient text-white px-5 py-2.5 rounded-xl font-bold text-sm disabled:opacity-60">
-            {{ actionLoading === 'review' ? 'Saving...' : 'Submit Review' }}
-          </button>
+          <button (click)="submitReview()" [disabled]="actionLoading === 'review'" class="signature-gradient rounded-xl px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60">{{ actionLoading === 'review' ? 'Saving...' : 'Submit Review' }}</button>
         </div>
       </div>
-
-      <div class="glass-panel p-7 rounded-2xl">
-        <div class="flex items-center justify-between mb-5">
+      <div class="glass-panel rounded-2xl p-7">
+        <div class="mb-5 flex items-center justify-between">
           <div><h2 class="text-2xl font-bold text-white">Traveler feedback</h2><p class="text-sm text-[#8ea5b0]">{{ itinerary.engagement?.averageRating || 0 }} average rating</p></div>
           <span class="text-3xl font-bold text-white">{{ itinerary.engagement?.ratingCount || 0 }}</span>
         </div>
-        <div *ngIf="!itinerary.reviews?.length" class="text-sm text-[#8ea5b0] py-8 text-center bg-white/6 rounded-xl border border-white/8">Be the first to review this plan.</div>
-        <div class="space-y-4 max-h-72 overflow-y-auto">
-          <div *ngFor="let review of itinerary.reviews" class="pb-4 border-b border-white/10 last:border-0">
-            <div class="flex justify-between gap-3"><p class="font-bold text-sm text-white">{{ review.userId?.name || 'Traveler' }}</p><span class="text-[#ffc96b]">{{ '★'.repeat(review.rating) }}</span></div>
-            <p class="text-sm text-[#b0c3cf] mt-2">{{ review.comment || 'Rated this itinerary.' }}</p>
+        <div *ngIf="!itinerary.reviews?.length" class="rounded-xl border border-white/8 bg-white/6 py-8 text-center text-sm text-[#8ea5b0]">Be the first to review this plan.</div>
+        <div class="max-h-72 space-y-4 overflow-y-auto">
+          <div *ngFor="let review of itinerary.reviews" class="border-b border-white/10 pb-4 last:border-0">
+            <div class="flex justify-between gap-3"><p class="text-sm font-bold text-white">{{ review.userId?.name || 'Traveler' }}</p><span class="text-[#ffc96b]">{{ '★'.repeat(review.rating) }}</span></div>
+            <p class="mt-2 text-sm text-[#b0c3cf]">{{ review.comment || 'Rated this itinerary.' }}</p>
           </div>
         </div>
       </div>
@@ -209,15 +435,15 @@
   </main>
 </div>
 
-<div *ngIf="loading" class="min-h-screen flex items-center justify-center pt-16 text-[#f5fbff]">
-  <div class="text-center"><span class="material-symbols-outlined text-[70px] text-[#7ae0c3] animate-spin">travel_explore</span><p class="text-[#8ea5b0] mt-4">Loading itinerary…</p></div>
+<div *ngIf="loading" class="flex min-h-screen items-center justify-center pt-16 text-[#f5fbff]">
+  <div class="text-center"><span class="material-symbols-outlined text-[70px] text-[#7ae0c3] animate-spin">travel_explore</span><p class="mt-4 text-[#8ea5b0]">Loading itinerary…</p></div>
 </div>
 
-<div *ngIf="!loading && !itinerary" class="min-h-screen flex items-center justify-center p-6">
-  <div class="max-w-md text-center glass-panel rounded-2xl p-10">
+<div *ngIf="!loading && !itinerary" class="flex min-h-screen items-center justify-center p-6">
+  <div class="glass-panel max-w-md rounded-2xl p-10 text-center">
     <span class="material-symbols-outlined text-6xl text-[#ff8d70]">map</span>
-    <h1 class="text-2xl font-bold text-white mt-4">Itinerary unavailable</h1>
-    <p class="text-[#8ea5b0] mt-2">{{ errorMessage }}</p>
-    <a routerLink="/dashboard" class="inline-block mt-6 signature-gradient text-white px-6 py-3 rounded-xl font-bold">Back to dashboard</a>
+    <h1 class="mt-4 text-2xl font-bold text-white">Itinerary unavailable</h1>
+    <p class="mt-2 text-[#8ea5b0]">{{ errorMessage }}</p>
+    <a routerLink="/dashboard" class="signature-gradient mt-6 inline-block rounded-xl px-6 py-3 font-bold text-white">Back to dashboard</a>
   </div>
 </div>
