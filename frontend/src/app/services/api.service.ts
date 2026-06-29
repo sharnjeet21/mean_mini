@@ -31,6 +31,7 @@ export interface Itinerary {
     contingency: number;
   };
   description: string;
+  stops?: Array<{ name: string; notes: string; order?: number }>;
   dailyPlan: any[];
   tripSummary: any;
   createdBy: User;
@@ -90,7 +91,7 @@ export interface RegisterRequest {
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = `${environment.apiUrl}/api`;
+  private baseUrl = `${environment.apiUrl}/api/v1`;
 
   constructor(private http: HttpClient) { }
 

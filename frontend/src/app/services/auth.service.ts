@@ -16,12 +16,15 @@ export interface AuthUser {
 // Task 9: Authentication service using JWT
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private baseUrl = `${environment.apiUrl}/api/auth`;
+  private baseUrl = `${environment.apiUrl}/api/v1/auth`;
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 
   // Reactive signal for current user
   currentUser = signal<AuthUser | null>(this.loadUser());
+
+  // Toast shown on the login page after logout
+  logoutMessage = signal<string | null>(null);
 
   constructor(private http: HttpClient, private router: Router) {}
 
@@ -97,6 +100,7 @@ export class AuthService {
   }
 
   logout(): void {
+    this.logoutMessage.set('You have been signed out successfully.');
     this.clearSession();
     this.router.navigate(['/login']);
   }

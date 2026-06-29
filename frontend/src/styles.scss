@@ -1,3 +1,25 @@
+@use '@angular/material' as mat;
+
+@include mat.core();
+
+// Dark theme matching the app's night palette
+$dark-theme: mat.define-theme((
+  color: (
+    theme-type: dark,
+    primary: mat.$cyan-palette,
+    tertiary: mat.$orange-palette,
+  ),
+  typography: (
+    brand-family: 'DM Sans',
+    plain-family: 'DM Sans',
+  ),
+  density: (scale: 0),
+));
+
+html {
+  @include mat.all-component-themes($dark-theme);
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -260,6 +282,162 @@ h6,
   border: 2px solid #07151f;
   border-radius: 999px;
   background: linear-gradient(#178f8d, #ff8d70);
+}
+
+// ── Back button ───────────────────────────────────────────────────────────────
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.05);
+  color: #a9bfcb;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s, color 0.18s, border-color 0.18s;
+  backdrop-filter: blur(12px);
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #f5fbff;
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+
+  &:focus-visible {
+    outline: 2px solid #7ae0c3;
+    outline-offset: 2px;
+  }
+
+  .material-symbols-outlined {
+    font-size: 1.1rem;
+  }
+}
+
+// ── Toast notifications ───────────────────────────────────────────────────────
+@keyframes slideInToast {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.75rem 1rem;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  animation: slideInToast 0.25s ease;
+  backdrop-filter: blur(16px);
+
+  .material-symbols-outlined {
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+}
+
+.toast-success {
+  @extend .toast;
+  border: 1px solid rgba(122, 224, 195, 0.25);
+  background: rgba(122, 224, 195, 0.1);
+  color: #c0f5e6;
+}
+
+.toast-error {
+  @extend .toast;
+  border: 1px solid rgba(255, 141, 112, 0.25);
+  background: rgba(255, 141, 112, 0.1);
+  color: #ffcfc2;
+}
+
+.toast-info {
+  @extend .toast;
+  border: 1px solid rgba(255, 201, 107, 0.22);
+  background: rgba(255, 201, 107, 0.08);
+  color: #ffe0a0;
+}
+
+// ── Profile dropdown ──────────────────────────────────────────────────────────
+.profile-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.5rem);
+  min-width: 200px;
+  border-radius: 18px;
+  border: 1px solid var(--glass-border);
+  background: linear-gradient(145deg, rgba(21, 51, 65, 0.96), rgba(7, 24, 35, 0.96));
+  box-shadow: 0 24px 60px rgba(0, 6, 12, 0.45);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  padding: 0.5rem;
+  animation: slideInToast 0.2s ease;
+  z-index: 100;
+}
+
+.profile-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.6rem 0.875rem;
+  border-radius: 12px;
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: #a9bfcb;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  text-decoration: none;
+
+  .material-symbols-outlined {
+    font-size: 1rem;
+    color: #6f8a98;
+    transition: color 0.15s;
+  }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #f5fbff;
+
+    .material-symbols-outlined {
+      color: #7ae0c3;
+    }
+  }
+
+  &:focus-visible {
+    outline: 2px solid #7ae0c3;
+    outline-offset: -2px;
+  }
+
+  &--danger {
+    color: #ffb0a0;
+
+    .material-symbols-outlined {
+      color: #ff9d83;
+    }
+
+    &:hover {
+      background: rgba(255, 141, 112, 0.1);
+      color: #ffd0c4;
+    }
+  }
+
+  &--divider {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    margin-top: 0.25rem;
+    padding-top: 0.85rem;
+  }
 }
 
 @keyframes drift {

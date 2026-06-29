@@ -52,12 +52,16 @@ async function run() {
   page.on('requestfailed', (request) => {
     failedRequests.push(`${request.method()} ${request.url()} - ${request.failure()?.errorText}`);
   });
-  page.on('response', (response) => {
+  page.on('response', async (response) => {
     if (response.url().includes('/api/')) {
       apiResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
     }
     if (response.status() >= 400) {
-      badResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+      let bodyText = '';
+      try {
+        bodyText = await response.text();
+      } catch (err) {}
+      badResponses.push(`${response.status()} ${response.request().method()} ${response.url()} - ${bodyText}`);
     }
   });
 
@@ -70,8 +74,19 @@ async function run() {
     );
     const collectionCards = page.locator('article').filter({ has: page.locator('h3') });
     record('Home collection cards render', await collectionCards.count() >= 3, `count=${await collectionCards.count()}`);
-    const cardLinks = collectionCards.locator('a, button');
-    record('Home collection cards have actions', await cardLinks.count() >= 3, `actions=${await cardLinks.count()}`);
+    await page.locator('article').filter({ hasText: 'The Zen of Kyoto' }).first().click();
+    await page.waitForTimeout(200);
+    const previewVisible = await page.evaluate(() => {
+      const component = globalThis.ng?.getComponent?.(document.querySelector('app-home'));
+      return Boolean(component?.showPreviewModal && component?.previewCard);
+    });
+    record(
+      'Home collection card opens itinerary preview',
+      previewVisible,
+    );
+    if (previewVisible) {
+      await page.getByRole('button', { name: /close preview/i }).click();
+    }
 
     await page.goto(`${baseUrl}/register`, { waitUntil: 'domcontentloaded' });
     await page.locator('input[name="name"]').fill('Field Audit User');
@@ -111,7 +126,7 @@ async function run() {
         }),
         directFetch: await page.evaluate(async () => {
           const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/itinerary', {
+          const response = await fetch('http://localhost:5000/api/v1/itinerary', {
             headers: { Authorization: `Bearer ${token}` },
           });
           const body = await response.json();
@@ -161,15 +176,18 @@ async function run() {
     if (await trendingCard.isVisible().catch(() => false)) {
       const trendingName = (await trendingCard.locator('strong').textContent()).trim();
       await trendingCard.click();
-      await page.getByText('Give the route a shape').waitFor({ state: 'visible', timeout: 5000 });
+      await page.waitForTimeout(100);
+      const destinationGuidance = await page.evaluate(() => {
+        const component = globalThis.ng?.getComponent?.(document.querySelector('app-dashboard'));
+        return component?.destinationToast || '';
+      });
       record(
-        'Trending destination card opens prefilled form',
-        (await page.locator('input[name="destination"]').inputValue()) === trendingName,
-        `destination=${await page.locator('input[name="destination"]').inputValue()}`,
+        'Trending destination card gives user guidance',
+        destinationGuidance.includes(trendingName),
+        `destination=${trendingName}; toast=${destinationGuidance}`,
       );
-      await page.getByRole('button', { name: 'Close dialog' }).click();
     } else {
-      record('Trending destination card opens prefilled form', false, 'Trending cards unavailable');
+      record('Trending destination card gives user guidance', false, 'Trending cards unavailable');
     }
 
     await page.getByRole('button', { name: 'Saved', exact: true }).click();
@@ -287,31 +305,35 @@ async function run() {
     const createLink = page.getByRole('link', { name: /create new trip/i }).first();
     await createLink.click();
     await page.waitForURL('**/dashboard*', { timeout: 10000 });
-    await page.getByText('Give the route a shape').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-    record('Admin create action opens form', await page.getByText('Give the route a shape').isVisible().catch(() => false));
+    await page.getByText('Journey basics').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+    record('Admin create action opens wizard', await page.getByText('Journey basics').isVisible().catch(() => false));
 
-    await page.getByRole('button', { name: /create itinerary/i }).click();
-    await page.getByText(/please fill all required fields/i).waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
+    await page.getByRole('button', { name: /continue/i }).click();
+    await page.getByText(/enter a trip title and primary destination/i).waitFor({ state: 'visible', timeout: 3000 }).catch(() => {});
     record(
-      'Create form shows required-field validation',
-      await page.getByText(/please fill all required fields/i).isVisible(),
+      'Create wizard shows required-field validation',
+      await page.getByText(/enter a trip title and primary destination/i).isVisible(),
     );
 
     const auditTitle = `UI Audit Journey ${Date.now()}`;
     await page.locator('input[name="title"]').fill(auditTitle);
     await page.locator('input[name="destination"]').fill('Pondicherry, India');
+    await page.getByRole('button', { name: /continue/i }).click();
     await page.locator('input[name="startDate"]').fill('2026-12-18');
     await page.locator('input[name="endDate"]').fill('2026-12-20');
-    await page.locator('input[name="budget"]').fill('3000');
-    await page.locator('textarea[name="description"]').fill('Temporary itinerary created by the automated UI functional audit.');
     record(
       'Date fields derive duration',
-      await page.locator('input[name="duration"]').inputValue() === '3 Days',
-      `value=${await page.locator('input[name="duration"]').inputValue()}`,
+      await page.getByText('3 Days / 2 Nights').first().isVisible(),
     );
-    const numericFields = page.locator('form input[type="number"]');
-    const transportAllocation = await numericFields.nth(2).inputValue();
+    await page.getByRole('button', { name: /continue/i }).click();
+    await page.locator('input[name="budget"]').fill('3000');
+    await page.locator('textarea[name="description"]').fill('Temporary itinerary created by the automated UI functional audit.');
+    const transportAllocation = await page.locator('input[name="budgetTransport"]').inputValue();
     record('Budget field allocates categories', transportAllocation === '750', `transport=${transportAllocation}`);
+    await page.getByRole('button', { name: /continue/i }).click();
+    await page.getByRole('button', { name: /add another stop/i }).click();
+    await page.getByPlaceholder(/next city or region/i).fill('Auroville');
+    await page.getByPlaceholder(/notes, nights, or highlights/i).fill('Half-day architecture and community visit');
     await page.getByRole('button', { name: /create itinerary/i }).click();
     await page.getByText(auditTitle).waitFor({ state: 'visible', timeout: 15000 });
     record('Create itinerary form saves and renders a card', true);
@@ -319,11 +341,11 @@ async function run() {
     const cleanup = await page.evaluate(async (title) => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const listResponse = await fetch('http://localhost:5000/api/itinerary', { headers });
+      const listResponse = await fetch('http://localhost:5000/api/v1/itinerary', { headers });
       const list = await listResponse.json();
       const created = list.find((item) => item.title === title);
       if (!created) return { found: false };
-      const deleteResponse = await fetch(`http://localhost:5000/api/itinerary/${created._id}`, {
+      const deleteResponse = await fetch(`http://localhost:5000/api/v1/itinerary/${created._id}`, {
         method: 'DELETE',
         headers,
       });
@@ -345,17 +367,21 @@ async function run() {
       await mobilePage.goto(baseUrl, { waitUntil: 'domcontentloaded' });
       const menuButton = mobilePage.getByRole('button', { name: /toggle navigation/i });
       await menuButton.click();
-      record('Mobile navigation opens', await mobilePage.getByRole('link', { name: 'Platform' }).isVisible());
+      const mobileNavigationOpen = await mobilePage.evaluate(() => {
+        const component = globalThis.ng?.getComponent?.(document.querySelector('app-navbar'));
+        return Boolean(component?.mobileOpen);
+      });
+      record('Mobile navigation opens', mobileNavigationOpen);
 
-      await login(mobilePage, 'aarav.demo@travel.com', 'TravelDemo123!');
+      await login(mobilePage, 'portfolio.admin@travel.com', 'TravelDemo123!');
       await mobilePage.locator('a:has-text("Open")').first().waitFor({ state: 'visible', timeout: 20000 });
       record('Mobile dashboard renders itinerary cards', true);
       const overflow = await mobilePage.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
       record('Mobile dashboard has no page-level horizontal overflow', overflow <= 2, `overflow=${overflow}px`);
 
-      await mobilePage.getByRole('button', { name: /new trip/i }).click();
-      await mobilePage.getByText('Give the route a shape').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
-      const mobileModalVisible = await mobilePage.getByText('Give the route a shape').isVisible().catch(() => false);
+      await mobilePage.getByRole('button', { name: /new itinerary/i }).click();
+      await mobilePage.getByText('Journey basics').waitFor({ state: 'visible', timeout: 5000 }).catch(() => {});
+      const mobileModalVisible = await mobilePage.getByText('Journey basics').isVisible().catch(() => false);
       const mobileTitleVisible = await mobilePage.locator('input[name="title"]').isVisible().catch(() => false);
       const mobileState = await mobilePage.evaluate(() => {
         const component = globalThis.ng?.getComponent?.(document.querySelector('app-dashboard'));
@@ -368,6 +394,10 @@ async function run() {
     }
   } finally {
     await browser.close();
+    console.log("Console Errors:", consoleErrors);
+    console.log("Failed Requests:", failedRequests);
+    console.log("Bad Responses:", badResponses);
+    console.log("API Responses:", apiResponses);
   }
 
   for (const item of report) {

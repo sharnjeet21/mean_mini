@@ -1,7 +1,7 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { Component, OnInit, PLATFORM_ID, inject, ChangeDetectorRef } from '@angular/core';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AiService, BudgetEstimate, Flight, Hotel, RoutePlan, SmartPlan } from '../../services/ai.service';
 import { ApiService, TripAnalysis } from '../../services/api.service';
@@ -28,6 +28,7 @@ export class ItineraryDetailComponent implements OnInit {
   reviewComment = '';
   readonly stars = [1, 2, 3, 4, 5];
   private platformId = inject(PLATFORM_ID);
+  private cdr = inject(ChangeDetectorRef);
   private itineraryId = '';
 
   // ── AI-enhanced feature state ─────────────────────────────────────────────
@@ -65,10 +66,20 @@ export class ItineraryDetailComponent implements OnInit {
 
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private api: ApiService,
     public auth: AuthService,
     private ai: AiService,
+    private location: Location,
   ) {}
+
+  goBack(): void {
+    if (history.length > 1) {
+      this.location.back();
+    } else {
+      this.router.navigate(['/dashboard']);
+    }
+  }
 
   ngOnInit() {
     if (!isPlatformBrowser(this.platformId)) {
@@ -106,18 +117,15 @@ export class ItineraryDetailComponent implements OnInit {
         this.smartPlanTravelers = res.travelerCount || 1;
         this.smartPlanDuration = parseInt(res.duration) || 3;
 
-        // Fetch AI-powered image from Unsplash
-        if (res.destination) {
-          fetchItineraryImage(res.destination).then((url) => {
-            this.imageUrl = url;
-          });
-        }
+
 
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (err) => {
         this.errorMessage = err?.error?.message || 'This itinerary could not be loaded.';
         this.loading = false;
+        this.cdr.detectChanges();
       },
     });
   }

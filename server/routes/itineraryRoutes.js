@@ -20,6 +20,7 @@ const EDITABLE_FIELDS = [
   'accommodationType',
   'budgetBreakdown',
   'description',
+  'stops',
   'dailyPlan',
   'tripSummary',
   'isActive',
@@ -204,6 +205,11 @@ router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res
 
     const itinerary = await Itinerary.create({
       ...payload,
+      stops: Array.isArray(payload.stops)
+        ? payload.stops
+          .filter((stop) => stop?.name?.trim())
+          .map((stop, index) => ({ name: stop.name.trim(), notes: stop.notes || '', order: index }))
+        : [],
       createdBy: req.user._id,
     });
 

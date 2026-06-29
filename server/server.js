@@ -35,7 +35,10 @@ const apiCors = cors({
       .filter(Boolean);
     const renderOrigin = process.env.RENDER_EXTERNAL_URL;
     const allowedOrigins = [
+      "http://localhost:5000",
+      "http://127.0.0.1:5000",
       "http://localhost:4200",
+      "http://127.0.0.1:4200",
       "http://localhost:3000",
       renderOrigin,
       ...configuredOrigins,
@@ -60,9 +63,6 @@ app.get("/api/health", apiCors, (req, res) => {
 
 app.use("/api/v1", apiCors, requireDatabase, apiRoutes);
 
-app.use(notFound);
-app.use(globalErrorHandler);
-
 // ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");
 const indexHtml   = path.join(angularDist, "index.html");
@@ -80,6 +80,9 @@ app.get("*", (req, res) => {
     res.status(500).json({ error: "Angular build not found", path: angularDist });
   }
 });
+
+app.use(notFound);
+app.use(globalErrorHandler);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;

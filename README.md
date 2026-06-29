@@ -1,147 +1,205 @@
 # Travel Intelligence & Itinerary Management Platform
 
-A full-stack MEAN application for designing, evaluating, publishing, booking, and monitoring travel itineraries. The project combines role-based workflows, AI-assisted destination discovery, deterministic trip feasibility analysis, community feedback, and portfolio analytics.
+A full-stack MEAN application for discovering, designing, evaluating, publishing, saving, booking, and reviewing travel itineraries. It combines Angular Material glassmorphism, role-based workflows, AI-assisted discovery, deterministic trip analysis, community engagement, and live MongoDB analytics.
 
-## Why this is a major engineering project
+## Highlights
 
-The system is more than CRUD:
-
-- A multi-criteria **Trip Intelligence engine** scores feasibility, completeness, pace, budget quality, and sustainability.
-- A **risk register** detects unplanned days, unrealistic budgets, overloaded schedules, budget mismatches, and high-impact short trips.
-- Travelers can maintain a **wishlist**, submit booking requests, cancel bookings, and create or update reviews.
-- Administrators receive live **MongoDB aggregation analytics** for bookings, saves, reviews, active plans, and destination demand.
-- Authentication uses JWT, bcrypt password hashing, role authorization, route guards, input validation, API rate limiting, and CORS controls.
-- Gemini and Unsplash integrations include normalization, caching, failure handling, and rate limiting.
-- The backend includes unit, route, and property-based tests.
+- Four-step itinerary wizard with automatic duration, budget allocation, and multi-stop planning.
+- Dashboard, detail, saved, and booking views backed by live MongoDB data.
+- Shared deterministic destination imagery so dashboard cards and detail heroes always match.
+- Destination autocomplete, trending places, attraction suggestions, and destination previews.
+- Graceful local fallbacks when Gemini, Unsplash, DNS, or an external MongoDB deployment is unavailable.
+- Trip Intelligence scores for feasibility, completeness, pace, budget quality, and sustainability.
+- Risk register and explainable recommendations derived from itinerary data.
+- Wishlist, booking, cancellation, ratings, reviews, and administrator analytics.
+- JWT authentication, automatic expired-session cleanup, role authorization, rate limiting, and input validation.
+- Responsive Angular Material interface with glass surfaces, ambient shapes, and local optimized travel images.
 
 ## Architecture
 
 ```mermaid
 flowchart LR
     U[Angular 21 SPA] -->|JWT + REST| E[Express API]
-    E --> A[Authentication & RBAC]
-    E --> I[Itinerary Domain]
-    E --> T[Trip Intelligence Engine]
-    E --> X[AI Integration Layer]
+    E --> A[Authentication and RBAC]
+    E --> I[Itinerary and engagement domain]
+    E --> T[Trip Intelligence engine]
+    E --> X[AI integration layer]
     I --> M[(MongoDB)]
     A --> M
     T --> I
     X --> G[Google Gemini]
     X --> P[Unsplash]
-    E --> C[In-memory TTL Cache]
+    E --> C[TTL caches and deterministic fallbacks]
 ```
 
-### Trip Intelligence model
-
-The final feasibility score is deterministic and explainable:
-
-```text
-Feasibility =
-  35% Completeness +
-  25% Pace +
-  25% Budget Quality +
-  15% Sustainability
-```
-
-Inputs include date coverage, activities per day, travelers, total and category budgets, contingency, transport mode, accommodation type, highlights, and schedule detail. The engine returns scores, derived metrics, risks, and recommended actions.
-
-## Main modules
-
-| Module | Capabilities |
-|---|---|
-| Authentication | Registration, login, JWT sessions, bcrypt hashing, protected routes |
-| Roles | User, admin, and superadmin authorization |
-| Itineraries | Create, browse, update, activate/deactivate, delete, detailed daily plans |
-| Trip Intelligence | Five scores, budget metrics, pace classification, risk detection |
-| Engagement | Wishlist, bookings, cancellation, ratings, reviews |
-| Administration | Live KPIs, demand ranking, search, filtering, lifecycle controls |
-| AI assistant | Place search, trending destinations, attraction suggestions, destination images |
-| Reliability | TTL cache, rate limiter, validation, graceful API failures, automated tests |
-
-## Technology stack
+## Technology
 
 - MongoDB and Mongoose
-- Express.js and Node.js
-- Angular 21, Angular Material, TypeScript, RxJS, and Tailwind CSS
+- Express.js and Node.js 24
+- Angular 21, Angular Material, TypeScript, RxJS, Tailwind CSS
 - JWT and bcryptjs
 - Google Gemini and Unsplash APIs
-- Node test runner, fast-check, Vitest, and Angular build tooling
+- Node test runner, fast-check, Vitest, Playwright, and Puppeteer
+
+## Prerequisites
+
+- Node.js `24.17.0`
+- npm `11.x`
+- MongoDB Atlas or a local MongoDB instance if you do not want to rely on the development fallback
+- Docker Desktop or Docker Engine if you want to validate the container workflow
+
+Version files included in the repo:
+
+- `.node-version`
+- `.nvmrc`
+
+On Windows PowerShell, if `npm` is blocked by execution policy, use `npm.cmd` instead.
+
+## Development workflow
+
+- `main` is the stable branch.
+- Use `yuvraj-dev` for active development work.
+- Do not commit Phase 0 or feature work directly on `main`.
 
 ## Local setup
 
-Requirements: Node.js 24 LTS and MongoDB.
+Install root and frontend dependencies from a clean environment:
 
 ```bash
-npm install
+npm ci
 cd frontend
-npm install
+npm ci
 cd ..
-cp .env.example .env
+copy .env.example .env
 ```
 
-Configure `.env`, then initialize the sample data:
+If you already have stale `node_modules` content, remove it first and rerun the clean install steps above.
+
+## Environment setup
+
+Copy `.env.example` to `.env` and fill in the values you need:
+
+```env
+NODE_ENV=development
+PORT=5000
+MONGO_URI=
+JWT_SECRET=replace_with_a_long_random_secret
+CLIENT_ORIGINS=http://localhost:4200
+UNSPLASH_ACCESS_KEY=
+GEMINI_API_KEY=
+MAPBOX_TOKEN=
+```
+
+Notes:
+
+- Leave `MONGO_URI` blank only if you intentionally want to test the development fallback path.
+- `MAPBOX_TOKEN` is included as a forward-looking placeholder for the map-driven roadmap work.
+- `RENDER_EXTERNAL_URL` is supplied by Render in production and does not need to be set locally.
+
+## Run the app
+
+Seed demo data when you have a working database connection:
 
 ```bash
-npm run init-db
+npm run seed:demo
+```
+
+Run backend and frontend together:
+
+```bash
 npm run dev:full
 ```
 
-- Angular: `http://localhost:4200`
-- API: `http://localhost:5000`
-- Health check: `http://localhost:5000/api/health`
+Useful local URLs:
 
-The seed script creates demonstration accounts. Change their passwords before using the project outside a local demonstration.
-
-## Render deployment
-
-The repository includes a Render Blueprint at [`render.yaml`](render.yaml) and pins Node.js through [`.node-version`](.node-version).
-
-### Blueprint deployment
-
-1. In Render, choose **New → Blueprint**.
-2. Connect this GitHub repository.
-3. Render reads `render.yaml` and creates the web service.
-4. Enter `MONGO_URI`, `GEMINI_API_KEY`, and `UNSPLASH_ACCESS_KEY` when prompted.
-5. `JWT_SECRET` is generated securely by Render.
-
-### Existing Render service
-
-Use these settings:
-
-```text
-Runtime: Node
-Build Command: npm ci --omit=dev && npm run build
-Start Command: npm start
-Health Check Path: /api/health
-Node Version: 24.17.0
-```
-
-Required environment variables:
-
-```text
-NODE_ENV=production
-MONGO_URI=<MongoDB Atlas connection string>
-JWT_SECRET=<long random secret>
-GEMINI_API_KEY=<optional AI features>
-UNSPLASH_ACCESS_KEY=<optional destination images>
-```
-
-The Express server binds to Render's dynamic `PORT` on `0.0.0.0`, waits for MongoDB before accepting traffic, serves the optimized Angular build, reports readiness at `/api/health`, and handles Render's `SIGTERM` shutdown signal gracefully.
+- Angular development server: `http://localhost:4200`
+- Express API: `http://localhost:5000`
+- Health endpoint: `http://localhost:5000/api/health`
 
 ## Commands
 
 ```bash
-npm run dev              # Express API
-npm run frontend         # Angular development server
-npm run dev:full         # API and Angular together
-npm run test             # Backend unit, property, and route tests
-npm run test:frontend    # Angular/Vitest tests
-npm run test:all         # Complete backend and frontend verification
-npm run test:ui          # Browser-level desktop/mobile functional audit
-npm run frontend:build   # Angular production build
-npm run init-db          # Seed users and a detailed itinerary
-npm run seed:demo        # Add a richer idempotent demo portfolio and engagement data
+npm run dev
+npm run frontend
+npm run dev:full
+npm run test
+npm run test:frontend
+npm run test:all
+npm run test:ui
+npm run frontend:build
+npm run init-db
+npm run seed:demo
 ```
+
+## Testing
+
+Backend test suite:
+
+```bash
+npm run test:backend
+```
+
+Frontend unit tests:
+
+```bash
+npm run test:frontend
+```
+
+Full test run:
+
+```bash
+npm run test:all
+```
+
+UI audit script:
+
+```bash
+npm run test:ui
+```
+
+## Build
+
+Frontend-only build:
+
+```bash
+npm run frontend:build
+```
+
+Root production-style build:
+
+```bash
+npm run build
+```
+
+The root build script installs frontend dependencies and then runs the Angular production build from the correct working directory.
+
+## Docker
+
+The repo includes a frontend container build in `frontend/Dockerfile`.
+
+Build it with:
+
+```bash
+docker build -t mean-mini-frontend ./frontend
+```
+
+Requirements:
+
+- Docker daemon must be running
+- Local Docker config must be accessible
+- Node 24 is used inside the Docker build stage
+
+## Backend startup notes
+
+- The backend uses `MONGO_URI` when provided.
+- In development, it attempts to fall back to an in-memory MongoDB only when the required dev dependency set is installed.
+- In production, startup aborts if MongoDB is unavailable.
+
+## Roles
+
+- User: browse, search, save, book, cancel, and review published itineraries.
+- Admin: publish and manage itineraries and booking workflows.
+- Superadmin: administrator capabilities plus user and role governance.
 
 ## API overview
 
@@ -160,7 +218,7 @@ npm run seed:demo        # Add a richer idempotent demo portfolio and engagement
 - `DELETE /api/itinerary/:id`
 - `GET /api/itinerary/:id/analysis`
 
-### Traveler engagement
+### Engagement
 
 - `POST /api/itinerary/:id/favorite`
 - `GET /api/itinerary/user/favorites`
@@ -186,38 +244,19 @@ npm run seed:demo        # Add a richer idempotent demo portfolio and engagement
 - `GET /api/trending`
 - `GET /api/itinerary-suggestions?place=...`
 
-## Project structure
+## Deployment
+
+The repository includes Docker, Jenkins, and Render configuration. For Render, use:
 
 ```text
-server/
-  config/          MongoDB connection
-  data/            Seed itinerary
-  middleware/      Authentication, validation, rate limiting
-  models/          Mongoose domain models
-  routes/          REST API modules
-  tests/           Unit, property, and route tests
-  utils/           Cache and Trip Intelligence engine
-frontend/src/app/
-  components/      Standalone Angular screens and UI modules
-  guards/          Authentication and admin route protection
-  services/        Typed API, AI, and authentication clients
-docs/
-  PROJECT_REPORT.md
+Runtime: Node
+Build Command: npm ci --omit=dev && npm run build
+Start Command: npm start
+Health Check Path: /api/health
+Node Version: 24.17.0
 ```
 
-## Engineering report
-
-See [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md) for the problem statement, objectives, data model, scoring method, security design, test strategy, limitations, future scope, and viva-oriented technical notes.
-
-## Verification status
-
-- Backend: 31 tests passing
-- Frontend: 34 tests passing
-- Frontend: Angular production build passing
-- Static JavaScript syntax checks passing
-- Production dependency audits: 0 known vulnerabilities
-
-The redesigned interface uses Material controls, responsive glassmorphism surfaces, ambient shapes, and optimized Unsplash destination photography. The optimized initial production bundle is approximately 760 kB raw (about 164 kB estimated transfer).
+See [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md) for the data model, scoring method, security design, testing strategy, limitations, and viva-oriented notes.
 
 ## Authors
 

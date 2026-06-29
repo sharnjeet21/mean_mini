@@ -47,7 +47,7 @@ export async function fetchItineraryImage(destination: string): Promise<string> 
       (typeof window !== 'undefined' && (window as any).__env?.apiUrl)
       || 'http://localhost:5000'
     );
-    const response = await fetch(`${baseUrl}/api/image?place=${encodeURIComponent(destination)}`, {
+    const response = await fetch(`${baseUrl}/api/v1/ai/image?place=${encodeURIComponent(destination)}`, {
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return fallback;

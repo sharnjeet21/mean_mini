@@ -1,17 +1,20 @@
-import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { HttpClient } from '@angular/common/http';
 import { finalize, timeout } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
-import { environment } from '../../../environments/environment';
 import { DestinationSearchComponent } from '../destination-search/destination-search.component';
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 import { getItineraryImage } from '../../utils/itinerary-image';
+
+export interface Stop {
+  name: string;
+  notes: string;
+}
 
 @Component({
   selector: 'app-dashboard',
@@ -35,108 +38,50 @@ export class DashboardComponent implements OnInit {
   activeView: 'explore' | 'saved' | 'bookings' = 'explore';
   rateLimitMessage = '';
   loadError = '';
-  private platformId = inject(PLATFORM_ID);
+  destinationToast = '';
 
   showModal = false;
   saving = false;
   formError = '';
-  form = {
-    title: '',
-    destination: '',
-    startDate: '',
-    endDate: '',
-    duration: '',
-    budget: null as number | null,
-    travelerCount: 1,
-    category: 'leisure',
-    travelStyle: 'balanced',
-    transportMode: 'mixed',
-    accommodationType: 'hotel',
-    budgetBreakdown: {
-      transport: 0,
-      accommodation: 0,
-      food: 0,
-      activities: 0,
-      contingency: 0,
-    },
-    description: '',
-  };
+  currentStep = 1;
+  readonly TOTAL_STEPS = 4;
+  readonly stepLabels = ['Basics', 'Dates', 'Budget', 'Stops'];
 
-  get stats() {
-    const total = this.itineraries.length;
-    const destinations = new Set(this.itineraries.map(i => i.destination)).size;
-    const avgBudget = total
-      ? Math.round(this.itineraries.reduce((s, i) => s + (i.budget || 0), 0) / total)
-      : 0;
-    return [
-      { icon: 'map',      label: 'Total Itineraries',   value: total,           badge: 'All',    badgeColor: '#835100', iconStyle: 'color:#3953bd; background:#dde1ff' },
-      { icon: 'explore',  label: 'Unique Destinations', value: destinations,    badge: 'Global', badgeColor: '#3953bd', iconStyle: 'color:#754aa1; background:#f0dbff' },
-      { icon: 'payments', label: 'Avg Budget',          value: `$${avgBudget.toLocaleString()}`, badge: 'Avg', badgeColor: '#444653', iconStyle: 'color:#835100; background:#ffddb9' },
-      { icon: 'favorite', label: 'Community Saves', value: this.itineraries.reduce((s, i) => s + (i.engagement?.favoriteCount || 0), 0), badge: 'Live', badgeColor: '#047857', iconStyle: 'color:#be185d; background:#fce7f3' },
-    ];
-  }
+  private platformId = inject(PLATFORM_ID);
 
-  get sortedItineraries() {
-    const list = [...this.itineraries];
-    if (this.activeFilter === 'Budget')   return list.sort((a, b) => (a.budget || 0) - (b.budget || 0));
-    if (this.activeFilter === 'Duration') return list.sort((a, b) => String(a.duration).localeCompare(String(b.duration)));
-    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }
+  form = this.emptyForm();
 
   constructor(
     public auth: AuthService,
-    private http: HttpClient,
     private api: ApiService,
     private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef,
   ) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
       this.loading = false;
       return;
     }
+
     this.loadItineraries();
-    if (this.route.snapshot.queryParamMap.get('create') === '1') {
-      this.openModal();
+    const destination = this.route.snapshot.queryParamMap.get('destination') || '';
+    const create = this.route.snapshot.queryParamMap.get('create') === '1';
+    if ((destination || create) && this.auth.isAdmin) {
+      setTimeout(() => this.openModal(destination), 200);
+    } else if (destination) {
+      this.destinationToast = `${destination} is ready to explore below. Save a route or ask a trip manager to publish a custom plan.`;
     }
   }
 
-  loadItineraries() {
-    this.loading = true;
-    this.loadError = '';
-    const request = this.activeView === 'saved'
-      ? this.api.getFavorites()
-      : this.activeView === 'bookings'
-        ? this.api.getUserBookings()
-        : this.api.getItineraries();
-    request.pipe(
-      timeout(12000),
-      finalize(() => { this.loading = false; }),
-    ).subscribe({
-      next: (res) => {
-        this.itineraries = Array.isArray(res) ? res : [];
-      },
-      error: (error) => {
-        this.itineraries = [];
-        if (error?.status === 401) {
-          this.loadError = 'Your session expired. Redirecting you to sign in…';
-        } else if (error?.name === 'TimeoutError') {
-          this.loadError = 'The itinerary service took too long to respond. Please retry.';
-        } else {
-          this.loadError = error?.error?.message || error?.message || 'Itineraries could not be loaded.';
-        }
-      }
-    });
-  }
-
-  openModal() {
-    this.form = {
+  private emptyForm(destination = '') {
+    return {
       title: '',
-      destination: '',
+      destination,
       startDate: '',
       endDate: '',
       duration: '',
-      budget: null,
+      budget: null as number | null,
       travelerCount: 1,
       category: 'leisure',
       travelStyle: 'balanced',
@@ -150,71 +95,203 @@ export class DashboardComponent implements OnInit {
         contingency: 0,
       },
       description: '',
+      stops: [] as Stop[],
     };
-    this.formError = '';
-    this.showModal = true;
   }
 
-  closeModal() { this.showModal = false; }
+  get stats() {
+    const total = this.itineraries.length;
+    const destinations = new Set(this.itineraries.map((item) => item.destination)).size;
+    const averageBudget = total
+      ? Math.round(this.itineraries.reduce((sum, item) => sum + (item.budget || 0), 0) / total)
+      : 0;
 
-  submitCreate() {
-    if (!this.form.title || !this.form.destination || !this.form.startDate || !this.form.endDate || !this.form.duration || !this.form.budget) {
-      this.formError = 'Please fill all required fields.';
-      return;
-    }
-    if (new Date(this.form.endDate) < new Date(this.form.startDate)) {
-      this.formError = 'End date must be on or after the start date.';
-      return;
-    }
-    this.saving = true;
-    this.formError = '';
-    this.http.post<any>(`${environment.apiUrl}/api/itinerary`, this.form).subscribe({
-      next: (res) => {
-        this.itineraries.unshift(res);
-        this.saving = false;
-        this.showModal = false;
+    return [
+      { icon: 'map', label: 'Total Itineraries', value: total, badge: 'All' },
+      { icon: 'explore', label: 'Unique Destinations', value: destinations, badge: 'Global' },
+      { icon: 'payments', label: 'Avg Budget', value: `$${averageBudget.toLocaleString()}`, badge: 'Avg' },
+      {
+        icon: 'favorite',
+        label: 'Community Saves',
+        value: this.itineraries.reduce((sum, item) => sum + (item.engagement?.favoriteCount || 0), 0),
+        badge: 'Live',
       },
-      error: (err) => {
-        this.formError = err?.error?.message || err?.message || 'Failed to create itinerary. Please try again.';
-        this.saving = false;
-      }
+    ];
+  }
+
+  get sortedItineraries() {
+    const list = [...this.itineraries];
+    if (this.activeFilter === 'Budget') return list.sort((a, b) => (a.budget || 0) - (b.budget || 0));
+    if (this.activeFilter === 'Duration') return list.sort((a, b) => String(a.duration).localeCompare(String(b.duration)));
+    return list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }
+
+  get calculatedDuration(): string {
+    if (!this.form.startDate || !this.form.endDate) return '';
+    const start = new Date(this.form.startDate);
+    const end = new Date(this.form.endDate);
+    if (end < start) return '';
+    const days = Math.ceil((end.getTime() - start.getTime()) / 86_400_000) + 1;
+    const nights = Math.max(0, days - 1);
+    return nights ? `${days} Days / ${nights} Nights` : '1 Day';
+  }
+
+  loadItineraries(): void {
+    this.loading = true;
+    this.loadError = '';
+    const request = this.activeView === 'saved'
+      ? this.api.getFavorites()
+      : this.activeView === 'bookings'
+        ? this.api.getUserBookings()
+        : this.api.getItineraries();
+
+    request.pipe(
+      timeout(12000),
+      finalize(() => {
+        this.loading = false;
+        this.cdr.detectChanges();
+      }),
+    ).subscribe({
+      next: (result) => {
+        this.itineraries = Array.isArray(result) ? result : [];
+      },
+      error: (error) => {
+        this.itineraries = [];
+        if (error?.status === 401) {
+          this.loadError = 'Your session expired. Redirecting you to sign in…';
+        } else if (error?.name === 'TimeoutError') {
+          this.loadError = 'The itinerary service took too long to respond. Please retry.';
+        } else {
+          this.loadError = error?.error?.message || error?.message || 'Itineraries could not be loaded.';
+        }
+      },
     });
   }
 
-  setView(view: 'explore' | 'saved' | 'bookings') {
+  setView(view: 'explore' | 'saved' | 'bookings'): void {
     this.activeView = view;
     this.loadItineraries();
+  }
+
+  openModal(prefilledDestination = ''): void {
+    if (!this.auth.isAdmin) {
+      this.rateLimitMessage = 'Publishing itineraries is available to trip managers. You can still save and book live routes.';
+      return;
+    }
+    this.form = this.emptyForm(prefilledDestination);
+    this.formError = '';
+    this.currentStep = 1;
+    this.showModal = true;
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.currentStep = 1;
+  }
+
+  nextStep(): void {
+    if (!this.validateStep(this.currentStep)) return;
+    if (this.currentStep === 2) this.form.duration = this.calculatedDuration;
+    if (this.currentStep < this.TOTAL_STEPS) this.currentStep += 1;
+  }
+
+  prevStep(): void {
+    if (this.currentStep > 1) this.currentStep -= 1;
+    this.formError = '';
+  }
+
+  validateStep(step: number): boolean {
+    this.formError = '';
+    if (step === 1 && (!this.form.title.trim() || !this.form.destination.trim())) {
+      this.formError = 'Enter a trip title and primary destination.';
+      return false;
+    }
+    if (step === 2) {
+      if (!this.form.startDate || !this.form.endDate) {
+        this.formError = 'Select both travel dates.';
+        return false;
+      }
+      if (!this.calculatedDuration) {
+        this.formError = 'End date must be on or after the start date.';
+        return false;
+      }
+    }
+    if (step === 3 && (!this.form.budget || this.form.budget <= 0)) {
+      this.formError = 'Enter a valid total budget.';
+      return false;
+    }
+    return true;
+  }
+
+  updateDuration(): void {
+    this.form.duration = this.calculatedDuration;
+  }
+
+  allocateBudget(): void {
+    const total = Number(this.form.budget) || 0;
+    const transport = Math.round(total * 0.25);
+    const accommodation = Math.round(total * 0.35);
+    const food = Math.round(total * 0.2);
+    const activities = Math.round(total * 0.1);
+    this.form.budgetBreakdown = {
+      transport,
+      accommodation,
+      food,
+      activities,
+      contingency: total - transport - accommodation - food - activities,
+    };
+  }
+
+  addStop(): void {
+    this.form.stops.push({ name: '', notes: '' });
+  }
+
+  removeStop(index: number): void {
+    this.form.stops.splice(index, 1);
+  }
+
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  submitCreate(): void {
+    if (!this.validateStep(this.currentStep)) return;
+    this.form.duration = this.form.duration || this.calculatedDuration || '1 Day';
+    this.saving = true;
+    this.formError = '';
+
+    const payload = {
+      ...this.form,
+      budget: Number(this.form.budget),
+      stops: this.form.stops.filter((stop) => stop.name.trim()),
+    };
+
+    this.api.createItinerary(payload).pipe(
+      finalize(() => {
+        this.saving = false;
+        this.cdr.detectChanges();
+      }),
+    ).subscribe({
+      next: (created) => {
+        this.itineraries.unshift(created);
+        this.showModal = false;
+      },
+      error: (error) => {
+        this.formError = error?.error?.message || error?.message || 'Failed to create itinerary.';
+      },
+    });
   }
 
   getCardImage(item: any): string {
     return getItineraryImage(item);
   }
 
-  updateDuration() {
-    if (!this.form.startDate || !this.form.endDate) return;
-    const start = new Date(this.form.startDate);
-    const end = new Date(this.form.endDate);
-    if (end < start) return;
-    const days = Math.ceil((end.getTime() - start.getTime()) / 86_400_000) + 1;
-    this.form.duration = `${days} Day${days === 1 ? '' : 's'}`;
-  }
-
-  allocateBudget() {
-    const total = Number(this.form.budget) || 0;
-    this.form.budgetBreakdown = {
-      transport: Math.round(total * 0.25),
-      accommodation: Math.round(total * 0.35),
-      food: Math.round(total * 0.2),
-      activities: Math.round(total * 0.1),
-      contingency: total - Math.round(total * 0.25) - Math.round(total * 0.35) - Math.round(total * 0.2) - Math.round(total * 0.1),
-    };
-  }
-
   onDestinationSelected(place: string): void {
-    if (this.showModal === false) {
-      this.openModal();
+    if (this.auth.isAdmin) {
+      this.openModal(place);
+    } else {
+      this.destinationToast = `${place} selected. Browse the live routes below, then save or book the one that fits.`;
     }
-    this.form.destination = place;
   }
 
   onRateLimitError(message: string): void {

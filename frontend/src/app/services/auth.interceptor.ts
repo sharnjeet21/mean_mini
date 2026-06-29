@@ -2,13 +2,11 @@ import { HttpInterceptorFn } from '@angular/common/http';
 import { inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
-import { catchError } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { catchError, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
-// Task 9: Attach Bearer token to every outgoing HTTP request
+// Attach the bearer token and recover cleanly from an expired session.
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  const auth = inject(AuthService);
   const platformId = inject(PLATFORM_ID);
   const router = inject(Router);
 
@@ -17,25 +15,23 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return next(req);
   }
 
+  const auth = inject(AuthService);
   const token = auth.token;
 
-  if (token) {
-    const cloned = req.clone({
-      setHeaders: { Authorization: `Bearer ${token}` },
-    });
-    return next(cloned).pipe(
-      catchError((error) => {
-        const isAuthEndpoint = req.url.includes('/api/auth/login') || req.url.includes('/api/auth/register');
-        if (error?.status === 401 && !isAuthEndpoint) {
-          auth.clearSession();
-          router.navigate(['/login'], {
-            queryParams: { reason: 'session-expired' },
-          });
-        }
-        return throwError(() => error);
-      }),
-    );
-  }
+  const request = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
 
-  return next(req);
+  return next(request).pipe(
+    catchError((error) => {
+      const isAuthEndpoint = req.url.includes('auth/login') || req.url.includes('auth/register');
+      if (error?.status === 401 && token && !isAuthEndpoint) {
+        auth.clearSession();
+        router.navigate(['/login'], {
+          queryParams: { reason: 'session-expired' },
+        });
+      }
+      return throwError(() => error);
+    }),
+  );
 };

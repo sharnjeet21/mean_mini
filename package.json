@@ -23,6 +23,8 @@
     "seed:demo": "node server/scripts/seedDemoData.js",
     "dev": "node server/server.js",
     "dev:full": "concurrently \"npm run dev\" \"cd frontend && npm start\"",
+    "build:all": "npm --prefix frontend run build && echo Angular build done",
+    "start:all": "concurrently --names \"API,Angular-Watch\" --prefix-colors \"cyan,magenta\" \"node server/server.js\" \"npm --prefix frontend run watch\"",
     "test": "node --test server/tests/*.test.js",
     "test:backend": "node --test server/tests/*.test.js",
     "test:frontend": "cd frontend && npm test -- --watch=false",
@@ -32,6 +34,7 @@
     "frontend:build": "cd frontend && npm run build"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.3",
     "cors": "^2.8.6",
     "dotenv": "^16.6.1",
@@ -43,8 +46,10 @@
     "concurrently": "^8.2.2",
     "express-validator": "^7.3.2",
     "fast-check": "^4.7.0",
+    "jest": "^29.7.0",
     "mongodb-memory-server": "^11.2.0",
     "playwright-core": "^1.61.0",
+    "puppeteer": "^24.42.0",
     "socket.io": "^4.8.3"
   }
 }

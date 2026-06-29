@@ -1,20 +1,28 @@
 <section class="min-w-0">
   <div class="mb-4 flex items-center justify-between">
     <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6f8996]">Trending right now</p>
-    <span class="flex items-center gap-1 text-[10px] font-bold text-[#7ae0c3]"><span class="h-1.5 w-1.5 rounded-full bg-[#7ae0c3]"></span> Live signals</span>
+    <span class="flex items-center gap-1 text-[10px] font-bold text-[#7ae0c3]">
+      <span class="h-1.5 w-1.5 rounded-full bg-[#7ae0c3]"></span>
+      Live signals
+    </span>
   </div>
 
   <div *ngIf="loading" class="flex gap-3 overflow-hidden">
     <div *ngFor="let i of [0,1,2]" class="h-28 w-52 flex-none animate-pulse rounded-[20px] bg-white/5"></div>
   </div>
 
-  <div *ngIf="!loading && error" class="rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-3 text-sm text-[#ffd996]">{{ error }}</div>
+  <div *ngIf="!loading && error"
+       class="rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-3 text-sm text-[#ffd996]">
+    {{ error }}
+  </div>
 
-  <div *ngIf="!loading && !error && destinations.length > 0" class="flex max-w-full gap-3 overflow-x-auto pb-1 hide-scrollbar">
+  <div *ngIf="!loading && !error && destinations.length > 0"
+       class="flex max-w-full gap-3 overflow-x-auto pb-1 hide-scrollbar">
     <button type="button" *ngFor="let destination of destinations; let i = index"
             (click)="onCardClick(destination.name, $event)"
             class="group relative h-32 w-56 flex-none overflow-hidden rounded-[20px] text-left">
-      <img [src]="imageFor(i)" [alt]="destination.name" class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
+      <img [src]="imageFor(i)" [alt]="destination.name"
+           class="h-full w-full object-cover transition duration-500 group-hover:scale-105">
       <span class="absolute inset-0 bg-gradient-to-t from-[#04131e]/95 via-[#071721]/30 to-transparent"></span>
       <span class="absolute inset-x-4 bottom-4">
         <strong class="block text-sm text-white">{{ destination.name }}</strong>
