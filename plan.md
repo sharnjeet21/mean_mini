@@ -615,6 +615,20 @@ Checklist:
 - [ ] Keyboard navigation works in dropdown
 - [ ] No image or attractions panel shown inside wizard
 
+### 16.4 My Bookings Routed View Issues (Planned)
+
+Drive view switching reactive to routing parameters rather than local component state, and show the custom user booking status.
+
+Requirements:
+- Subscribe to `ActivatedRoute.queryParamMap` in `DashboardComponent` to read `view` query parameter and update `activeView` dynamically.
+- Modify `setView()` in `DashboardComponent` to use router navigation with query parameters instead of modifying local state.
+- Render booking status (`item.userBooking?.status`) instead of the itinerary status (`item.isActive`) on the dashboard card badge when in Bookings view.
+
+Checklist:
+- [ ] Implement queryParamMap subscription in DashboardComponent
+- [ ] Modify setView() to update query parameters in URL
+- [ ] Conditionalize card status badge for activeView === 'bookings'
+
 ## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:
@@ -624,6 +638,7 @@ Recommended practical order for implementation:
 - [ ] Phase 16.1: Back Button
 - [ ] Phase 16.2: Profile Page
 - [ ] Phase 16.3: Destination Suggestions in Wizard
+- [ ] Phase 16.4: My Bookings Routed View Issues
 - [ ] Phase 1: Visual Discovery MVP
 - [ ] Phase 2: Smart Itinerary Builder MVP
 - [ ] Phase 3: Route Intelligence
@@ -634,3 +649,4 @@ Recommended practical order for implementation:
 ## 18. Final Direction
 
 Travel Intelligence should not become "just another itinerary generator." The strongest version of the product is a visual, explainable travel planning platform where AI helps users discover possibilities and deterministic logic helps them trust the outcome.
+
