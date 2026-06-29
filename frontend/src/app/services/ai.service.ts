@@ -118,7 +118,7 @@ export interface SmartPlan {
 
 @Injectable({ providedIn: 'root' })
 export class AiService {
-  private baseUrl = `${environment.apiUrl}/api`;
+  private baseUrl = `${environment.apiUrl}/api/v1/ai`;
   private isBrowser: boolean;
 
   constructor(

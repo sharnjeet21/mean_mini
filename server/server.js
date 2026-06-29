@@ -63,9 +63,6 @@ app.get("/api/health", apiCors, (req, res) => {
 
 app.use("/api/v1", apiCors, requireDatabase, apiRoutes);
 
-app.use(notFound);
-app.use(globalErrorHandler);
-
 // ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");
 const indexHtml   = path.join(angularDist, "index.html");
@@ -83,6 +80,9 @@ app.get("*", (req, res) => {
     res.status(500).json({ error: "Angular build not found", path: angularDist });
   }
 });
+
+app.use(notFound);
+app.use(globalErrorHandler);
 
 // ── Start ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;

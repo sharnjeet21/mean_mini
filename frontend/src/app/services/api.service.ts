@@ -91,7 +91,7 @@ export interface RegisterRequest {
   providedIn: 'root'
 })
 export class ApiService {
-  private baseUrl = `${environment.apiUrl}/api`;
+  private baseUrl = `${environment.apiUrl}/api/v1`;
 
   constructor(private http: HttpClient) { }
 

@@ -16,7 +16,7 @@ export interface AuthUser {
 // Task 9: Authentication service using JWT
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private baseUrl = `${environment.apiUrl}/api/auth`;
+  private baseUrl = `${environment.apiUrl}/api/v1/auth`;
   private platformId = inject(PLATFORM_ID);
   private isBrowser = isPlatformBrowser(this.platformId);
 

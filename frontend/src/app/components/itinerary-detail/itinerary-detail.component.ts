@@ -117,12 +117,7 @@ export class ItineraryDetailComponent implements OnInit {
         this.smartPlanTravelers = res.travelerCount || 1;
         this.smartPlanDuration = parseInt(res.duration) || 3;
 
-        // Fetch AI-powered image from Unsplash
-        if (res.destination) {
-          fetchItineraryImage(res.destination).then((url) => {
-            this.imageUrl = url;
-          });
-        }
+
 
         this.loading = false;
         this.cdr.detectChanges();

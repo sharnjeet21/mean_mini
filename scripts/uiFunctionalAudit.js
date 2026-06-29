@@ -52,12 +52,16 @@ async function run() {
   page.on('requestfailed', (request) => {
     failedRequests.push(`${request.method()} ${request.url()} - ${request.failure()?.errorText}`);
   });
-  page.on('response', (response) => {
+  page.on('response', async (response) => {
     if (response.url().includes('/api/')) {
       apiResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
     }
     if (response.status() >= 400) {
-      badResponses.push(`${response.status()} ${response.request().method()} ${response.url()}`);
+      let bodyText = '';
+      try {
+        bodyText = await response.text();
+      } catch (err) {}
+      badResponses.push(`${response.status()} ${response.request().method()} ${response.url()} - ${bodyText}`);
     }
   });
 
@@ -122,7 +126,7 @@ async function run() {
         }),
         directFetch: await page.evaluate(async () => {
           const token = localStorage.getItem('token');
-          const response = await fetch('http://localhost:5000/api/itinerary', {
+          const response = await fetch('http://localhost:5000/api/v1/itinerary', {
             headers: { Authorization: `Bearer ${token}` },
           });
           const body = await response.json();
@@ -319,7 +323,7 @@ async function run() {
     await page.locator('input[name="endDate"]').fill('2026-12-20');
     record(
       'Date fields derive duration',
-      await page.getByText('3 Days / 2 Nights').isVisible(),
+      await page.getByText('3 Days / 2 Nights').first().isVisible(),
     );
     await page.getByRole('button', { name: /continue/i }).click();
     await page.locator('input[name="budget"]').fill('3000');
@@ -337,11 +341,11 @@ async function run() {
     const cleanup = await page.evaluate(async (title) => {
       const token = localStorage.getItem('token');
       const headers = { Authorization: `Bearer ${token}` };
-      const listResponse = await fetch('http://localhost:5000/api/itinerary', { headers });
+      const listResponse = await fetch('http://localhost:5000/api/v1/itinerary', { headers });
       const list = await listResponse.json();
       const created = list.find((item) => item.title === title);
       if (!created) return { found: false };
-      const deleteResponse = await fetch(`http://localhost:5000/api/itinerary/${created._id}`, {
+      const deleteResponse = await fetch(`http://localhost:5000/api/v1/itinerary/${created._id}`, {
         method: 'DELETE',
         headers,
       });
@@ -390,6 +394,10 @@ async function run() {
     }
   } finally {
     await browser.close();
+    console.log("Console Errors:", consoleErrors);
+    console.log("Failed Requests:", failedRequests);
+    console.log("Bad Responses:", badResponses);
+    console.log("API Responses:", apiResponses);
   }
 
   for (const item of report) {

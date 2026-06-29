@@ -44,7 +44,12 @@ function authMiddleware(req, res, next) {
   if (!token) return res.status(401).json({ message: 'Access token required' });
 
   try {
-    req.user = jwt.verify(token, JWT_SECRET);
+    const verified = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      ...verified,
+      id: verified.id || verified._id,
+      _id: verified.id || verified._id,
+    };
     next();
   } catch {
     return res.status(401).json({ message: 'Invalid or expired token' });

@@ -46,13 +46,14 @@ router.post('/login', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Email and password are required.' });
     }
 
-    const result = await loginUser({ email: String(email).trim().toLowerCase(), password });
-    const user = await User.findById(result.id).select('-passwordHash');
+    const cleanEmail = String(email).trim().toLowerCase();
+    const token = await loginUser({ email: cleanEmail, password });
+    const user = await User.findOne({ email: cleanEmail }).select('-passwordHash');
 
     return res.json({
       success: true,
       message: 'Login successful',
-      token: result.token,
+      token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
