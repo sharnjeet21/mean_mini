@@ -4,6 +4,7 @@ import { throwError, TimeoutError } from 'rxjs';
 
 export const apiTimeoutInterceptor: HttpInterceptorFn = (request, next) => {
   const isAiGen = request.url.includes('/api/v1/ai/itinerary-draft') || 
+                  request.url.includes('/api/v1/ai/itinerary-revision') ||
                   request.url.includes('/api/v1/ai/travel-search') ||
                   request.url.includes('/api/v1/ai/extract-intent') ||
                   request.url.includes('/api/v1/ai/trending') ||

@@ -112,7 +112,8 @@ async function handleSmartPlan(req, res, next) {
 
 async function handleItineraryDraft(req, res, next) {
   try {
-    const draft = await itineraryDraftService.generateItineraryDraft(req.body);
+    const userId = req.user ? (req.user._id || req.user.id) : '';
+    const draft = await itineraryDraftService.generateItineraryDraft(req.body, userId);
     res.json(draft);
   } catch (err) {
     console.error('[aiController] Itinerary draft error:', err.message);

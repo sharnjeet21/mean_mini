@@ -232,7 +232,12 @@ export class ItineraryDetailComponent implements OnInit {
           this.changeSummary = this.calculateChangeSummary(this.itinerary, preview);
         },
         error: (err) => {
-          this.revisionError = err?.error?.message || err?.message || 'Failed to preview revision.';
+          if (err?.status === 408 || err?.name === 'TimeoutError' || String(err?.message || '').toLowerCase().includes('time out') || String(err?.message || '').toLowerCase().includes('timeout')) {
+            this.revisionError = 'The local AI planner took too long to respond. Your edit instruction has been preserved. Try again.';
+          } else {
+            this.revisionError = err?.error?.message || err?.message || 'Failed to preview revision.';
+          }
+          this.cdr.detectChanges();
         }
       });
   }

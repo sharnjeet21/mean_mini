@@ -334,7 +334,7 @@ export class AiService {
   }
 
   previewItineraryRevision(itineraryId: string, instruction: string): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/ai/itinerary-revision`, { itineraryId, instruction }).pipe(
+    return this.http.post<any>(`${this.baseUrl}/itinerary-revision`, { itineraryId, instruction }).pipe(
       catchError(err => this.handleError(err))
     );
   }

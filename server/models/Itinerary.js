@@ -85,6 +85,9 @@ const itinerarySchema = new mongoose.Schema({
       activity: String,
       description: String,
       location: String,
+      category: String,
+      suggestedDuration: String,
+      whyThisStop: String,
     }],
   }],
   tripSummary: {

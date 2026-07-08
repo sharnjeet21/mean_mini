@@ -448,7 +448,7 @@
       <ng-container *ngIf="creationMode === 'clarify'">
         <button mat-stroked-button class="ghost-action" type="button" (click)="creationMode = 'ai'">Back</button>
         <div class="flex-grow"></div>
-        <button mat-flat-button class="primary-action !px-6" type="button" (click)="submitClarification()">
+        <button mat-flat-button class="primary-action !px-6" type="button" (click)="submitClarification()" [disabled]="aiLoading">
           Generate draft <span class="material-symbols-outlined ml-2 text-lg">auto_awesome</span>
         </button>
       </ng-container>

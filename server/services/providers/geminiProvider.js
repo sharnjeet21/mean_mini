@@ -57,6 +57,16 @@ class GeminiProvider {
   }
 
   async generateItineraryDraft(input) {
+    let attractionsPrompt = '';
+    if (input.destinationAttractions && input.destinationAttractions.length > 0) {
+      attractionsPrompt = `
+Here are some popular signature/recommended places in ${input.destination} that you can select from if they fit the user's prompt, duration, budget, travelStyle, and interests:
+${input.destinationAttractions.map(a => `- ${a.name}: ${a.description}`).join('\n')}
+
+Do NOT blindly include all of them. Only select and prioritize the ones that match the user's specific context (e.g. arts vs relaxation, budget, etc.).
+`;
+    }
+
     const prompt = `
 You are a highly capable travel planning assistant. Your task is to generate a structured itinerary draft.
 You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
@@ -76,7 +86,8 @@ Output JSON Schema:
           "description": "string (short useful description)",
           "suggestedTime": "string (e.g., 10:00)",
           "suggestedDuration": "string (e.g., 2 hours)",
-          "category": "string (e.g., culture, nature, food)"
+          "category": "string (e.g., culture, nature, food)",
+          "whyThisStop": "string (why this stop matches user interests or style)"
         }
       ]
     }
@@ -92,7 +103,7 @@ Input Parameters:
 - Travel Style: ${input.travelStyle || 'balanced'}
 - Interests: ${input.interests && input.interests.length > 0 ? input.interests.join(', ') : 'general'}
 - Budget: ${input.budget ? input.budget : 'Not specified'}
-
+${attractionsPrompt}
 Generation Rules:
 - You must generate EXACTLY ${input.duration} days.
 - Each day must have a meaningful theme.
@@ -125,7 +136,8 @@ Generation Rules:
         description: stop.description || 'Explore the local area',
         suggestedTime: stop.suggestedTime || 'Flexible',
         suggestedDuration: stop.suggestedDuration || '1-2 hours',
-        category: stop.category || 'general'
+        category: stop.category || 'general',
+        whyThisStop: stop.whyThisStop || stop.reason || ''
       })) : []
     }));
 

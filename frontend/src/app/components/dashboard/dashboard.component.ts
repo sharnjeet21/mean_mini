@@ -62,6 +62,7 @@ export class DashboardComponent implements OnInit {
 
   // For AI draft flow
   extractedIntent: any = null;
+  currentDestinationAttractions: any[] = [];
   generatedDraft: any = null;
   durationConflictMessage = '';
   clarificationForm = {
@@ -225,6 +226,7 @@ export class DashboardComponent implements OnInit {
     this.aiPromptText = prefilledDestination ? `I want to plan a trip to ${prefilledDestination}` : '';
     this.aiLoading = false;
     this.extractedIntent = null;
+    this.currentDestinationAttractions = [];
     this.generatedDraft = null;
     this.durationConflictMessage = '';
     this.clarificationForm = {
@@ -369,6 +371,7 @@ export class DashboardComponent implements OnInit {
     // Parse duration if present, e.g. "4 days" -> 4
     const duration = this.parseDuration(result.suggestedDuration);
     this.aiPromptText = `I want a ${duration}-day trip to ${destination}`;
+    this.currentDestinationAttractions = result.attractions || [];
     this.clarificationForm = {
       destination,
       duration
@@ -377,11 +380,10 @@ export class DashboardComponent implements OnInit {
 
   // AI-first logic helpers
   private loadingTexts = [
-    'Building your trip...',
-    'Finding ideas for your days...',
-    'Structuring your itinerary...',
-    'Sourcing packing recommendations...',
-    'Organizing day-by-day stops...'
+    'Understanding your trip...',
+    'Finding relevant places...',
+    'Building your day plan...',
+    'Structuring your itinerary...'
   ];
   private loadingTextInterval: any;
 
@@ -492,7 +494,12 @@ export class DashboardComponent implements OnInit {
   }
 
   private callDraftGeneration(intent: any): void {
-    this.api.generateItineraryDraft(intent).pipe(
+    const payloadWithAttractions = {
+      ...intent,
+      destinationAttractions: this.currentDestinationAttractions
+    };
+
+    this.api.generateItineraryDraft(payloadWithAttractions).pipe(
       finalize(() => {
         this.stopLoadingTexts();
         this.aiLoading = false;
@@ -526,7 +533,10 @@ export class DashboardComponent implements OnInit {
               time: stop.suggestedTime || '10:00',
               activity: stop.name,
               description: stop.description,
-              location: draft.destination
+              location: draft.destination,
+              category: stop.category,
+              suggestedDuration: stop.suggestedDuration,
+              whyThisStop: stop.whyThisStop || stop.reason
             }))
           })),
           tripSummary: {
@@ -548,7 +558,11 @@ export class DashboardComponent implements OnInit {
         });
       },
       error: (err) => {
-        this.formError = err?.error?.message || err?.message || 'Failed to generate itinerary draft. Please try again.';
+        if (err?.status === 408 || err?.name === 'TimeoutError' || String(err?.message || '').toLowerCase().includes('time out') || String(err?.message || '').toLowerCase().includes('timeout')) {
+          this.formError = 'The local AI planner took too long to respond. Your trip description has been preserved. Try again.';
+        } else {
+          this.formError = err?.error?.message || err?.message || 'Failed to generate itinerary draft. Please try again.';
+        }
         this.cdr.detectChanges();
       }
     });

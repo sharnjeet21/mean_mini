@@ -887,3 +887,39 @@ Recommended practical order for implementation:
 
 Travel Intelligence should not become "just another itinerary generator." The strongest version of the product is a visual, explainable travel planning platform where AI helps users discover possibilities and deterministic logic helps them trust the outcome.
 
+## 19. Long-Term Travel Intelligence Direction
+
+- RAG-backed travel knowledge system
+- curated destination knowledge
+- traveler review ingestion pipeline
+- review moderation and trust scoring before RAG ingestion
+- local and hidden-place knowledge
+- seasonal destination intelligence
+- itinerary generation grounded with retrieved travel context
+- social travel inspiration ingestion
+- future reel/video transcription
+- extraction of destinations and activities from travel content
+- conversion of travel inspiration into itinerary drafts
+
+### Reviews Integration Architecture
+
+Reviews must NOT directly train the model or immediately enter the RAG knowledge base. The design requires a multi-stage validation pipeline:
+
+Traveler review
+→ moderation
+→ spam/quality checks
+→ location/entity validation
+→ trusted knowledge store
+→ embeddings/vector index
+→ RAG retrieval
+→ LLM itinerary generation/refinement
+
+### Future Production Evolution
+
+For scaling the deduplication and caching mechanisms:
+
+in-memory generation registry
+→ shared Redis cache
+→ asynchronous AI generation jobs
+→ persistent job status
+→ horizontally scalable workers
