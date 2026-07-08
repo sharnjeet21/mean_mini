@@ -3,6 +3,8 @@ const { rateLimiter } = require("../middleware/rateLimiter");
 const { validateQueryParam } = require("../middleware/inputValidator");
 const { InMemoryCache } = require("../utils/inMemoryCache");
 const aiController = require("../controllers/aiController");
+const { enrichWithImage } = require("../services/imageService");
+const { authenticate } = require("../middleware/auth");
 
 const router = express.Router();
 
@@ -25,6 +27,7 @@ const imageCache       = new InMemoryCache(ONE_HOUR_MS);
 const suggestionsCache = new InMemoryCache(ONE_HOUR_MS);
 const trendingCache    = new InMemoryCache(TWENTY_FOUR_HOURS_MS);
 const itineraryCache   = new InMemoryCache(ONE_HOUR_MS);
+const travelSearchCache = new InMemoryCache(ONE_HOUR_MS);
 
 const FALLBACK_DESTINATIONS = [
   { name: 'Kyoto, Japan', description: 'Temple mornings, craft traditions, and thoughtful neighborhood food.' },
@@ -70,6 +73,169 @@ function fallbackAttractions(destination) {
   ];
 }
 
+const TRAVEL_SEARCH_SCHEMA = {
+  type: 'destination | itinerary | recommendation | out_of_scope',
+  destination: '',
+  overview: '',
+  suggestedDuration: '',
+  attractions: [],
+  dayPlan: [],
+  travelTips: [],
+  recommendations: [],
+};
+
+const TRAVEL_KEYWORDS = [
+  'trip', 'travel', 'visit', 'vacation', 'holiday', 'destination', 'beach', 'mountain', 'city',
+  'island', 'hotel', 'stay', 'itinerary', 'days', 'day', 'tour', 'honeymoon', 'backpacking',
+  'weekend', 'getaway', 'flight', 'goa', 'jaipur', 'manali', 'kerala', 'paris', 'tokyo',
+];
+
+function validateTravelSearchBody(req, res, next) {
+  const query = String(req.body?.query || '').trim();
+  if (!query) {
+    return res.status(400).json({ message: 'Query is required.' });
+  }
+  if (query.length > 200) {
+    return res.status(400).json({ message: 'Query must be 200 characters or fewer.' });
+  }
+  const printableUnicodeRegex = /^[\x20-\x7E\u00A0-\uFFFF]+$/;
+  if (!printableUnicodeRegex.test(query)) {
+    return res.status(400).json({ message: 'Query contains invalid characters.' });
+  }
+
+  let sanitized = query.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+  sanitized = sanitized.replace(/<[^>]+>/g, '').trim();
+  req.sanitized = { ...(req.sanitized || {}), query: sanitized };
+  next();
+}
+
+function looksTravelRelated(query) {
+  const normalized = String(query || '').toLowerCase();
+  return TRAVEL_KEYWORDS.some((keyword) => normalized.includes(keyword))
+    || /\b\d+\s*(day|days|night|nights)\b/i.test(normalized);
+}
+
+function inferQueryType(query) {
+  const normalized = String(query || '').toLowerCase();
+  if (/\b(plan|itinerary|days|day-wise|for \d+ days?)\b/i.test(normalized)) return 'itinerary';
+  if (/\b(budget|recommend|suggest|beach|mountain|family|romantic)\b/i.test(normalized)) return 'recommendation';
+  return 'destination';
+}
+
+function safeText(value, max = 300) {
+  return String(value || '').trim().slice(0, max);
+}
+
+function normalizeStringList(value, maxItems = 6, maxChars = 160) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => safeText(item, maxChars))
+    .filter(Boolean)
+    .slice(0, maxItems);
+}
+
+function normalizeAttractions(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => ({
+      name: safeText(item?.name, 80),
+      description: safeText(item?.description, 180),
+    }))
+    .filter((item) => item.name)
+    .slice(0, 6);
+}
+
+function normalizeDayPlan(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item, index) => ({
+      day: Number.isInteger(Number(item?.day)) ? Number(item.day) : index + 1,
+      title: safeText(item?.title || `Day ${index + 1}`, 120),
+      summary: safeText(item?.summary, 220),
+      places: normalizeStringList(item?.places, 5, 80),
+    }))
+    .slice(0, 10);
+}
+
+function fallbackTravelSearch(query) {
+  const type = inferQueryType(query);
+  const destinationMatch = String(query).match(/\b(?:to|in|for)\s+([A-Za-z\s,]+)$/i);
+  const destination = safeText(destinationMatch?.[1] || query, 80);
+  return {
+    type,
+    destination,
+    normalizedDestination: destination,
+    overview: type === 'recommendation'
+      ? 'Here are travel-friendly ideas based on your request.'
+      : `${destination} is a strong travel pick with a mix of highlights, local experiences, and flexible pacing.`,
+    suggestedDuration: /\b\d+\s*day/i.test(query) ? query.match(/\b\d+\s*days?\b/i)?.[0] || '' : '3 to 5 days',
+    attractions: type === 'recommendation' ? [] : fallbackAttractions(destination),
+    dayPlan: type === 'itinerary'
+      ? normalizeDayPlan([
+        { day: 1, title: 'Arrival and orientation', summary: 'Settle in and explore the surrounding neighborhood.', places: ['Old Quarter', 'Local market'] },
+        { day: 2, title: 'Signature highlights', summary: 'Focus on the destination’s must-see experiences at a comfortable pace.', places: ['Top viewpoint', 'Cultural landmark'] },
+      ])
+      : [],
+    travelTips: ['Check seasonal weather before you lock dates.', 'Keep one flexible block for slower local exploration.'],
+    recommendations: type === 'recommendation'
+      ? [
+        { name: 'Goa, India', reason: 'Easy beach escape with strong budget and short-trip options.' },
+        { name: 'Pondicherry, India', reason: 'Compact coastal trip with food, cafes, and walkable neighborhoods.' },
+        { name: 'Gokarna, India', reason: 'A quieter beach alternative for a relaxed 3-day plan.' },
+      ]
+      : [],
+  };
+}
+
+function normalizeRecommendationList(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => ({
+      name: safeText(item?.name, 80),
+      reason: safeText(item?.reason, 180),
+    }))
+    .filter((item) => item.name && item.reason)
+    .slice(0, 5);
+}
+
+function normalizeTravelSearchResponse(raw, query) {
+  const type = ['destination', 'itinerary', 'recommendation'].includes(raw?.type) ? raw.type : inferQueryType(query);
+  const destination = safeText(raw?.destination, 80);
+  const normalizedDestination = safeText(raw?.normalizedDestination || destination, 120);
+  return {
+    type,
+    destination,
+    normalizedDestination,
+    overview: safeText(raw?.overview, 400),
+    suggestedDuration: safeText(raw?.suggestedDuration, 60),
+    attractions: normalizeAttractions(raw?.attractions),
+    dayPlan: normalizeDayPlan(raw?.dayPlan),
+    travelTips: normalizeStringList(raw?.travelTips, 6, 160),
+    recommendations: normalizeRecommendationList(raw?.recommendations),
+  };
+}
+
+async function fetchTravelSearchImage(destination) {
+  if (!destination) return null;
+  const cacheKey = `travel-image:${destination.toLowerCase()}`;
+  const cached = imageCache.get(cacheKey);
+  if (cached !== null) return cached;
+
+  try {
+    const image = await enrichWithImage(destination);
+    if (image) {
+      imageCache.set(cacheKey, image);
+      return image;
+    }
+  } catch (err) {
+    console.error('[aiRoutes] Travel image error:', err.message);
+  }
+
+  const fallback = { image: fallbackImage(destination), photographer: '', profile: '' };
+  imageCache.set(cacheKey, fallback);
+  return fallback;
+}
+
 // ── Gemini helper ─────────────────────────────────────────────────────────────
 async function callGemini(prompt) {
   if (!GEMINI_API_KEY) {
@@ -91,6 +257,91 @@ async function callGemini(prompt) {
   if (!text) throw new Error('Gemini returned an empty response');
   return text;
 }
+
+async function generateStructuredTravelSearch(query) {
+  const prompt = [
+    'You are a travel planning assistant.',
+    'Reply ONLY with valid JSON and no markdown.',
+    `Use this schema exactly: ${JSON.stringify(TRAVEL_SEARCH_SCHEMA)}.`,
+    'Rules:',
+    '- Only answer travel-related queries.',
+    '- If the query is outside travel, respond with {"type":"out_of_scope","destination":"","overview":"This assistant currently focuses on travel planning and destination discovery.","suggestedDuration":"","attractions":[],"dayPlan":[],"travelTips":[],"recommendations":[]}.',
+    '- For type="destination", include overview, suggestedDuration, attractions, and travelTips.',
+    '- For type="itinerary", include destination, overview, suggestedDuration, attractions, dayPlan, and travelTips.',
+    '- For type="recommendation", include recommendations as objects with name and reason.',
+    '- Keep answers concise and practical.',
+    `User query: ${query}`,
+  ].join('\n');
+
+  const text = await callGemini(prompt);
+  const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
+  return JSON.parse(cleaned);
+}
+
+router.post('/travel-search', rateLimiter, validateTravelSearchBody, async (req, res) => {
+  const query = req.sanitized.query;
+  const cacheKey = `travel-search:${query.toLowerCase()}`;
+  const cached = travelSearchCache.get(cacheKey);
+  if (cached !== null) return res.set('X-Cache', 'HIT').json(cached);
+
+  if (!looksTravelRelated(query)) {
+    const outOfScope = {
+      type: 'out_of_scope',
+      destination: '',
+      normalizedDestination: '',
+      overview: 'This assistant currently focuses on travel planning and destination discovery.',
+      suggestedDuration: '',
+      attractions: [],
+      dayPlan: [],
+      travelTips: [],
+      recommendations: [],
+      image: null,
+    };
+    travelSearchCache.set(cacheKey, outOfScope);
+    return res.set('X-Cache', 'MISS').json(outOfScope);
+  }
+
+  try {
+    const raw = await generateStructuredTravelSearch(query);
+    if (raw?.type === 'out_of_scope') {
+      const result = {
+        type: 'out_of_scope',
+        destination: '',
+        normalizedDestination: '',
+        overview: 'This assistant currently focuses on travel planning and destination discovery.',
+        suggestedDuration: '',
+        attractions: [],
+        dayPlan: [],
+        travelTips: [],
+        recommendations: [],
+        image: null,
+      };
+      travelSearchCache.set(cacheKey, result);
+      return res.set('X-Cache', 'MISS').json(result);
+    }
+
+    const normalized = normalizeTravelSearchResponse(raw, query);
+    if (!normalized.destination && normalized.type !== 'recommendation') {
+      throw new Error('Missing destination in structured travel response');
+    }
+
+    const image = normalized.normalizedDestination
+      ? await fetchTravelSearchImage(normalized.normalizedDestination)
+      : null;
+    const result = { ...normalized, image };
+    travelSearchCache.set(cacheKey, result);
+    return res.set('X-Cache', 'MISS').json(result);
+  } catch (err) {
+    console.error('[aiRoutes] Travel search error:', err.message);
+    const fallback = fallbackTravelSearch(query);
+    const image = fallback.normalizedDestination
+      ? await fetchTravelSearchImage(fallback.normalizedDestination)
+      : null;
+    const result = { ...fallback, image };
+    travelSearchCache.set(cacheKey, result);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json(result);
+  }
+});
 
 // ── GET /image ────────────────────────────────────────────────────────────────
 router.get('/image', rateLimiter, validateQueryParam('place'), async (req, res) => {
@@ -278,6 +529,16 @@ router.get("/flight-info", rateLimiter, (req, res, next) => {
 router.post("/smart-plan", rateLimiter, (req, res, next) => {
   if (!req.body.destination) return res.status(400).json({ error: "destination is required" });
   aiController.handleSmartPlan(req, res, next);
+});
+router.post("/itinerary-draft", authenticate, rateLimiter, (req, res, next) => {
+  if (!req.body.destination) return res.status(400).json({ error: "destination is required" });
+  if (!req.body.duration) return res.status(400).json({ error: "duration is required" });
+  aiController.handleItineraryDraft(req, res, next);
+});
+
+router.post("/extract-intent", authenticate, rateLimiter, (req, res, next) => {
+  if (!req.body.text) return res.status(400).json({ error: "text is required" });
+  aiController.handleExtractIntent(req, res, next);
 });
 
 module.exports = router;

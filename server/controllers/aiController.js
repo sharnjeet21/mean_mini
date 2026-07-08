@@ -1,4 +1,5 @@
 const aiService = require("../services/ai.service");
+const itineraryDraftService = require("../services/itineraryDraftService");
 
 async function handleSuggestions(req, res, next) {
   try {
@@ -79,6 +80,10 @@ async function handleFlightInfo(req, res, next) {
   }
 }
 
+// LEGACY MOCK BEHAVIOR
+// This endpoint returns deterministic, hard-coded mock data. 
+// It does NOT use a real AI provider. It is kept only to support the existing UI
+// until the new itinerary draft engine is fully integrated.
 async function handleSmartPlan(req, res, next) {
   try {
     const { destination, duration, travelerCount = 1, travelStyle = "balanced" } = req.body;
@@ -105,6 +110,31 @@ async function handleSmartPlan(req, res, next) {
   }
 }
 
+async function handleItineraryDraft(req, res, next) {
+  try {
+    const draft = await itineraryDraftService.generateItineraryDraft(req.body);
+    res.json(draft);
+  } catch (err) {
+    console.error('[aiController] Itinerary draft error:', err.message);
+    // Return a controlled application error. Do not generate fake data.
+    res.status(503).json({ message: 'We couldn\'t generate your trip draft right now. Your trip has not been saved.', details: err.message });
+  }
+}
+
+async function handleExtractIntent(req, res, next) {
+  try {
+    const { text } = req.body;
+    if (!text) {
+      return res.status(400).json({ error: 'text is required' });
+    }
+    const extracted = await itineraryDraftService.extractTripIntent(text);
+    res.json(extracted);
+  } catch (err) {
+    console.error('[aiController] Intent extraction error:', err.message);
+    res.status(503).json({ message: 'We couldn\'t extract your trip intent right now.', details: err.message });
+  }
+}
+
 module.exports = {
   handleSuggestions,
   handleRoutePlan,
@@ -112,4 +142,6 @@ module.exports = {
   handleBudgetEstimate,
   handleFlightInfo,
   handleSmartPlan,
+  handleItineraryDraft,
+  handleExtractIntent,
 };
