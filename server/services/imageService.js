@@ -2,6 +2,9 @@ const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/
 const imageCache = new Map();
 
 async function generateKeyword(place) {
+  const provider = process.env.AI_PROVIDER || 'ollama';
+  if (provider.toLowerCase() === 'ollama') return place;
+
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) return place;
 

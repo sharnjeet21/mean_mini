@@ -1,10 +1,11 @@
 'use strict';
 
 const OllamaProvider = require('./providers/ollamaProvider');
+const GeminiProvider = require('./providers/geminiProvider');
 
 /**
  * Resolves and returns the configured AI provider.
- * Currently supports 'ollama'.
+ * Supports 'ollama' and 'gemini'.
  */
 function getAiProvider() {
   const providerName = process.env.AI_PROVIDER || 'ollama';
@@ -12,8 +13,9 @@ function getAiProvider() {
   if (providerName.toLowerCase() === 'ollama') {
     return new OllamaProvider();
   }
-
-  // Future providers (like Gemini) can be added here
+  if (providerName.toLowerCase() === 'gemini') {
+    return new GeminiProvider();
+  }
   
   throw new Error(`Unsupported AI_PROVIDER configured: ${providerName}`);
 }

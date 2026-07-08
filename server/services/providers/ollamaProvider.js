@@ -52,21 +52,10 @@ class OllamaProvider {
   constructor(config = {}) {
     this.baseUrl = config.baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
     this.model = config.model || process.env.OLLAMA_MODEL || 'qwen2.5-coder:7b';
-    this.timeout = config.timeout || 120000; // 2 minutes local timeout
+    this.timeout = config.timeout || Number(process.env.AI_GENERATION_TIMEOUT_MS) || 120000; // 2 minutes local timeout
   }
 
-  async generateItineraryDraft(input) {
-    const prompt = this._buildPrompt(input);
-    const payload = {
-      model: this.model,
-      prompt: prompt,
-      stream: false,
-      format: ITINERARY_DRAFT_SCHEMA,
-      options: {
-        temperature: 0.2, // Conservative temperature for structured generation as requested
-      }
-    };
-
+  async _callOllama(payload) {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
@@ -91,23 +80,39 @@ class OllamaProvider {
         throw new Error('Ollama returned empty response');
       }
 
-      let parsed;
-      try {
-        parsed = JSON.parse(textResponse);
-      } catch (err) {
-        throw new Error('Ollama returned malformed JSON');
-      }
-
-      return this._validateAndNormalize(parsed, input);
+      return textResponse;
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error('Ollama request timed out after ' + (this.timeout / 1000) + ' seconds.');
+        throw new Error(`Ollama request timed out after ${this.timeout / 1000} seconds.`);
       }
       if (error.cause && error.cause.code === 'ECONNREFUSED') {
         throw new Error(`Ollama connection refused at ${this.baseUrl}. Is Ollama running?`);
       }
-      throw error; // Let itineraryDraftService handle other errors
+      throw error;
     }
+  }
+
+  async generateItineraryDraft(input) {
+    const prompt = this._buildPrompt(input);
+    const payload = {
+      model: this.model,
+      prompt: prompt,
+      stream: false,
+      format: ITINERARY_DRAFT_SCHEMA,
+      options: {
+        temperature: 0.2, // Conservative temperature for structured generation as requested
+      }
+    };
+
+    const responseText = await this._callOllama(payload);
+    let parsed;
+    try {
+      parsed = JSON.parse(responseText);
+    } catch (err) {
+      throw new Error('Ollama returned malformed JSON');
+    }
+
+    return this._validateAndNormalize(parsed, input);
   }
 
   _buildPrompt(input) {
@@ -219,51 +224,22 @@ Generation Rules:
       }
     };
 
+    const responseText = await this._callOllama(payload);
+    let parsed;
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), this.timeout);
-
-      const response = await fetch(`${this.baseUrl}/api/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        throw new Error(`Ollama API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      const textResponse = data.response;
-      
-      if (!textResponse) {
-        throw new Error('Ollama returned empty response');
-      }
-
-      let parsed;
-      try {
-        parsed = JSON.parse(textResponse);
-      } catch (err) {
-        throw new Error('Ollama returned malformed JSON for intent extraction');
-      }
-
-      return {
-        destination: parsed.destination || null,
-        duration: typeof parsed.duration === 'number' ? parsed.duration : null,
-        travelers: typeof parsed.travelers === 'number' ? parsed.travelers : null,
-        travelStyle: parsed.travelStyle || null,
-        interests: Array.isArray(parsed.interests) ? parsed.interests : [],
-        budget: typeof parsed.budget === 'number' ? parsed.budget : null
-      };
-    } catch (error) {
-      if (error.name === 'AbortError') {
-        throw new Error('Ollama intent extraction timed out.');
-      }
-      throw error;
+      parsed = JSON.parse(responseText);
+    } catch (err) {
+      throw new Error('Ollama returned malformed JSON for intent extraction');
     }
+
+    return {
+      destination: parsed.destination || null,
+      duration: typeof parsed.duration === 'number' ? parsed.duration : null,
+      travelers: typeof parsed.travelers === 'number' ? parsed.travelers : null,
+      travelStyle: parsed.travelStyle || null,
+      interests: Array.isArray(parsed.interests) ? parsed.interests : [],
+      budget: typeof parsed.budget === 'number' ? parsed.budget : null
+    };
   }
 
   _buildIntentPrompt(text) {
@@ -289,6 +265,180 @@ Extraction Rules:
 - If duration is a range, pick the maximum number.
 - Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
 `;
+  }
+
+  async generateStructuredTravelSearch(query) {
+    const prompt = `
+You are a travel planning assistant.
+You MUST output ONLY valid JSON matching the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Output JSON Schema:
+{
+  "type": "string (one of: 'destination', 'itinerary', 'recommendation', 'out_of_scope')",
+  "destination": "string",
+  "overview": "string",
+  "suggestedDuration": "string",
+  "attractions": [
+    {
+      "name": "string",
+      "description": "string"
+    }
+  ],
+  "dayPlan": [
+    {
+      "day": "integer",
+      "title": "string",
+      "summary": "string",
+      "places": ["string"]
+    }
+  ],
+  "travelTips": ["string"],
+  "recommendations": [
+    {
+      "name": "string",
+      "reason": "string"
+    }
+  ]
+}
+
+Rules:
+- Only answer travel-related queries.
+- If the query is outside travel, set type to "out_of_scope".
+- For type="destination", include destination, overview, suggestedDuration, attractions, and travelTips.
+- For type="itinerary", include destination, overview, suggestedDuration, attractions, dayPlan, and travelTips.
+- For type="recommendation", include recommendations.
+- Keep answers concise and practical.
+
+User query: ${query}
+`;
+
+    const payload = {
+      model: this.model,
+      prompt: prompt,
+      stream: false,
+      format: {
+        type: 'object',
+        properties: {
+          type: { type: 'string', enum: ['destination', 'itinerary', 'recommendation', 'out_of_scope'] },
+          destination: { type: 'string' },
+          overview: { type: 'string' },
+          suggestedDuration: { type: 'string' },
+          attractions: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                description: { type: 'string' }
+              },
+              required: ['name', 'description']
+            }
+          },
+          dayPlan: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                day: { type: 'integer' },
+                title: { type: 'string' },
+                summary: { type: 'string' },
+                places: {
+                  type: 'array',
+                  items: { type: 'string' }
+                }
+              },
+              required: ['day', 'title', 'summary', 'places']
+            }
+          },
+          travelTips: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          recommendations: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                name: { type: 'string' },
+                reason: { type: 'string' }
+              },
+              required: ['name', 'reason']
+            }
+          }
+        },
+        required: ['type', 'destination', 'overview', 'suggestedDuration', 'attractions', 'dayPlan', 'travelTips', 'recommendations']
+      },
+      options: {
+        temperature: 0.2
+      }
+    };
+
+    const response = await this._callOllama(payload);
+    return JSON.parse(response);
+  }
+
+  async generateTrendingDestinations() {
+    const prompt = `Suggest 5 trending travel destinations in ${new Date().getFullYear()} with short descriptions. Return ONLY JSON.`;
+    const TRENDING_SCHEMA = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' }
+        },
+        required: ['name', 'description']
+      }
+    };
+    const payload = {
+      model: this.model,
+      prompt: prompt,
+      stream: false,
+      format: TRENDING_SCHEMA,
+      options: { temperature: 0.3 }
+    };
+    const response = await this._callOllama(payload);
+    return JSON.parse(response);
+  }
+
+  async generateItinerarySuggestions(destination) {
+    const prompt = `Suggest top 5 attractions in ${destination} for a travel itinerary. Return ONLY JSON.`;
+    const ATTRACTIONS_SCHEMA = {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          description: { type: 'string' }
+        },
+        required: ['name', 'description']
+      }
+    };
+    const payload = {
+      model: this.model,
+      prompt: prompt,
+      stream: false,
+      format: ATTRACTIONS_SCHEMA,
+      options: { temperature: 0.3 }
+    };
+    const response = await this._callOllama(payload);
+    return JSON.parse(response);
+  }
+
+  async generateAutocompleteSuggestions(query) {
+    const list = [
+      'Kyoto, Japan',
+      'Santorini, Greece',
+      'Leh, Ladakh, India',
+      'Lucerne, Switzerland',
+      'Munnar, Kerala, India',
+      'Jaipur, Rajasthan, India',
+      'Ubud, Bali, Indonesia',
+      'Paros, Greece',
+    ];
+    const normalized = String(query || '').toLowerCase();
+    const matches = list.filter((place) => place.toLowerCase().includes(normalized));
+    return (matches.length ? matches : list).slice(0, 8);
   }
 }
 
