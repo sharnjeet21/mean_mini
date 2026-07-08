@@ -62,4 +62,67 @@
       </div>
     </div>
   </div>
+
+  <div *ngIf="aiLoading || aiResult || aiError" class="mt-5">
+    <div *ngIf="aiLoading" class="rounded-[24px] border border-[#7ae0c3]/20 bg-[#7ae0c3]/10 p-4 text-sm text-[#baf4e3]">
+      Building travel suggestions...
+    </div>
+
+    <div *ngIf="aiError && !aiLoading" class="rounded-2xl border border-[#ff8d70]/20 bg-[#ff8d70]/10 p-4 text-sm text-[#ffb4a1]">
+      <div class="flex items-center justify-between gap-3">
+        <span>{{ aiError }}</span>
+        <button type="button" (click)="selectSuggestion(query)" class="rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-white">Retry</button>
+      </div>
+    </div>
+
+    <section *ngIf="aiResult && !aiLoading" class="glass-panel rounded-[24px] p-5">
+      <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6f8996]">AI travel answer</p>
+      <h3 class="mt-3 text-2xl font-extrabold text-white">
+        {{ aiResult.destination || 'Travel assistant' }}
+      </h3>
+      <p class="mt-3 text-sm leading-6 text-[#9cb0ba]">{{ aiResult.overview }}</p>
+
+      <p *ngIf="aiResult.suggestedDuration" class="mt-4 text-xs font-bold uppercase tracking-[0.14em] text-[#a5ecd7]">
+        Ideal duration: {{ aiResult.suggestedDuration }}
+      </p>
+
+      <div *ngIf="aiResult.recommendations.length" class="mt-5 grid gap-2 sm:grid-cols-2">
+        <article *ngFor="let recommendation of aiResult.recommendations" class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <p class="text-sm font-bold text-white">{{ recommendation.name }}</p>
+          <p class="mt-1 text-xs leading-5 text-[#7e96a2]">{{ recommendation.reason }}</p>
+        </article>
+      </div>
+
+      <div *ngIf="aiResult.dayPlan.length" class="mt-5 space-y-3">
+        <article *ngFor="let day of aiResult.dayPlan" class="rounded-2xl border border-white/10 bg-white/[0.035] p-4">
+          <p class="text-xs font-extrabold uppercase tracking-[0.14em] text-[#a5ecd7]">Day {{ day.day }}</p>
+          <p class="mt-2 text-sm font-bold text-white">{{ day.title }}</p>
+          <p *ngIf="day.summary" class="mt-1 text-xs leading-5 text-[#7e96a2]">{{ day.summary }}</p>
+          <p *ngIf="day.places.length" class="mt-2 text-xs text-[#c2d0d6]">{{ day.places.join(' • ') }}</p>
+        </article>
+      </div>
+
+      <div *ngIf="aiResult.travelTips.length" class="mt-5">
+        <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6f8996]">Travel tips</p>
+        <div class="mt-3 flex flex-wrap gap-2">
+          <span *ngFor="let tip of aiResult.travelTips" class="rounded-full border border-white/10 bg-white/[0.035] px-3 py-2 text-xs text-[#c2d0d6]">
+            {{ tip }}
+          </span>
+        </div>
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button *ngIf="aiResult.type === 'itinerary'" type="button" (click)="createItineraryFromAi()" class="rounded-full bg-[#7ae0c3] px-4 py-2 text-sm font-bold text-[#05201f]">
+          Create Itinerary
+        </button>
+        <button type="button" (click)="selectSuggestion(query)" class="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-white">
+          Refine Plan
+        </button>
+      </div>
+
+      <p *ngIf="aiResult.image?.photographer" class="mt-4 text-[11px] text-[#6f8996]">
+        Photo by <a [href]="aiResult.image?.profile" target="_blank" rel="noreferrer" class="text-[#a5ecd7]">{{ aiResult.image?.photographer }}</a> on Unsplash
+      </p>
+    </section>
+  </div>
 </div>

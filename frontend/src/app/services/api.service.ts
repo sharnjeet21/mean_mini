@@ -184,4 +184,13 @@ export class ApiService {
       reviewNotes
     });
   }
+
+  // AI draft endpoints
+  extractIntent(text: string): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ai/extract-intent`, { text });
+  }
+
+  generateItineraryDraft(input: any): Observable<any> {
+    return this.http.post(`${this.baseUrl}/ai/itinerary-draft`, input);
+  }
 }

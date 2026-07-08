@@ -13,7 +13,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Subject, Subscription } from 'rxjs';
 import { debounceTime, switchMap } from 'rxjs/operators';
-import { AiService, Attraction } from '../../services/ai.service';
+import { AiService, AiTravelSearchResult, Attraction } from '../../services/ai.service';
 
 interface HighlightPart {
   text: string;
@@ -28,6 +28,7 @@ interface HighlightPart {
 })
 export class DestinationSearchComponent implements OnInit, OnDestroy {
   @Output() destinationSelected = new EventEmitter<string>();
+  @Output() createItineraryRequested = new EventEmitter<AiTravelSearchResult>();
 
   // Input state
   query = '';
@@ -48,6 +49,9 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
   attractions: Attraction[] = [];
   attractionsLoading = false;
   attractionsError = '';
+  aiResult: AiTravelSearchResult | null = null;
+  aiLoading = false;
+  aiError = '';
 
   // Error state
   rateLimitError = '';
@@ -142,6 +146,9 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
     this.query = place;
     this.showSuggestions = false;
     this.activeIndex = -1;
+    this.aiResult = null;
+    this.aiError = '';
+    this.aiLoading = true;
     this.attractionsError = '';
     this.rateLimitError = '';
     this.attractionsLoading = true;
@@ -177,7 +184,32 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
       },
     });
 
+    this.aiService.getTravelSearchResult(place).subscribe({
+      next: (result) => {
+        this.aiResult = result;
+        this.aiLoading = false;
+        if (result.image?.image) {
+          this.imageUrl = result.image.image;
+          this.imageError = false;
+          this.imageLoading = false;
+        }
+        if (result.attractions?.length) {
+          this.attractions = result.attractions;
+          this.attractionsLoading = false;
+        }
+      },
+      error: (err) => {
+        this.aiLoading = false;
+        this.aiError = err?.error?.message || err?.message || 'Failed to build travel suggestions. Please try again.';
+      },
+    });
+
     this.destinationSelected.emit(place);
+  }
+
+  createItineraryFromAi(): void {
+    if (!this.aiResult || this.aiResult.type !== 'itinerary') return;
+    this.createItineraryRequested.emit(this.aiResult);
   }
 
   getHighlightedParts(suggestion: string, query: string): HighlightPart[] {
@@ -223,6 +255,9 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
     this.suggestions = [];
     this.showSuggestions = false;
     this.activeIndex = -1;
+    this.aiResult = null;
+    this.aiLoading = false;
+    this.aiError = '';
     this.attractions = [];
     this.attractionsError = '';
     this.rateLimitError = '';

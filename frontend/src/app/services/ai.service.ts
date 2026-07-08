@@ -15,6 +15,35 @@ export interface Attraction {
   description: string;
 }
 
+export interface AiRecommendation {
+  name: string;
+  reason: string;
+}
+
+export interface AiDayPlan {
+  day: number;
+  title: string;
+  summary: string;
+  places: string[];
+}
+
+export interface AiTravelSearchResult {
+  type: 'destination' | 'itinerary' | 'recommendation' | 'out_of_scope';
+  destination: string;
+  normalizedDestination: string;
+  overview: string;
+  suggestedDuration: string;
+  attractions: Attraction[];
+  dayPlan: AiDayPlan[];
+  travelTips: string[];
+  recommendations: AiRecommendation[];
+  image: {
+    image: string;
+    photographer: string;
+    profile: string;
+  } | null;
+}
+
 // ── Fallback mock data shown when AI APIs are unavailable ──────────────────────
 const FALLBACK_TRENDING: TrendingDestination[] = [
   { name: 'Kyoto, Japan',         description: 'Ancient temples, bamboo groves & world-class kaiseki dining.' },
@@ -37,6 +66,7 @@ const TTL_TRENDING     = 24 * 60 * 60 * 1000; // 24 h
 const TTL_IMAGES       = 60 * 60 * 1000;       // 1 h
 const TTL_SUGGESTIONS  = 60 * 60 * 1000;       // 1 h
 const TTL_ATTRACTIONS  = 60 * 60 * 1000;       // 1 h
+const TTL_TRAVEL_SEARCH = 30 * 60 * 1000;      // 30 min
 
 interface CacheEntry<T> {
   data: T;
@@ -219,6 +249,17 @@ export class AiService {
         if (err?.status === 429) return throwError(() => new Error('Too many requests — please wait a moment before trying again.'));
         return of(FALLBACK_ATTRACTIONS);
       })
+    );
+  }
+
+  getTravelSearchResult(query: string): Observable<AiTravelSearchResult> {
+    const key = `travel-search:${query.toLowerCase()}`;
+    const cached = this.lsGet<AiTravelSearchResult>(key);
+    if (cached) return of(cached);
+
+    return this.http.post<AiTravelSearchResult>(`${this.baseUrl}/travel-search`, { query }).pipe(
+      tap(data => this.lsSet(key, data, TTL_TRAVEL_SEARCH)),
+      catchError(err => this.handleError(err))
     );
   }
   /**

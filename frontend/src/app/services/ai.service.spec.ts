@@ -1,3 +1,4 @@
+import '@angular/compiler';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { HttpParams } from '@angular/common/http';
@@ -6,6 +7,7 @@ import { AiService } from './ai.service';
 // Mock HttpClient
 const mockHttp = {
   get: vi.fn(),
+  post: vi.fn(),
 };
 
 // Create service instance directly
@@ -28,7 +30,7 @@ describe('AiService', () => {
 
       expect(mockHttp.get).toHaveBeenCalledOnce();
       const [url, options] = mockHttp.get.mock.calls[0];
-      expect(url).toContain('/api/image');
+      expect(url).toContain('/api/v1/ai/image');
       expect((options.params as HttpParams).toString()).toContain('place=Paris');
     });
 
@@ -77,7 +79,7 @@ describe('AiService', () => {
 
       expect(mockHttp.get).toHaveBeenCalledOnce();
       const [url, options] = mockHttp.get.mock.calls[0];
-      expect(url).toContain('/api/suggestions');
+      expect(url).toContain('/api/v1/ai/suggestions');
       expect((options.params as HttpParams).toString()).toContain('q=Paris');
     });
 
@@ -114,7 +116,7 @@ describe('AiService', () => {
 
       expect(mockHttp.get).toHaveBeenCalledOnce();
       const [url, options] = mockHttp.get.mock.calls[0];
-      expect(url).toContain('/api/trending');
+      expect(url).toContain('/api/v1/ai/trending');
       // No params should be passed
       expect(options).toBeUndefined();
     });
@@ -143,7 +145,7 @@ describe('AiService', () => {
 
       expect(mockHttp.get).toHaveBeenCalledOnce();
       const [url, options] = mockHttp.get.mock.calls[0];
-      expect(url).toContain('/api/itinerary-suggestions');
+      expect(url).toContain('/api/v1/ai/itinerary-suggestions');
       expect((options.params as HttpParams).toString()).toContain('place=Paris');
     });
 
@@ -158,6 +160,31 @@ describe('AiService', () => {
       service.getItinerarySuggestions('Paris').subscribe((res) => (result = res));
 
       expect(result).toEqual(attractions);
+    });
+  });
+
+  describe('getTravelSearchResult(query)', () => {
+    it('calls http.post with correct URL containing /api/travel-search and request body', () => {
+      mockHttp.post.mockReturnValue(of({ type: 'destination', destination: 'Paris' }));
+
+      service.getTravelSearchResult('Paris').subscribe();
+
+      expect(mockHttp.post).toHaveBeenCalledOnce();
+      const [url, payload] = mockHttp.post.mock.calls[0];
+      expect(url).toContain('/api/v1/ai/travel-search');
+      expect(payload).toEqual({ query: 'Paris' });
+    });
+
+    it('maps 429 error to rate-limit message', () => {
+      mockHttp.post.mockReturnValue(throwError(() => ({ status: 429 })));
+
+      let error: any;
+      service.getTravelSearchResult('Paris').subscribe({
+        error: (err) => (error = err),
+      });
+
+      expect(error).toBeInstanceOf(Error);
+      expect(error.message).toBe(RATE_LIMIT_MSG);
     });
   });
 });

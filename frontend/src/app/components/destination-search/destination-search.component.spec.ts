@@ -1,18 +1,38 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import '@angular/compiler';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { of, throwError } from 'rxjs';
 import { DestinationSearchComponent } from './destination-search.component';
+
+const baseAiResult = {
+  type: 'destination' as const,
+  destination: 'Paris',
+  normalizedDestination: 'Paris, France',
+  overview: 'City overview',
+  suggestedDuration: '3 days',
+  attractions: [],
+  dayPlan: [],
+  travelTips: [],
+  recommendations: [],
+  image: null,
+};
 
 const mockAiService = {
   getDestinationImage: vi.fn(),
   getSuggestions: vi.fn(),
   getItinerarySuggestions: vi.fn(),
+  getTravelSearchResult: vi.fn(),
 };
+
+function keyEvent(key: string): KeyboardEvent {
+  return { key, preventDefault: vi.fn() } as unknown as KeyboardEvent;
+}
 
 let component: DestinationSearchComponent;
 
 describe('DestinationSearchComponent', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockAiService.getTravelSearchResult.mockReturnValue(of(baseAiResult));
     component = new DestinationSearchComponent(mockAiService as any);
     component.ngOnInit();
   });
@@ -21,19 +41,14 @@ describe('DestinationSearchComponent', () => {
     component.ngOnDestroy();
   });
 
-  // ─── Input validation guard ────────────────────────────────────────────────
-
   describe('Input validation guard', () => {
     it('does NOT push to inputSubject when input contains non-printable characters', () => {
-      // Spy on the private inputSubject via the onInput path
-      // If invalid, no API call should be triggered even after debounce
       mockAiService.getDestinationImage.mockReturnValue(of({ url: 'https://example.com/img.jpg' }));
       mockAiService.getSuggestions.mockReturnValue(of(['Paris']));
 
-      component.query = 'Paris\x01'; // non-printable char
+      component.query = 'Paris\x01';
       component.onInput();
 
-      // No API calls should be made (inputSubject not pushed)
       expect(mockAiService.getDestinationImage).not.toHaveBeenCalled();
       expect(mockAiService.getSuggestions).not.toHaveBeenCalled();
     });
@@ -50,8 +65,6 @@ describe('DestinationSearchComponent', () => {
     });
   });
 
-  // ─── Suggestion selection ──────────────────────────────────────────────────
-
   describe('selectSuggestion', () => {
     it('sets query, closes dropdown, and calls getItinerarySuggestions', () => {
       mockAiService.getItinerarySuggestions.mockReturnValue(of([]));
@@ -62,6 +75,7 @@ describe('DestinationSearchComponent', () => {
       expect(component.query).toBe('Paris');
       expect(component.showSuggestions).toBe(false);
       expect(mockAiService.getItinerarySuggestions).toHaveBeenCalledWith('Paris');
+      expect(mockAiService.getTravelSearchResult).toHaveBeenCalledWith('Paris');
     });
 
     it('emits destinationSelected with the place name', () => {
@@ -81,6 +95,7 @@ describe('DestinationSearchComponent', () => {
         { name: 'Louvre', description: 'Famous museum' },
       ];
       mockAiService.getItinerarySuggestions.mockReturnValue(of(attractions));
+      mockAiService.getTravelSearchResult.mockReturnValue(of({ ...baseAiResult, attractions }));
 
       component.selectSuggestion('Paris');
 
@@ -111,8 +126,6 @@ describe('DestinationSearchComponent', () => {
     });
   });
 
-  // ─── Keyboard navigation ───────────────────────────────────────────────────
-
   describe('Keyboard navigation', () => {
     beforeEach(() => {
       component.suggestions = ['Paris', 'Prague', 'Porto'];
@@ -121,39 +134,37 @@ describe('DestinationSearchComponent', () => {
     });
 
     it('ArrowDown increments activeIndex (capped at suggestions.length - 1)', () => {
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      component.onKeydown(keyEvent('ArrowDown'));
       expect(component.activeIndex).toBe(0);
 
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      component.onKeydown(keyEvent('ArrowDown'));
       expect(component.activeIndex).toBe(1);
 
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      component.onKeydown(keyEvent('ArrowDown'));
       expect(component.activeIndex).toBe(2);
 
-      // Should not exceed suggestions.length - 1
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+      component.onKeydown(keyEvent('ArrowDown'));
       expect(component.activeIndex).toBe(2);
     });
 
     it('ArrowUp decrements activeIndex (floored at -1)', () => {
       component.activeIndex = 2;
 
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      component.onKeydown(keyEvent('ArrowUp'));
       expect(component.activeIndex).toBe(1);
 
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      component.onKeydown(keyEvent('ArrowUp'));
       expect(component.activeIndex).toBe(0);
 
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      component.onKeydown(keyEvent('ArrowUp'));
       expect(component.activeIndex).toBe(-1);
 
-      // Should not go below -1
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+      component.onKeydown(keyEvent('ArrowUp'));
       expect(component.activeIndex).toBe(-1);
     });
 
     it('Escape sets showSuggestions = false', () => {
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'Escape' }));
+      component.onKeydown(keyEvent('Escape'));
       expect(component.showSuggestions).toBe(false);
     });
 
@@ -161,13 +172,11 @@ describe('DestinationSearchComponent', () => {
       mockAiService.getItinerarySuggestions.mockReturnValue(of([]));
 
       component.activeIndex = 1;
-      component.onKeydown(new KeyboardEvent('keydown', { key: 'Enter' }));
+      component.onKeydown(keyEvent('Enter'));
 
       expect(mockAiService.getItinerarySuggestions).toHaveBeenCalledWith('Prague');
     });
   });
-
-  // ─── getHighlightedParts ───────────────────────────────────────────────────
 
   describe('getHighlightedParts', () => {
     it('returns [{text: suggestion, highlight: false}] when query is empty', () => {
@@ -190,17 +199,15 @@ describe('DestinationSearchComponent', () => {
     });
   });
 
-  // ─── clearAll on empty input ───────────────────────────────────────────────
-
   describe('clearAll on empty input', () => {
-    it('onInput() with empty query clears image, suggestions, and attractions', () => {
-      // Set up some state
+    it('onInput() with empty query clears image, suggestions, attractions, and ai result', () => {
       component.imageUrl = 'https://example.com/img.jpg';
       component.suggestions = ['Paris', 'Prague'];
       component.showSuggestions = true;
       component.attractions = [{ name: 'Eiffel Tower', description: 'Tower' }];
       component.attractionsError = 'Some error';
       component.rateLimitError = 'Rate limit error';
+      component.aiResult = baseAiResult;
 
       component.query = '';
       component.onInput();
@@ -211,6 +218,26 @@ describe('DestinationSearchComponent', () => {
       expect(component.attractions).toEqual([]);
       expect(component.attractionsError).toBe('');
       expect(component.rateLimitError).toBe('');
+      expect(component.aiResult).toBeNull();
+    });
+  });
+
+  describe('createItineraryFromAi', () => {
+    it('emits createItineraryRequested when aiResult is an itinerary', () => {
+      const emitted: any[] = [];
+      component.createItineraryRequested.subscribe((value) => emitted.push(value));
+      component.aiResult = {
+        ...baseAiResult,
+        type: 'itinerary',
+        destination: 'Manali',
+        normalizedDestination: 'Manali, India',
+        suggestedDuration: '4 days',
+      };
+
+      component.createItineraryFromAi();
+
+      expect(emitted).toHaveLength(1);
+      expect(emitted[0].destination).toBe('Manali');
     });
   });
 });
