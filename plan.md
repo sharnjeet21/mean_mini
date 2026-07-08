@@ -235,6 +235,131 @@ Angular Material v21 requires a `@use '@angular/material'` theme include in the 
 
 ---
 
+## 6.6 Phase 0.6 — AI Provider Abstraction + Ollama Itinerary Draft Foundation
+
+Status: `Completed`
+
+Goal: Replace the deterministic, hard-coded mock smart plan logic with a real AI-driven itinerary draft engine using a provider-independent architecture, starting with Ollama.
+
+### Problem statement
+The legacy "Smart Plan" endpoint (`/smart-plan`) was a deterministic mock returning simulated, generic activities ("Sightseeing", "Museum") wrapped in a hardcoded JSON format. The user expectation was a real AI-generated itinerary. This needed to be migrated to a true AI solution without impacting the existing UI workflows or the Gemini-based `/travel-search` endpoint.
+
+### Provider abstraction
+- Created `server/services/aiProviderResolver.js` to decouple the application from any single AI vendor.
+- Resolves the provider dynamically based on `process.env.AI_PROVIDER` (defaulting to `ollama`).
+
+### Ollama development provider
+- Implemented `server/services/providers/ollamaProvider.js` as the primary development provider.
+- Configurable via `OLLAMA_BASE_URL` and `OLLAMA_MODEL`.
+- Sends highly structured prompts enforcing exact JSON output, strict day counts, and detailed activity formatting without markdown wrapping.
+
+### Itinerary draft schema
+The endpoint `POST /api/v1/ai/itinerary-draft` accepts parameters (destination, duration, travelers, style, interests, budget) and enforces the following AI output schema:
+```json
+{
+  "destination": "string",
+  "duration": "number",
+  "summary": "string",
+  "days": [
+    {
+      "day": "number",
+      "theme": "string",
+      "stops": [
+        { "name": "string", "description": "string", "suggestedTime": "string", "suggestedDuration": "string", "category": "string" }
+      ]
+    }
+  ],
+  "recommendations": ["string"],
+  "packingTips": ["string"]
+}
+```
+
+### Failure policy
+- If the AI provider is unreachable (e.g. `ECONNREFUSED`), times out, or produces malformed JSON, the service **does not fallback to fake data**.
+- Instead, it throws a controlled error resulting in a `503 Service Unavailable` response, explicitly stating: "We couldn't generate your trip draft right now."
+
+### Tests performed
+- Re-ran existing backend test suites (`npm test`); all 37 tests passing.
+- Created `server/tests/itineraryDraft.test.js` covering validation (missing destination/duration), proper structure generation, provider failure handling (503 status), and correct parameter passthrough.
+
+### Manual model evaluation results (Gemma 3 Verification)
+We updated the Ollama provider to pass the itinerary draft JSON Schema through Ollama's structured-output `format` field, and tested the `gemma3:latest` model locally across three scenarios:
+- **Solan, 4 days** (Interests: nature, adventure; Style: balanced; Budget: 30000):
+  - **Endpoint Status:** 200 OK
+  - **Generation Time:** 100.10 seconds
+  - **Schema Validity:** Valid (perfectly matched the schema definition)
+  - **returned summary:** "A four-day adventure through the scenic landscapes and cultural richness of Solan, Himachal Pradesh, combining nature exploration with thrilling activities."
+  - **Day themes:** "Arrival & Himalayan Foothills", "Adventure & Waterfalls", "Cultural Immersion & Local Crafts", "Scenic Drive & Departure"
+  - **Stops:** Solan Pine Grove, Mashobra Picnic Spot, Naddi Village, Jalkhand Waterfall, Sural Village, Solan Brewery, Bakrota Hills, Local Market (Solan).
+  - **Repeated stops:** None
+  - **Interest alignment:** Excellent nature & adventure alignment (hikes, pine groves, waterfalls).
+- **Goa, 3 days** (Interests: beaches, food; Style: budget; Budget: 20000):
+  - **Endpoint Status:** 200 OK
+  - **Generation Time:** 57.95 seconds
+  - **Schema Validity:** Valid
+  - **Beach/Food alignment:** Calangute Beach, Baga Beach, Brittos Restaurant, Palolem Beach, Shri Mangueshi Temple, War Room Cafe, Se Cathedral, Basilica of Bom Jesus, Vinayak Temple, De Bomb Cafe.
+  - **Budget awareness:** Mentioned renting a scooter, visiting free beaches/temples, and cheap local Goan food.
+- **Jaipur, 2 days** (Interests: history, food; Style: balanced):
+  - **Endpoint Status:** 200 OK
+  - **Generation Time:** 44.13 seconds
+  - **Schema Validity:** Valid
+  - **Relevance:** Amber Fort, Sheesh Mahal, Jaigarh Fort, City Palace, Hawa Mahal, Johari Bazaar & Bapu Bazaar. Excellent historical and culinary accuracy.
+
+### Qwen vs Gemma 3 Comparison
+- No verified Qwen test results exist because the `qwen2.5-coder:7b` model hit a strict 120-second timeout on all test runs during development.
+- Gemma 3 completed successfully for all runs, staying well within the 120-second timeout window (44-100 seconds).
+
+### Known limitations
+- The model (`gemma3:latest`) can occasionally suffer from minor geographic hallucinations (e.g. putting Naddi Village, which is near Dharamshala, and Bakrota Hills, near Dalhousie, under a Solan itinerary).
+- The generation time can be long (~45-100 seconds) on local machines, so the UI must handle long-running states gracefully.
+
+### Future Work
+- [ ] Provider failover logic (e.g. fallback to Gemini if Ollama fails, or vice versa).
+
+---
+
+## 6.7 Phase 0.7 — AI-First Itinerary Creation Foundation
+
+Status: `Completed`
+
+Goal: Make the itinerary creation process AI-first by allowing natural-language trip inputs, while preserving manual creation as a secondary option. Both flows converge into a private draft itinerary lifecycle.
+
+### Problem Statement
+Previously, itinerary creation was a complex, multi-step manual form restricted only to admin users. Normal users could only search for destinations but could not create itineraries. More importantly, there was no integration with the newly built structured itinerary draft engine.
+
+### Goal
+Provide a simple, understandable AI trip planning interface as the primary entry point for itinerary creation for all logged-in users, alongside a simplified manual creation option. Newly generated itineraries are persisted as private drafts in MongoDB.
+
+### Implementation
+- **Intent Extraction Endpoint:** Implemented `POST /api/v1/ai/extract-intent` using Gemma 3. It parses natural-language trip descriptions (e.g., "4 days in Solan for 3 people under 30000") and extracts structured params (`destination`, `duration`, `travelers`, `travelStyle`, `interests`, `budget`).
+- **Mongoose Schema Update:** Updated `Itinerary.js` schema to include `status` (`'draft'`, `'published'`, `'archived'`, defaulting to `'published'` for backwards compatibility with legacy records). Made `startDate`, `endDate`, `duration`, and `budget` optional in the database schema to support simplified drafts.
+- **Route Authorization & Privacy:** Modified `POST /`, `PUT /:id`, `GET /`, and `GET /:id` in `itineraryRoutes.js`.
+  - Normal users (`role: 'user'`) can now create itineraries, but they are strictly created with `status: 'draft'`.
+  - Normal users can view and edit only their own drafts. Admins can view and manage all itineraries.
+  - Publishing itineraries (setting `status: 'published'`) remains restricted to admins and superadmins.
+- **UI Integration (Dashboard Component):**
+  - Updated the "New Itinerary" button to be visible to all logged-in users.
+  - Implemented a multi-mode modal:
+    - **AI-first Entry:** Textarea for natural-language descriptions. Clicking "Generate my itinerary" triggers intent extraction and cycles through friendly loading messages ("Building your trip...", "Structuring your itinerary...").
+    - **Clarification Form:** If destination or duration are missing from the extracted intent, a simple page prompts the user to input them.
+    - **Draft Preview:** Displays the generated day-by-day plan, theme, stops, and packing tips returned from Gemma 3. Warns the user that locations are AI-suggested and not geographically verified yet.
+    - **Manual Form:** Renders the simplified standard multi-step form when the user clicks "Create manually".
+  - **Auto-Suggestions:** Integrated autocomplete suggestions in the destination input fields in the modal (both clarification and manual form) by calling the `AiService.getSuggestions()` API with proper debouncing.
+  - **Dashboard Cards:** Added a "Draft" badge on dashboard cards to distinguish private drafts from open routes.
+
+### Verified Behavior
+- **AI Flow:** Describe trip -> intent extracted -> Gemma 3 reached locally (status 200, ~44-100s) -> loading states cycle successfully -> draft preview renders day themes/stops -> persisted privately as draft in MongoDB -> survives browser close and page refresh.
+- **Manual Flow:** Clicking "Create manually" allows entering minimal fields (Title and Destination) -> skips stops -> successfully creates a private draft.
+- **Autocomplete:** Destination autocomplete suggestions load query-responsive matching results.
+- **Handoff:** Clicking "Create Itinerary" from AI Travel Search successfully prepopulates the AI prompt and starts the creation flow.
+- **Role Permissions:** Admins can manage/publish, while normal users are limited to creating/viewing their own drafts.
+- **Tests & Compilation:** 39 backend tests and 37 frontend tests passing; production Angular build succeeds.
+
+### Geographic Validation Limitation
+The stops generated by Gemma 3 are not geographically validated. Future work includes adding a Place Intelligence layer (such as Google Places API) to geocode and verify distances.
+
+---
+
 ## 7. Phase 1 - Visual Discovery
 
 Goal: transform itinerary creation into map-driven planning.
@@ -629,6 +754,65 @@ Checklist:
 - [ ] Modify setView() to update query parameters in URL
 - [ ] Conditionalize card status badge for activeView === 'bookings'
 
+## 16.5 Phase 0.6 - AI Travel Search and Itinerary Assistant
+
+Status: `Completed`
+
+Problem statement:
+
+The current destination search experience stopped at autocomplete, static image preview, and attraction cards. It did not understand natural-language travel requests, did not validate travel scope, and could not hand a structured AI itinerary into the existing itinerary creation workflow.
+
+Goal:
+
+Turn the existing search surface into an AI-assisted travel search experience that stays inside the current UI, returns structured travel data, rejects unrelated prompts gracefully, and lets users explicitly continue into the current itinerary workflow without auto-saving AI output.
+
+Checklist:
+
+- [x] Investigate existing Gemini routes, image enrichment, destination search, and itinerary flow before coding
+- [x] Add a structured backend AI travel search endpoint inside the existing AI route architecture
+- [x] Validate and normalize AI output before sending it to Angular
+- [x] Add lightweight travel-scope validation for unrelated prompts
+- [x] Only request destination images after a valid destination is identified
+- [x] Surface AI travel results in the existing destination search UI without redesigning the page
+- [x] Add explicit `Create Itinerary` handoff from AI itinerary output into the existing itinerary creation modal
+- [x] Keep MongoDB persistence explicit and unchanged
+- [x] Add backend and frontend automated test coverage for the new flow
+- [x] Verify frontend production build succeeds
+- [x] Record future security and platform hardening work without implementing it now
+
+Implementation completed:
+
+- Added `POST /api/v1/ai/travel-search` in `server/routes/aiRoutes.js`
+- Reused the existing Gemini route file and existing Unsplash enrichment service instead of creating duplicate AI services
+- Added travel-focused query validation, structured response normalization, graceful fallback responses, and out-of-scope handling
+- Normalized destination image lookup to run only after a travel destination is identified
+- Extended `frontend/src/app/services/ai.service.ts` with a typed AI travel search client
+- Updated `DestinationSearchComponent` to render structured AI answers, day plans, recommendations, travel tips, retry state, and explicit actions
+- Added a `createItineraryRequested` event so itinerary creation remains user-confirmed
+- Updated `DashboardComponent` to prefill the existing itinerary modal from the AI result without auto-saving
+
+Testing performed:
+
+- [x] `node --test server/tests/aiRoutes.test.js`
+- [x] `npm.cmd --prefix frontend exec vitest run src/app/services/ai.service.spec.ts src/app/components/destination-search/destination-search.component.spec.ts`
+- [x] `npm.cmd --prefix frontend run build`
+
+Remaining limitations:
+
+- The AI handoff prefills destination, description, duration, and stops, but does not yet map day-wise AI output into persisted itinerary `dailyPlan` records
+- The search UI still begins from destination autocomplete selection rather than fully freeform submit-first behavior
+- Existing Angular build warnings in `itinerary-detail.component.html` remain outside this phase
+
+Future security and platform items:
+
+- [ ] Add an LLM firewall layer
+- [ ] Add prompt-injection protection
+- [ ] Add provider abstraction for multiple LLMs
+- [ ] Add travel-specific retrieval/RAG
+- [ ] Add model evaluation and prompt regression checks
+- [ ] Add conversational travel assistant/chatbot mode
+- [ ] Add maps integration
+
 ## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:
@@ -639,6 +823,7 @@ Recommended practical order for implementation:
 - [ ] Phase 16.2: Profile Page
 - [ ] Phase 16.3: Destination Suggestions in Wizard
 - [ ] Phase 16.4: My Bookings Routed View Issues
+- [x] Phase 16.5: AI Travel Search and Itinerary Assistant
 - [ ] Phase 1: Visual Discovery MVP
 - [ ] Phase 2: Smart Itinerary Builder MVP
 - [ ] Phase 3: Route Intelligence

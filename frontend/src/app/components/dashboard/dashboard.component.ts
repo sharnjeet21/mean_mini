@@ -10,6 +10,7 @@ import { ApiService } from '../../services/api.service';
 import { DestinationSearchComponent } from '../destination-search/destination-search.component';
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 import { getItineraryImage } from '../../utils/itinerary-image';
+import { AiService, AiTravelSearchResult } from '../../services/ai.service';
 
 export interface Stop {
   name: string;
@@ -47,6 +48,24 @@ export class DashboardComponent implements OnInit {
   readonly TOTAL_STEPS = 4;
   readonly stepLabels = ['Basics', 'Dates', 'Budget', 'Stops'];
 
+  // AI-first itinerary creation states
+  creationMode: 'ai' | 'manual' | 'clarify' | 'preview' = 'ai';
+  aiPromptText = '';
+  aiLoading = false;
+  aiLoadingText = 'Building your trip...';
+  
+  // Suggestions lists
+  showManualSuggestions = false;
+  manualSuggestions: string[] = [];
+
+  // For AI draft flow
+  extractedIntent: any = null;
+  generatedDraft: any = null;
+  clarificationForm = {
+    destination: '',
+    duration: 4
+  };
+
   private platformId = inject(PLATFORM_ID);
 
   form = this.emptyForm();
@@ -56,6 +75,7 @@ export class DashboardComponent implements OnInit {
     private api: ApiService,
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
+    private ai: AiService,
   ) {}
 
   ngOnInit(): void {
@@ -174,17 +194,27 @@ export class DashboardComponent implements OnInit {
   }
 
   openModal(prefilledDestination = ''): void {
-    if (!this.auth.isAdmin) {
-      this.rateLimitMessage = 'Publishing itineraries is available to trip managers. You can still save and book live routes.';
+    if (!this.auth.isLoggedIn) {
+      this.rateLimitMessage = 'Please log in to plan trips.';
       return;
     }
     this.form = this.emptyForm(prefilledDestination);
     this.formError = '';
     this.currentStep = 1;
+    this.creationMode = 'ai';
+    this.aiPromptText = prefilledDestination ? `I want to plan a trip to ${prefilledDestination}` : '';
+    this.aiLoading = false;
+    this.extractedIntent = null;
+    this.generatedDraft = null;
+    this.clarificationForm = {
+      destination: prefilledDestination,
+      duration: 4
+    };
     this.showModal = true;
   }
 
   closeModal(): void {
+    this.stopLoadingTexts();
     this.showModal = false;
     this.currentStep = 1;
   }
@@ -207,18 +237,22 @@ export class DashboardComponent implements OnInit {
       return false;
     }
     if (step === 2) {
-      if (!this.form.startDate || !this.form.endDate) {
-        this.formError = 'Select both travel dates.';
-        return false;
-      }
-      if (!this.calculatedDuration) {
-        this.formError = 'End date must be on or after the start date.';
-        return false;
+      if (this.form.startDate || this.form.endDate) {
+        if (!this.form.startDate || !this.form.endDate) {
+          this.formError = 'Select both travel dates.';
+          return false;
+        }
+        if (!this.calculatedDuration) {
+          this.formError = 'End date must be on or after the start date.';
+          return false;
+        }
       }
     }
-    if (step === 3 && (!this.form.budget || this.form.budget <= 0)) {
-      this.formError = 'Enter a valid total budget.';
-      return false;
+    if (step === 3) {
+      if (this.form.budget !== null && this.form.budget <= 0) {
+        this.formError = 'Enter a valid total budget.';
+        return false;
+      }
     }
     return true;
   }
@@ -262,7 +296,8 @@ export class DashboardComponent implements OnInit {
 
     const payload = {
       ...this.form,
-      budget: Number(this.form.budget),
+      status: 'draft', // Converge manual flow into itinerary draft lifecycle
+      budget: this.form.budget ? Number(this.form.budget) : 0,
       stops: this.form.stops.filter((stop) => stop.name.trim()),
     };
 
@@ -287,7 +322,7 @@ export class DashboardComponent implements OnInit {
   }
 
   onDestinationSelected(place: string): void {
-    if (this.auth.isAdmin) {
+    if (this.auth.isLoggedIn) {
       this.openModal(place);
     } else {
       this.destinationToast = `${place} selected. Browse the live routes below, then save or book the one that fits.`;
@@ -297,5 +332,212 @@ export class DashboardComponent implements OnInit {
   onRateLimitError(message: string): void {
     this.rateLimitMessage = message;
     setTimeout(() => { this.rateLimitMessage = ''; }, 5000);
+  }
+
+  onCreateItineraryRequested(result: AiTravelSearchResult): void {
+    const destination = result.normalizedDestination || result.destination;
+    if (!destination) return;
+
+    if (!this.auth.isLoggedIn) {
+      this.destinationToast = 'Please log in to plan trips.';
+      return;
+    }
+
+    this.openModal(destination);
+    
+    // Parse duration if present, e.g. "4 days" -> 4
+    const duration = this.parseDuration(result.suggestedDuration);
+    this.aiPromptText = `I want a ${duration}-day trip to ${destination}`;
+    this.clarificationForm = {
+      destination,
+      duration
+    };
+  }
+
+  // AI-first logic helpers
+  private loadingTexts = [
+    'Building your trip...',
+    'Finding ideas for your days...',
+    'Structuring your itinerary...',
+    'Sourcing packing recommendations...',
+    'Organizing day-by-day stops...'
+  ];
+  private loadingTextInterval: any;
+
+  startLoadingTexts() {
+    this.stopLoadingTexts();
+    let index = 0;
+    this.aiLoadingText = this.loadingTexts[index];
+    this.loadingTextInterval = setInterval(() => {
+      index = (index + 1) % this.loadingTexts.length;
+      this.aiLoadingText = this.loadingTexts[index];
+      this.cdr.detectChanges();
+    }, 4000);
+  }
+
+  stopLoadingTexts() {
+    if (this.loadingTextInterval) {
+      clearInterval(this.loadingTextInterval);
+      this.loadingTextInterval = null;
+    }
+  }
+
+  private parseDuration(durStr: string): number {
+    const match = String(durStr || '').match(/\d+/);
+    return match ? Math.max(1, Number(match[0])) : 4;
+  }
+
+  generateAiItinerary(): void {
+    if (!this.aiPromptText.trim()) {
+      this.formError = 'Please describe your trip intent first.';
+      return;
+    }
+
+    this.aiLoading = true;
+    this.formError = '';
+    this.startLoadingTexts();
+
+    // 1. Extract intent
+    this.api.extractIntent(this.aiPromptText).subscribe({
+      next: (extracted) => {
+        this.extractedIntent = extracted;
+        
+        // Check if destination and duration are present
+        const hasDest = extracted.destination && extracted.destination.trim();
+        const hasDur = extracted.duration && Number.isInteger(extracted.duration) && extracted.duration > 0;
+        
+        if (hasDest && hasDur) {
+          // Proceed directly to draft generation
+          this.callDraftGeneration(extracted);
+        } else {
+          // Stop loading states for clarification
+          this.stopLoadingTexts();
+          this.aiLoading = false;
+          this.clarificationForm = {
+            destination: extracted.destination || '',
+            duration: extracted.duration || 4
+          };
+          this.creationMode = 'clarify';
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        this.stopLoadingTexts();
+        this.aiLoading = false;
+        this.formError = err?.error?.message || err?.message || 'Failed to extract trip intent. Please try again.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  submitClarification(): void {
+    if (!this.clarificationForm.destination.trim()) {
+      this.formError = 'Destination is required.';
+      return;
+    }
+    const duration = Number(this.clarificationForm.duration);
+    if (!Number.isInteger(duration) || duration < 1 || duration > 30) {
+      this.formError = 'Duration must be between 1 and 30 days.';
+      return;
+    }
+
+    this.formError = '';
+    this.aiLoading = true;
+    this.creationMode = 'ai'; // show loading screen again
+    this.startLoadingTexts();
+
+    const mergedIntent = {
+      ...this.extractedIntent,
+      destination: this.clarificationForm.destination.trim(),
+      duration: duration
+    };
+    
+    this.callDraftGeneration(mergedIntent);
+  }
+
+  private callDraftGeneration(intent: any): void {
+    this.api.generateItineraryDraft(intent).pipe(
+      finalize(() => {
+        this.stopLoadingTexts();
+        this.aiLoading = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: (draft) => {
+        // Save to MongoDB immediately as a private draft
+        const allStops = (draft.days || []).flatMap((day: any) => day.stops || []).map((stop: any, idx: number) => ({
+          name: stop.name,
+          notes: stop.description || '',
+          order: idx
+        }));
+        
+        const payload = {
+          title: `Trip to ${draft.destination} (AI Draft)`,
+          destination: draft.destination,
+          duration: `${draft.duration} Days`,
+          startDate: new Date().toISOString(), // default start today
+          endDate: new Date(Date.now() + (draft.duration - 1) * 86400000).toISOString(),
+          budget: intent.budget || 0,
+          travelerCount: intent.travelers || 1,
+          travelStyle: intent.travelStyle || 'balanced',
+          status: 'draft',
+          description: draft.summary || '',
+          stops: allStops,
+          dailyPlan: (draft.days || []).map((day: any) => ({
+            day: day.day,
+            title: day.theme,
+            activities: (day.stops || []).map((stop: any) => ({
+              time: stop.suggestedTime || '10:00',
+              activity: stop.name,
+              description: stop.description,
+              location: draft.destination
+            }))
+          })),
+          tripSummary: {
+            highlights: draft.recommendations || []
+          }
+        };
+
+        this.api.createItinerary(payload).subscribe({
+          next: (created) => {
+            this.generatedDraft = created; // Store populated database record (with _id)
+            this.itineraries.unshift(created);
+            this.creationMode = 'preview';
+            this.cdr.detectChanges();
+          },
+          error: (saveErr) => {
+            this.formError = 'AI generated the trip, but we failed to save the draft: ' + (saveErr?.error?.message || saveErr?.message);
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        this.formError = err?.error?.message || err?.message || 'Failed to generate itinerary draft. Please try again.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  onDestinationInputChange(value: string): void {
+    if (!value || value.length < 2) {
+      this.manualSuggestions = [];
+      this.showManualSuggestions = false;
+      return;
+    }
+    this.ai.getSuggestions(value).subscribe({
+      next: (sugs) => {
+        this.manualSuggestions = sugs;
+        this.showManualSuggestions = sugs.length > 0;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  selectManualSuggestion(suggestion: string): void {
+    this.form.destination = suggestion;
+    this.clarificationForm.destination = suggestion;
+    this.showManualSuggestions = false;
+    this.manualSuggestions = [];
+    this.cdr.detectChanges();
   }
 }
