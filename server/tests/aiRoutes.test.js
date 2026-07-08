@@ -23,6 +23,7 @@ function createApp() {
   // but still provide non-secret placeholder keys to exercise the configured path.
   process.env.UNSPLASH_ACCESS_KEY = 'test-unsplash-key';
   process.env.GEMINI_API_KEY = 'test-gemini-key';
+  process.env.AI_PROVIDER = 'gemini';
   const routePath = require.resolve('../routes/aiRoutes');
   const cachePath = require.resolve('../utils/inMemoryCache');
   const ratePath  = require.resolve('../middleware/rateLimiter');

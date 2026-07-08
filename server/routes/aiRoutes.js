@@ -5,6 +5,7 @@ const { InMemoryCache } = require("../utils/inMemoryCache");
 const aiController = require("../controllers/aiController");
 const { enrichWithImage } = require("../services/imageService");
 const { authenticate } = require("../middleware/auth");
+const { getAiProvider } = require("../services/aiProviderResolver");
 
 const router = express.Router();
 
@@ -259,23 +260,8 @@ async function callGemini(prompt) {
 }
 
 async function generateStructuredTravelSearch(query) {
-  const prompt = [
-    'You are a travel planning assistant.',
-    'Reply ONLY with valid JSON and no markdown.',
-    `Use this schema exactly: ${JSON.stringify(TRAVEL_SEARCH_SCHEMA)}.`,
-    'Rules:',
-    '- Only answer travel-related queries.',
-    '- If the query is outside travel, respond with {"type":"out_of_scope","destination":"","overview":"This assistant currently focuses on travel planning and destination discovery.","suggestedDuration":"","attractions":[],"dayPlan":[],"travelTips":[],"recommendations":[]}.',
-    '- For type="destination", include overview, suggestedDuration, attractions, and travelTips.',
-    '- For type="itinerary", include destination, overview, suggestedDuration, attractions, dayPlan, and travelTips.',
-    '- For type="recommendation", include recommendations as objects with name and reason.',
-    '- Keep answers concise and practical.',
-    `User query: ${query}`,
-  ].join('\n');
-
-  const text = await callGemini(prompt);
-  const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
-  return JSON.parse(cleaned);
+  const provider = getAiProvider();
+  return await provider.generateStructuredTravelSearch(query);
 }
 
 router.post('/travel-search', rateLimiter, validateTravelSearchBody, async (req, res) => {
@@ -394,13 +380,8 @@ router.get('/suggestions', rateLimiter, validateQueryParam('q'), async (req, res
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ suggestions: cached });
 
   try {
-    const prompt = `Suggest up to 8 real place names matching '${query}'. Return ONLY a JSON array of strings, no markdown.`;
-    const text   = await callGemini(prompt);
-    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
-    const parsed = JSON.parse(cleaned);
-    const suggestions = Array.isArray(parsed)
-      ? parsed.map((item) => String(item).trim()).filter(Boolean).slice(0, 8)
-      : [];
+    const provider = getAiProvider();
+    const suggestions = await provider.generateAutocompleteSuggestions(query);
 
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
       return res.set('X-Cache', 'MISS').json({ suggestions: [] });
@@ -409,7 +390,7 @@ router.get('/suggestions', rateLimiter, validateQueryParam('q'), async (req, res
     suggestionsCache.set(cacheKey, suggestions);
     return res.set('X-Cache', 'MISS').json({ suggestions });
   } catch (err) {
-    console.error('[aiRoutes] Gemini suggestions error:', err.message);
+    console.error('[aiRoutes] suggestions error:', err.message);
     const suggestions = fallbackSuggestions(query);
     suggestionsCache.set(cacheKey, suggestions);
     return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ suggestions });
@@ -424,14 +405,11 @@ router.get('/trending', rateLimiter, async (req, res) => {
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ destinations: cached });
 
   try {
-    const prompt =
-      `Suggest 5 trending travel destinations in ${new Date().getFullYear()} with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.`;
-    const text = await callGemini(prompt);
-    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
-    const parsed  = JSON.parse(cleaned);
+    const provider = getAiProvider();
+    const parsed = await provider.generateTrendingDestinations();
 
     if (!Array.isArray(parsed) || parsed.length < 5) {
-      console.error('[aiRoutes] Trending: invalid response shape from Gemini');
+      console.error('[aiRoutes] Trending: invalid response shape from provider');
       trendingCache.set(cacheKey, FALLBACK_DESTINATIONS);
       return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({
         destinations: FALLBACK_DESTINATIONS,
@@ -454,7 +432,7 @@ router.get('/trending', rateLimiter, async (req, res) => {
     trendingCache.set(cacheKey, destinations);
     return res.set('X-Cache', 'MISS').json({ destinations });
   } catch (err) {
-    console.error('[aiRoutes] Gemini trending error:', err.message);
+    console.error('[aiRoutes] trending error:', err.message);
     trendingCache.set(cacheKey, FALLBACK_DESTINATIONS);
     return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({
       destinations: FALLBACK_DESTINATIONS,
@@ -471,13 +449,11 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ attractions: cached });
 
   try {
-    const prompt = `Suggest top 5 attractions in ${destination} for a travel itinerary. Return ONLY a JSON array of objects with fields name (string) and description (string, max 150 chars), no markdown.`;
-    const text    = await callGemini(prompt);
-    const cleaned = text.replace(/```(?:json)?\n?/gi, '').trim();
-    const parsed  = JSON.parse(cleaned);
+    const provider = getAiProvider();
+    const parsed = await provider.generateItinerarySuggestions(destination);
 
     if (!Array.isArray(parsed) || parsed.length < 5) {
-      console.error('[aiRoutes] Itinerary: invalid response shape from Gemini');
+      console.error('[aiRoutes] Itinerary: invalid response shape from provider');
       const attractions = fallbackAttractions(destination);
       itineraryCache.set(cacheKey, attractions);
       return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
@@ -498,7 +474,7 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
     itineraryCache.set(cacheKey, attractions);
     return res.set('X-Cache', 'MISS').json({ attractions });
   } catch (err) {
-    console.error('[aiRoutes] Gemini itinerary error:', err.message);
+    console.error('[aiRoutes] itinerary suggestions error:', err.message);
     const attractions = fallbackAttractions(destination);
     itineraryCache.set(cacheKey, attractions);
     return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
