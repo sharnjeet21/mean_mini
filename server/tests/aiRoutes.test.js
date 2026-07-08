@@ -69,6 +69,33 @@ function httpGet(port, path) {
   });
 }
 
+function httpPost(port, path, payload) {
+  return new Promise((resolve, reject) => {
+    const body = JSON.stringify(payload);
+    const req = http.request({
+      hostname: '127.0.0.1',
+      port,
+      path,
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Length': Buffer.byteLength(body),
+      },
+    }, (res) => {
+      let raw = '';
+      res.on('data', (chunk) => { raw += chunk; });
+      res.on('end', () => {
+        let parsed;
+        try { parsed = JSON.parse(raw); } catch { parsed = raw; }
+        resolve({ status: res.statusCode, headers: res.headers, body: parsed });
+      });
+    });
+    req.on('error', reject);
+    req.write(body);
+    req.end();
+  });
+}
+
 function mockFetchReturning(body, status = 200) {
   return async () => ({
     ok: status >= 200 && status < 300,
@@ -235,6 +262,89 @@ describe('GET /itinerary-suggestions', { concurrency: false }, () => {
       assert.ok(Array.isArray(body.attractions));
       assert.equal(body.attractions.length, 5);
       assert.equal(headers['x-cache'], 'MISS');
+    } finally {
+      globalThis.fetch = originalFetch;
+      await stopServer(server);
+    }
+  });
+});
+
+describe('POST /travel-search', { concurrency: false }, () => {
+  it('returns out_of_scope for unrelated query without image enrichment', async () => {
+    const app = createApp();
+    const { server, port } = await startServer(app);
+    const originalFetch = globalThis.fetch;
+    try {
+      globalThis.fetch = async () => { throw new Error('fetch should not be called'); };
+      const { status, body } = await httpPost(port, '/travel-search', { query: 'Write Python code' });
+      assert.equal(status, 200);
+      assert.equal(body.type, 'out_of_scope');
+      assert.equal(body.image, null);
+    } finally {
+      globalThis.fetch = originalFetch;
+      await stopServer(server);
+    }
+  });
+
+  it('returns normalized itinerary response with image data for travel query', async () => {
+    const app = createApp();
+    const { server, port } = await startServer(app);
+    const originalFetch = globalThis.fetch;
+    try {
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('generativelanguage.googleapis.com')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              candidates: [{
+                content: {
+                  parts: [{
+                    text: JSON.stringify({
+                      type: 'itinerary',
+                      destination: 'Manali, India',
+                      normalizedDestination: 'Manali, India',
+                      overview: 'A mountain break with scenic drives and local food.',
+                      suggestedDuration: '4 days',
+                      attractions: [{ name: 'Solang Valley', description: 'Adventure hub' }],
+                      dayPlan: [{ day: 1, title: 'Arrival', summary: 'Settle in', places: ['Old Manali'] }],
+                      travelTips: ['Carry layers'],
+                      recommendations: [],
+                    }),
+                  }],
+                },
+              }],
+            }),
+          };
+        }
+
+        if (String(url).includes('api.unsplash.com/search/photos')) {
+          return {
+            ok: true,
+            status: 200,
+            json: async () => ({
+              results: [{
+                id: 'photo-1',
+                urls: { regular: 'https://example.com/manali.jpg' },
+                user: { name: 'A Photographer', links: { html: 'https://unsplash.com/@photographer' } },
+              }],
+            }),
+          };
+        }
+
+        if (String(url).includes('/download?client_id=')) {
+          return { ok: true, status: 200, json: async () => ({}) };
+        }
+
+        throw new Error(`Unexpected URL ${url}`);
+      };
+
+      const { status, body } = await httpPost(port, '/travel-search', { query: 'Plan a 4 day trip to Manali' });
+      assert.equal(status, 200);
+      assert.equal(body.type, 'itinerary');
+      assert.equal(body.destination, 'Manali, India');
+      assert.equal(body.image.image, 'https://example.com/manali.jpg');
+      assert.deepEqual(body.dayPlan[0].places, ['Old Manali']);
     } finally {
       globalThis.fetch = originalFetch;
       await stopServer(server);

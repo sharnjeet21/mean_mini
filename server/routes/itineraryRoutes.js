@@ -24,6 +24,7 @@ const EDITABLE_FIELDS = [
   'dailyPlan',
   'tripSummary',
   'isActive',
+  'status',
 ];
 
 function pickItineraryFields(body) {
@@ -34,7 +35,11 @@ function pickItineraryFields(body) {
 }
 
 function validateItinerary(payload, requireAll = false) {
-  const required = ['title', 'destination', 'startDate', 'endDate', 'duration', 'budget'];
+  const isDraft = payload.status === 'draft';
+  const required = isDraft 
+    ? ['title', 'destination']
+    : ['title', 'destination', 'startDate', 'endDate', 'duration', 'budget'];
+    
   if (requireAll && required.some((field) => payload[field] === undefined || payload[field] === '')) {
     return 'Please fill all required fields.';
   }
@@ -42,10 +47,10 @@ function validateItinerary(payload, requireAll = false) {
   if (payload.startDate && payload.endDate && new Date(payload.endDate) < new Date(payload.startDate)) {
     return 'End date must be on or after the start date.';
   }
-  if (payload.budget !== undefined && (!Number.isFinite(Number(payload.budget)) || Number(payload.budget) < 0)) {
+  if (payload.budget !== undefined && payload.budget !== null && (!Number.isFinite(Number(payload.budget)) || Number(payload.budget) < 0)) {
     return 'Budget must be a valid non-negative number.';
   }
-  if (payload.travelerCount !== undefined && (!Number.isInteger(Number(payload.travelerCount)) || Number(payload.travelerCount) < 1)) {
+  if (payload.travelerCount !== undefined && payload.travelerCount !== null && (!Number.isInteger(Number(payload.travelerCount)) || Number(payload.travelerCount) < 1)) {
     return 'Traveler count must be a positive whole number.';
   }
   return null;
@@ -196,10 +201,17 @@ router.get('/analytics/overview', authenticate, authorize('admin', 'superadmin')
   }
 });
 
-// Trip managers can publish itineraries.
-router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+// Trip managers can publish itineraries; any user can create a draft.
+router.post('/', authenticate, async (req, res) => {
   try {
     const payload = pickItineraryFields(req.body);
+    
+    // Normal users must create itineraries as drafts.
+    const isAdmin = canManageItinerary(req.user);
+    if (!isAdmin) {
+      payload.status = 'draft';
+    }
+
     const validationError = validateItinerary(payload, true);
     if (validationError) return res.status(400).json({ message: validationError });
 
@@ -226,7 +238,16 @@ router.post('/', authenticate, authorize('admin', 'superadmin'), async (req, res
 // Browse active itineraries; administrators can also see inactive records.
 router.get('/', authenticate, async (req, res) => {
   try {
-    const query = ['admin', 'superadmin'].includes(req.user.role) ? {} : { isActive: true };
+    const query = ['admin', 'superadmin'].includes(req.user.role)
+      ? {}
+      : {
+          isActive: true,
+          $or: [
+            { status: 'published' },
+            { status: { $exists: false } },
+            { status: 'draft', createdBy: req.user._id }
+          ]
+        };
     const itineraries = await Itinerary.find(query)
       .populate('createdBy', 'name email role')
       .sort({ createdAt: -1 });
@@ -389,7 +410,9 @@ router.get('/:id', authenticate, ensureValidId, async (req, res) => {
       .populate('bookings.userId', 'name email')
       .populate('reviews.userId', 'name');
 
-    if (!itinerary || (req.user.role === 'user' && !itinerary.isActive)) {
+    const isOwner = itinerary && itinerary.createdBy && itinerary.createdBy._id.toString() === req.user._id.toString();
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+    if (!itinerary || (!isAdmin && !itinerary.isActive) || (itinerary.status === 'draft' && !isOwner && !isAdmin)) {
       return res.status(404).json({ message: 'Itinerary not found.' });
     }
     return res.json(presentItinerary(itinerary, req.user._id, {
@@ -402,15 +425,26 @@ router.get('/:id', authenticate, ensureValidId, async (req, res) => {
   }
 });
 
-// Trip managers can edit any itinerary.
+// Trip managers can edit any itinerary; users can edit their own drafts.
 router.put('/:id', authenticate, ensureValidId, async (req, res) => {
   try {
     const itinerary = await Itinerary.findById(req.params.id);
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
-    if (!canManageItinerary(req.user)) return res.status(403).json({ message: 'Insufficient permissions.' });
+    
+    const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
+    const isAdmin = canManageItinerary(req.user);
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: 'Insufficient permissions.' });
+    }
 
     const payload = pickItineraryFields(req.body);
-    if (req.user.role === 'user') delete payload.isActive;
+    if (!isAdmin) {
+      delete payload.isActive;
+      if (payload.status && payload.status !== 'draft') {
+        return res.status(403).json({ message: 'Only trip managers can publish itineraries.' });
+      }
+    }
+    
     const validationError = validateItinerary({
       ...itinerary.toObject(),
       ...payload,

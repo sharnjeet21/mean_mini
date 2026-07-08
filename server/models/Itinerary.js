@@ -13,19 +13,15 @@ const itinerarySchema = new mongoose.Schema({
   },
   startDate: {
     type: Date,
-    required: true,
   },
   endDate: {
     type: Date,
-    required: true,
   },
   duration: {
     type: String,
-    required: true, // e.g., "4 Days / 3 Nights"
   },
   budget: {
     type: Number,
-    required: true,
     min: 0,
   },
   travelerCount: {
@@ -101,6 +97,11 @@ const itinerarySchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true,
+  },
+  status: {
+    type: String,
+    enum: ['draft', 'published', 'archived'],
+    default: 'published',
   },
   bookings: [{
     userId: {
