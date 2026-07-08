@@ -243,6 +243,59 @@ User query: ${query}
       ? parsed.map((item) => String(item).trim()).filter(Boolean).slice(0, 8)
       : [];
   }
+
+  async reviseItinerary(currentData, instruction) {
+    const prompt = `
+You are an expert travel assistant. Your task is to revise an existing travel itinerary based on a user's instruction.
+You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Current Itinerary:
+${JSON.stringify(currentData, null, 2)}
+
+User edit instruction:
+"${instruction}"
+
+Output JSON Schema:
+{
+  "title": "string",
+  "destination": "string",
+  "duration": "integer",
+  "budget": "integer",
+  "description": "string",
+  "dailyPlan": [
+    {
+      "day": "integer",
+      "title": "string",
+      "activities": [
+        {
+          "time": "string",
+          "activity": "string",
+          "description": "string",
+          "location": "string"
+        }
+      ]
+    }
+  ],
+  "tripSummary": {
+    "highlights": ["string"]
+  }
+}
+
+Revision Rules:
+- Preserve itinerary content unrelated to the requested change.
+- Modify only what is reasonably required.
+- Avoid duplicate stops.
+- Avoid generic placeholder activities such as "Sightseeing" or "Museum". Be specific.
+- Preserve destination relevance.
+- Maintain the required structured itinerary schema.
+- Do not silently invent live prices, hotel availability, flight availability, or exact travel times.
+- Ensure duration (number of days) matches the count of daily plans.
+`;
+
+    const text = await this._callGemini(prompt);
+    const cleaned = this._cleanJson(text);
+    return JSON.parse(cleaned);
+  }
 }
 
 module.exports = GeminiProvider;

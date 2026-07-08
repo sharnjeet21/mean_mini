@@ -45,7 +45,41 @@ async function extractTripIntent(text) {
   return await provider.extractTripIntent(text.trim());
 }
 
+async function reviseItinerary(itinerary, instruction) {
+  if (!itinerary || typeof itinerary !== 'object') {
+    throw new Error('Itinerary is required for revision.');
+  }
+  if (!instruction || typeof instruction !== 'string' || !instruction.trim()) {
+    throw new Error('Instruction is required and must be a non-empty string.');
+  }
+
+  const currentData = {
+    title: itinerary.title,
+    destination: itinerary.destination,
+    duration: parseInt(itinerary.duration) || 1,
+    budget: itinerary.budget || 0,
+    description: itinerary.description || '',
+    dailyPlan: (itinerary.dailyPlan || []).map(d => ({
+      day: d.day,
+      title: d.title,
+      activities: (d.activities || []).map(a => ({
+        time: a.time || '',
+        activity: a.activity || '',
+        description: a.description || '',
+        location: a.location || ''
+      }))
+    })),
+    tripSummary: {
+      highlights: (itinerary.tripSummary && itinerary.tripSummary.highlights) || []
+    }
+  };
+
+  const provider = getAiProvider();
+  return await provider.reviseItinerary(currentData, instruction.trim());
+}
+
 module.exports = {
   generateItineraryDraft,
-  extractTripIntent
+  extractTripIntent,
+  reviseItinerary
 };

@@ -168,18 +168,17 @@ describe('GET /image', { concurrency: false }, () => {
 
 // ── /suggestions route ────────────────────────────────────────────────────────
 describe('GET /suggestions', { concurrency: false }, () => {
-  it('returns 200 + { suggestions } + X-Cache: MISS on first call', async () => {
+  it('returns 200 + { suggestions } + X-Cache: MISS on first call with local matching', async () => {
     const app = createApp();
     const { server, port } = await startServer(app);
-    const originalFetch = globalThis.fetch;
     try {
-      globalThis.fetch = geminiMock(JSON.stringify(['Paris', 'Pattaya']));
       const { status, headers, body } = await httpGet(port, '/suggestions?q=Pa');
       assert.equal(status, 200);
-      assert.deepEqual(body.suggestions, ['Paris', 'Pattaya']);
+      assert.ok(Array.isArray(body.suggestions), 'suggestions should be an array');
+      assert.ok(body.suggestions.length > 0, 'should have at least one match for "Pa"');
+      assert.ok(body.suggestions.some(s => s.startsWith('Paris')), 'should include Paris match');
       assert.equal(headers['x-cache'], 'MISS');
     } finally {
-      globalThis.fetch = originalFetch;
       await stopServer(server);
     }
   });
@@ -187,17 +186,25 @@ describe('GET /suggestions', { concurrency: false }, () => {
   it('returns same suggestions + X-Cache: HIT on second call', async () => {
     const app = createApp();
     const { server, port } = await startServer(app);
-    const originalFetch = globalThis.fetch;
     try {
-      globalThis.fetch = geminiMock(JSON.stringify(['Paris', 'Pattaya']));
-      await httpGet(port, '/suggestions?q=Pa');
-      globalThis.fetch = async () => { throw new Error('fetch should not be called on cache hit'); };
+      const firstResponse = await httpGet(port, '/suggestions?q=Pa');
       const { status, headers, body } = await httpGet(port, '/suggestions?q=Pa');
       assert.equal(status, 200);
-      assert.deepEqual(body.suggestions, ['Paris', 'Pattaya']);
+      assert.deepEqual(body.suggestions, firstResponse.body.suggestions);
       assert.equal(headers['x-cache'], 'HIT');
     } finally {
-      globalThis.fetch = originalFetch;
+      await stopServer(server);
+    }
+  });
+
+  it('returns empty array for query with no matches', async () => {
+    const app = createApp();
+    const { server, port } = await startServer(app);
+    try {
+      const { status, body } = await httpGet(port, '/suggestions?q=Zzzzxy');
+      assert.equal(status, 200);
+      assert.deepEqual(body.suggestions, []);
+    } finally {
       await stopServer(server);
     }
   });

@@ -333,6 +333,12 @@ export class AiService {
     );
   }
 
+  previewItineraryRevision(itineraryId: string, instruction: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/ai/itinerary-revision`, { itineraryId, instruction }).pipe(
+      catchError(err => this.handleError(err))
+    );
+  }
+
   private handleError(err: any): Observable<never> {
     if (err?.status === 429) {
       return throwError(() => new Error('Too many requests — please wait a moment before trying again.'));

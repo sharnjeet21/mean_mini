@@ -26,7 +26,11 @@ export function getItineraryImage(itinerary: {
   _id?: string;
   title?: string;
   destination?: string;
+  imageUrl?: string;
 }): string {
+  if (itinerary?.imageUrl && itinerary.imageUrl.trim()) {
+    return itinerary.imageUrl.trim();
+  }
   if (itinerary?.destination) {
     return matchFallback(itinerary.destination);
   }

@@ -55,14 +55,13 @@ export class ItineraryDetailComponent implements OnInit {
   flightsLoading = false;
   flightsError = '';
 
-  // Smart Plan
-  smartPlan: SmartPlan | null = null;
-  smartPlanLoading = false;
-  smartPlanError = '';
-  smartPlanInterests = '';
-  smartPlanDuration = 3;
-  smartPlanTravelStyle = 'balanced';
-  smartPlanTravelers = 1;
+  // AI Refinement / Revision
+  revisionInstruction = '';
+  revisedItineraryPreview: any = null;
+  revisionLoading = false;
+  revisionError = '';
+  changeSummary: string[] = [];
+  isSavingRevision = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -79,6 +78,13 @@ export class ItineraryDetailComponent implements OnInit {
     } else {
       this.router.navigate(['/dashboard']);
     }
+  }
+
+  get canEdit(): boolean {
+    if (!this.itinerary) return false;
+    const isOwner = this.itinerary.createdBy && (this.itinerary.createdBy._id || this.itinerary.createdBy) === this.auth.currentUser()?.id;
+    const isAdmin = ['admin', 'superadmin'].includes(this.auth.currentUser()?.role || '');
+    return !!(isOwner || isAdmin);
   }
 
   ngOnInit() {
@@ -114,8 +120,6 @@ export class ItineraryDetailComponent implements OnInit {
         // Auto-populate AI feature fields from itinerary data
         this.routeDest = res.destination || '';
         this.routeOrigin = '';
-        this.smartPlanTravelers = res.travelerCount || 1;
-        this.smartPlanDuration = parseInt(res.duration) || 3;
 
 
 
@@ -208,26 +212,96 @@ export class ItineraryDetailComponent implements OnInit {
       });
   }
 
-  // ── Phase 4: Smart Plan ───────────────────────────────────────────────────
-  loadSmartPlan() {
-    if (!this.itinerary?.destination) return;
-    this.smartPlanLoading = true;
-    this.smartPlanError = '';
-    this.smartPlan = null;
-    const interests = this.smartPlanInterests
-      ? this.smartPlanInterests.split(',').map(s => s.trim()).filter(Boolean)
-      : undefined;
-    this.ai.getSmartPlan({
-      destination: this.itinerary.destination,
-      duration: this.smartPlanDuration,
-      travelerCount: this.smartPlanTravelers,
-      travelStyle: this.smartPlanTravelStyle,
-      interests,
-    }).pipe(finalize(() => { this.smartPlanLoading = false; }))
+  // ── AI Refinement / Revision ──────────────────────────────────────────────
+  applyChip(chipText: string) {
+    this.revisionInstruction = chipText;
+  }
+
+  previewRevision() {
+    if (!this.revisionInstruction || !this.revisionInstruction.trim()) return;
+    this.revisionLoading = true;
+    this.revisionError = '';
+    this.revisedItineraryPreview = null;
+    this.changeSummary = [];
+
+    this.ai.previewItineraryRevision(this.itineraryId, this.revisionInstruction)
+      .pipe(finalize(() => { this.revisionLoading = false; this.cdr.detectChanges(); }))
       .subscribe({
-        next: (plan) => { this.smartPlan = plan; },
-        error: (err) => { this.smartPlanError = err?.message || 'Failed to generate smart plan.'; },
+        next: (preview) => {
+          this.revisedItineraryPreview = preview;
+          this.changeSummary = this.calculateChangeSummary(this.itinerary, preview);
+        },
+        error: (err) => {
+          this.revisionError = err?.error?.message || err?.message || 'Failed to preview revision.';
+        }
       });
+  }
+
+  applyRevision() {
+    if (!this.revisedItineraryPreview) return;
+    this.isSavingRevision = true;
+    this.revisionError = '';
+
+    const payload = {
+      title: this.revisedItineraryPreview.title,
+      destination: this.revisedItineraryPreview.destination,
+      duration: this.revisedItineraryPreview.duration,
+      budget: this.revisedItineraryPreview.budget,
+      description: this.revisedItineraryPreview.description,
+      dailyPlan: this.revisedItineraryPreview.dailyPlan,
+      tripSummary: this.revisedItineraryPreview.tripSummary
+    };
+
+    this.api.updateItinerary(this.itineraryId, payload)
+      .pipe(finalize(() => { this.isSavingRevision = false; this.cdr.detectChanges(); }))
+      .subscribe({
+        next: (updated) => {
+          this.itinerary = updated;
+          this.revisedItineraryPreview = null;
+          this.revisionInstruction = '';
+          this.changeSummary = [];
+          this.imageUrl = getItineraryImage(updated);
+        },
+        error: (err) => {
+          this.revisionError = err?.error?.message || err?.message || 'Failed to apply revision.';
+        }
+      });
+  }
+
+  discardRevision() {
+    this.revisedItineraryPreview = null;
+    this.changeSummary = [];
+  }
+
+  calculateChangeSummary(original: any, revised: any): string[] {
+    const summary: string[] = [];
+    if (Number(original.budget) !== Number(revised.budget)) {
+      summary.push(`Budget updated from $${original.budget} to $${revised.budget}`);
+    }
+    if (original.description !== revised.description) {
+      summary.push('Trip overview updated');
+    }
+    
+    const origDays = original.dailyPlan || [];
+    const revDays = revised.dailyPlan || [];
+    const maxDays = Math.max(origDays.length, revDays.length);
+    
+    for (let i = 0; i < maxDays; i++) {
+      const origDay = origDays[i];
+      const revDay = revDays[i];
+      if (!origDay || !revDay) {
+        summary.push(`Day ${i + 1} added/removed`);
+        continue;
+      }
+      
+      const origActivities = JSON.stringify(origDay.activities || []);
+      const revActivities = JSON.stringify(revDay.activities || []);
+      if (origDay.title !== revDay.title || origActivities !== revActivities) {
+        summary.push(`Day ${origDay.day || (i + 1)} activities updated`);
+      }
+    }
+    
+    return summary;
   }
 
   // ── Utility helpers ──────────────────────────────────────────────────────

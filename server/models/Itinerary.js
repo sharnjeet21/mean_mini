@@ -11,6 +11,10 @@ const itinerarySchema = new mongoose.Schema({
     required: true,
     trim: true,
   },
+  imageUrl: {
+    type: String,
+    trim: true,
+  },
   startDate: {
     type: Date,
   },

@@ -6,6 +6,7 @@ const aiController = require("../controllers/aiController");
 const { enrichWithImage } = require("../services/imageService");
 const { authenticate } = require("../middleware/auth");
 const { getAiProvider } = require("../services/aiProviderResolver");
+const itineraryDraftService = require("../services/itineraryDraftService");
 
 const router = express.Router();
 
@@ -38,16 +39,112 @@ const FALLBACK_DESTINATIONS = [
   { name: 'Kerala, India', description: 'Tea hills, backwater cruises, heritage towns, and restorative stays.' },
 ];
 
-const FALLBACK_PLACE_NAMES = [
+const POPULAR_DESTINATIONS = [
+  'Amsterdam, Netherlands',
+  'Athens, Greece',
+  'Bangkok, Thailand',
+  'Barcelona, Spain',
+  'Berlin, Germany',
+  'Boston, USA',
+  'Brussels, Belgium',
+  'Budapest, Hungary',
+  'Buenos Aires, Argentina',
+  'Cairo, Egypt',
+  'Cape Town, South Africa',
+  'Chicago, USA',
+  'Delhi, India',
+  'Dubai, UAE',
+  'Dublin, Ireland',
+  'Edinburgh, UK',
+  'Florence, Italy',
+  'Goa, India',
+  'Hanoi, Vietnam',
+  'Hong Kong, China',
+  'Istanbul, Turkey',
+  'Jaipur, Rajasthan, India',
   'Kyoto, Japan',
+  'London, UK',
+  'Los Angeles, USA',
+  'Madrid, Spain',
+  'Manila, Philippines',
+  'Melbourne, Australia',
+  'Mexico City, Mexico',
+  'Miami, USA',
+  'Milan, Italy',
+  'Montreal, Canada',
+  'Mumbai, India',
+  'Munich, Germany',
+  'Munnar, Kerala, India',
+  'New York City, USA',
+  'Osaka, Japan',
+  'Oslo, Norway',
+  'Paris, France',
+  'Prague, Czech Republic',
+  'Rio de Janeiro, Brazil',
+  'Rome, Italy',
+  'San Francisco, USA',
   'Santorini, Greece',
+  'Seoul, South Korea',
+  'Shanghai, China',
+  'Singapore, Singapore',
+  'Stockholm, Sweden',
+  'Sydney, Australia',
+  'Tokyo, Japan',
+  'Toronto, Canada',
+  'Vancouver, Canada',
+  'Venice, Italy',
+  'Vienna, Austria',
+  'Zurich, Switzerland',
   'Leh, Ladakh, India',
   'Lucerne, Switzerland',
-  'Munnar, Kerala, India',
-  'Jaipur, Rajasthan, India',
   'Ubud, Bali, Indonesia',
   'Paros, Greece',
+  'Meghalaya, India',
+  'Shillong, Meghalaya, India',
+  'Cherrapunji, Meghalaya, India',
+  'Mawlynnong, Meghalaya, India',
+  'Guwahati, Assam, India',
+  'Manali, Himachal Pradesh, India',
+  'Shimla, Himachal Pradesh, India',
+  'Dharamshala, Himachal Pradesh, India',
+  'Srinagar, Jammu and Kashmir, India',
+  'Agra, Uttar Pradesh, India',
+  'Udaipur, Rajasthan, India',
+  'Jaisalmer, Rajasthan, India',
+  'Kochi, Kerala, India',
+  'Alleppey, Kerala, India',
+  'Ooty, Tamil Nadu, India',
+  'Mysore, Karnataka, India',
+  'Hampi, Karnataka, India',
+  'Pondicherry, India',
+  'Darjeeling, West Bengal, India',
+  'Gangtok, Sikkim, India'
 ];
+
+function getRelevantSuggestions(query) {
+  if (!query || typeof query !== 'string' || query.trim().length < 2) {
+    return [];
+  }
+  const normalized = query.trim().toLowerCase();
+  
+  const prefixMatches = [];
+  const substringMatches = [];
+
+  for (const place of POPULAR_DESTINATIONS) {
+    const placeLower = place.toLowerCase();
+    const words = placeLower.split(/[\s,]+/);
+    const isPrefix = placeLower.startsWith(normalized) || words.some(word => word.startsWith(normalized));
+    
+    if (isPrefix) {
+      prefixMatches.push(place);
+    } else if (placeLower.includes(normalized)) {
+      substringMatches.push(place);
+    }
+  }
+
+  const combined = [...new Set([...prefixMatches, ...substringMatches])];
+  return combined.slice(0, 8);
+}
 
 function fallbackImage(place) {
   const normalized = String(place || '').toLowerCase();
@@ -59,9 +156,7 @@ function fallbackImage(place) {
 }
 
 function fallbackSuggestions(query) {
-  const normalized = String(query || '').toLowerCase();
-  const matches = FALLBACK_PLACE_NAMES.filter((place) => place.toLowerCase().includes(normalized));
-  return (matches.length ? matches : FALLBACK_PLACE_NAMES).slice(0, 8);
+  return getRelevantSuggestions(query);
 }
 
 function fallbackAttractions(destination) {
@@ -237,27 +332,6 @@ async function fetchTravelSearchImage(destination) {
   return fallback;
 }
 
-// ── Gemini helper ─────────────────────────────────────────────────────────────
-async function callGemini(prompt) {
-  if (!GEMINI_API_KEY) {
-    throw new Error('GEMINI_API_KEY is not configured');
-  }
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-    }
-  );
-  const data = await response.json();
-  if (!response.ok) {
-    throw new Error(data?.error?.message || `Gemini request failed with status ${response.status}`);
-  }
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Gemini returned an empty response');
-  return text;
-}
 
 async function generateStructuredTravelSearch(query) {
   const provider = getAiProvider();
@@ -515,6 +589,36 @@ router.post("/itinerary-draft", authenticate, rateLimiter, (req, res, next) => {
 router.post("/extract-intent", authenticate, rateLimiter, (req, res, next) => {
   if (!req.body.text) return res.status(400).json({ error: "text is required" });
   aiController.handleExtractIntent(req, res, next);
+});
+
+router.post("/itinerary-revision", authenticate, rateLimiter, async (req, res, next) => {
+  try {
+    const { itineraryId, instruction } = req.body;
+    if (!itineraryId) return res.status(400).json({ error: "itineraryId is required" });
+    if (!instruction || typeof instruction !== 'string' || !instruction.trim()) {
+      return res.status(400).json({ error: "instruction is required" });
+    }
+
+    const Itinerary = require("../models/Itinerary");
+    const itinerary = await Itinerary.findById(itineraryId);
+    if (!itinerary) return res.status(404).json({ message: "Itinerary not found." });
+
+    const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+    if (!isOwner && !isAdmin) {
+      return res.status(403).json({ message: "Insufficient permissions." });
+    }
+
+    const revised = await itineraryDraftService.reviseItinerary(itinerary, instruction);
+    if (!revised || typeof revised !== 'object' || !revised.dailyPlan) {
+      throw new Error('Revised itinerary structure is invalid or missing dailyPlan.');
+    }
+
+    return res.json(revised);
+  } catch (err) {
+    console.error('[aiRoutes] Itinerary revision error:', err.message);
+    return res.status(503).json({ message: "We couldn't revise your itinerary right now.", details: err.message });
+  }
 });
 
 module.exports = router;

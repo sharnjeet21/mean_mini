@@ -48,6 +48,52 @@ const ITINERARY_DRAFT_SCHEMA = {
   required: ['destination', 'duration', 'summary', 'days', 'recommendations', 'packingTips']
 };
 
+const ITINERARY_REVISION_SCHEMA = {
+  type: 'object',
+  properties: {
+    title: { type: 'string' },
+    destination: { type: 'string' },
+    duration: { type: 'integer' },
+    budget: { type: 'integer' },
+    description: { type: 'string' },
+    dailyPlan: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          day: { type: 'integer' },
+          title: { type: 'string' },
+          activities: {
+            type: 'array',
+            items: {
+              type: 'object',
+              properties: {
+                time: { type: 'string' },
+                activity: { type: 'string' },
+                description: { type: 'string' },
+                location: { type: 'string' }
+              },
+              required: ['time', 'activity', 'description']
+            }
+          }
+        },
+        required: ['day', 'title', 'activities']
+      }
+    },
+    tripSummary: {
+      type: 'object',
+      properties: {
+        highlights: {
+          type: 'array',
+          items: { type: 'string' }
+        }
+      },
+      required: ['highlights']
+    }
+  },
+  required: ['title', 'destination', 'duration', 'budget', 'description', 'dailyPlan', 'tripSummary']
+};
+
 class OllamaProvider {
   constructor(config = {}) {
     this.baseUrl = config.baseUrl || process.env.OLLAMA_BASE_URL || 'http://localhost:11434';
@@ -427,18 +473,145 @@ User query: ${query}
 
   async generateAutocompleteSuggestions(query) {
     const list = [
+      'Amsterdam, Netherlands',
+      'Athens, Greece',
+      'Bangkok, Thailand',
+      'Barcelona, Spain',
+      'Berlin, Germany',
+      'Boston, USA',
+      'Brussels, Belgium',
+      'Budapest, Hungary',
+      'Buenos Aires, Argentina',
+      'Cairo, Egypt',
+      'Cape Town, South Africa',
+      'Chicago, USA',
+      'Delhi, India',
+      'Dubai, UAE',
+      'Dublin, Ireland',
+      'Edinburgh, UK',
+      'Florence, Italy',
+      'Goa, India',
+      'Hanoi, Vietnam',
+      'Hong Kong, China',
+      'Istanbul, Turkey',
+      'Jaipur, Rajasthan, India',
       'Kyoto, Japan',
+      'London, UK',
+      'Los Angeles, USA',
+      'Madrid, Spain',
+      'Manila, Philippines',
+      'Melbourne, Australia',
+      'Mexico City, Mexico',
+      'Miami, USA',
+      'Milan, Italy',
+      'Montreal, Canada',
+      'Mumbai, India',
+      'Munich, Germany',
+      'Munnar, Kerala, India',
+      'New York City, USA',
+      'Osaka, Japan',
+      'Oslo, Norway',
+      'Paris, France',
+      'Prague, Czech Republic',
+      'Rio de Janeiro, Brazil',
+      'Rome, Italy',
+      'San Francisco, USA',
       'Santorini, Greece',
+      'Seoul, South Korea',
+      'Shanghai, China',
+      'Singapore, Singapore',
+      'Stockholm, Sweden',
+      'Sydney, Australia',
+      'Tokyo, Japan',
+      'Toronto, Canada',
+      'Vancouver, Canada',
+      'Venice, Italy',
+      'Vienna, Austria',
+      'Zurich, Switzerland',
       'Leh, Ladakh, India',
       'Lucerne, Switzerland',
-      'Munnar, Kerala, India',
-      'Jaipur, Rajasthan, India',
       'Ubud, Bali, Indonesia',
       'Paros, Greece',
+      'Meghalaya, India',
+      'Shillong, Meghalaya, India',
+      'Cherrapunji, Meghalaya, India',
+      'Mawlynnong, Meghalaya, India',
+      'Guwahati, Assam, India',
+      'Manali, Himachal Pradesh, India',
+      'Shimla, Himachal Pradesh, India',
+      'Dharamshala, Himachal Pradesh, India',
+      'Srinagar, Jammu and Kashmir, India',
+      'Agra, Uttar Pradesh, India',
+      'Udaipur, Rajasthan, India',
+      'Jaisalmer, Rajasthan, India',
+      'Kochi, Kerala, India',
+      'Alleppey, Kerala, India',
+      'Ooty, Tamil Nadu, India',
+      'Mysore, Karnataka, India',
+      'Hampi, Karnataka, India',
+      'Pondicherry, India',
+      'Darjeeling, West Bengal, India',
+      'Gangtok, Sikkim, India'
     ];
-    const normalized = String(query || '').toLowerCase();
-    const matches = list.filter((place) => place.toLowerCase().includes(normalized));
-    return (matches.length ? matches : list).slice(0, 8);
+
+    if (!query || typeof query !== 'string' || query.trim().length < 2) {
+      return [];
+    }
+    const normalized = query.trim().toLowerCase();
+    
+    const prefixMatches = [];
+    const substringMatches = [];
+
+    for (const place of list) {
+      const placeLower = place.toLowerCase();
+      const words = placeLower.split(/[\s,]+/);
+      const isPrefix = placeLower.startsWith(normalized) || words.some(word => word.startsWith(normalized));
+      
+      if (isPrefix) {
+        prefixMatches.push(place);
+      } else if (placeLower.includes(normalized)) {
+        substringMatches.push(place);
+      }
+    }
+
+    const combined = [...new Set([...prefixMatches, ...substringMatches])];
+    return combined.slice(0, 8);
+  }
+
+  async reviseItinerary(currentData, instruction) {
+    const prompt = `
+You are an expert travel assistant. Your task is to revise an existing travel itinerary based on a user's instruction.
+You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Current Itinerary:
+${JSON.stringify(currentData, null, 2)}
+
+User edit instruction:
+"${instruction}"
+
+Revision Rules:
+- Preserve itinerary content unrelated to the requested change.
+- Modify only what is reasonably required.
+- Avoid duplicate stops.
+- Avoid generic placeholder activities such as "Sightseeing" or "Museum". Be specific.
+- Preserve destination relevance.
+- Maintain the required structured itinerary schema.
+- Do not silently invent live prices, hotel availability, flight availability, or exact travel times.
+- Ensure duration (number of days) matches the count of daily plans.
+`;
+
+    const payload = {
+      model: this.model,
+      prompt: prompt,
+      stream: false,
+      format: ITINERARY_REVISION_SCHEMA,
+      options: {
+        temperature: 0.2
+      }
+    };
+
+    const response = await this._callOllama(payload);
+    return JSON.parse(response);
   }
 }
 

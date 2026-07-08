@@ -114,6 +114,7 @@
     </section>
 
     <!-- ── Phase 2: Route Planning ────────────────────────────────────────────── -->
+    <ng-container *ngIf="false">
     <section class="mb-14">
       <div class="mb-7">
         <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 2</p>
@@ -141,38 +142,40 @@
           <div class="grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div class="rounded-xl bg-white/[0.035] p-4">
               <p class="text-xs uppercase text-[#8ea5b0]">Distance</p>
-              <p class="mt-1 text-lg font-bold text-white">{{ routePlan.totalDistance }}</p>
+              <p class="mt-1 text-lg font-bold text-white">{{ routePlan?.totalDistance }}</p>
             </div>
             <div class="rounded-xl bg-white/[0.035] p-4">
               <p class="text-xs uppercase text-[#8ea5b0]">Travel time</p>
-              <p class="mt-1 text-lg font-bold text-white">{{ routePlan.estimatedTravelTime }}</p>
+              <p class="mt-1 text-lg font-bold text-white">{{ routePlan?.estimatedTravelTime }}</p>
             </div>
             <div class="rounded-xl bg-white/[0.035] p-4">
               <p class="text-xs uppercase text-[#8ea5b0]">Best transport</p>
-              <p class="mt-1 text-lg font-bold text-white capitalize">{{ routePlan.bestTransportMode }}</p>
+              <p class="mt-1 text-lg font-bold text-white capitalize">{{ routePlan?.bestTransportMode }}</p>
             </div>
             <div class="rounded-xl bg-white/[0.035] p-4">
               <p class="text-xs uppercase text-[#8ea5b0]">Advice</p>
-              <p class="mt-1 text-sm text-[#b0c3cf]">{{ routePlan.routingAdvice }}</p>
+              <p class="mt-1 text-sm text-[#b0c3cf]">{{ routePlan?.routingAdvice }}</p>
             </div>
           </div>
-          <div *ngIf="routePlan.waypoints?.length" class="rounded-xl bg-white/[0.035] p-4">
+          <div *ngIf="routePlan?.waypoints?.length" class="rounded-xl bg-white/[0.035] p-4">
             <p class="mb-2 text-xs font-bold uppercase text-[#a6ebd7]">Waypoints</p>
             <ul class="space-y-2">
-              <li *ngFor="let wp of routePlan.waypoints" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+              <li *ngFor="let wp of routePlan?.waypoints" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
                 <span class="material-symbols-outlined mt-0.5 text-sm text-[#7ae0c3]">location_on</span>
                 <div><span class="font-semibold text-white">{{ wp.name }}</span> — {{ wp.description }}</div>
               </li>
             </ul>
           </div>
-          <div *ngIf="routePlan.highlights?.length" class="flex flex-wrap gap-2">
-            <span *ngFor="let h of routePlan.highlights" class="rounded-full bg-[#7ae0c3]/15 px-3 py-1 text-xs text-[#a6ebd7]">{{ h }}</span>
+          <div *ngIf="routePlan?.highlights?.length" class="flex flex-wrap gap-2">
+            <span *ngFor="let h of routePlan?.highlights" class="rounded-full bg-[#7ae0c3]/15 px-3 py-1 text-xs text-[#a6ebd7]">{{ h }}</span>
           </div>
         </div>
       </div>
     </section>
+    </ng-container>
 
     <!-- ── Phase 3: Hotel Suggestions + Budget ────────────────────────────────── -->
+    <ng-container *ngIf="false">
     <section class="mb-14 grid grid-cols-1 gap-8 lg:grid-cols-2">
       <!-- Hotels -->
       <div>
@@ -225,11 +228,11 @@
             <div class="flex items-center justify-between">
               <div>
                 <p class="text-xs uppercase text-[#8ea5b0]">Total estimated</p>
-                <p class="text-3xl font-bold text-white">{{ budgetEstimate.currency }} {{ budgetEstimate.totalEstimated | number }}</p>
+                <p class="text-3xl font-bold text-white">{{ budgetEstimate?.currency }} {{ budgetEstimate?.totalEstimated | number }}</p>
               </div>
-              <span class="rounded-full px-3 py-1 text-sm font-bold" [class]="budgetEstimate.costLevel === 'budget' ? 'bg-emerald-500/10 text-emerald-200' : budgetEstimate.costLevel === 'expensive' ? 'bg-rose-500/10 text-rose-200' : 'bg-amber-500/10 text-amber-200'">{{ budgetEstimate.costLevel }}</span>
+              <span class="rounded-full px-3 py-1 text-sm font-bold" [class]="budgetEstimate?.costLevel === 'budget' ? 'bg-emerald-500/10 text-emerald-200' : budgetEstimate?.costLevel === 'expensive' ? 'bg-rose-500/10 text-rose-200' : 'bg-amber-500/10 text-amber-200'">{{ budgetEstimate?.costLevel }}</span>
             </div>
-            <div *ngIf="budgetEstimate.perPerson" class="text-sm text-[#8ea5b0]">{{ budgetEstimate.currency }} {{ budgetEstimate.perPerson | number }} per person</div>
+            <div *ngIf="budgetEstimate?.perPerson" class="text-sm text-[#8ea5b0]">{{ budgetEstimate?.currency }} {{ budgetEstimate?.perPerson | number }} per person</div>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div *ngFor="let item of [
                 { key: 'transport', label: 'Transport' },
@@ -242,10 +245,10 @@
                 <p class="text-[10px] uppercase text-[#8ea5b0]">{{ item.label }}</p>
               </div>
             </div>
-            <div *ngIf="budgetEstimate.tips?.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
+            <div *ngIf="budgetEstimate?.tips?.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
               <p class="mb-2 text-xs font-bold uppercase text-[#ffd996]">Money tips</p>
               <ul class="space-y-1">
-                <li *ngFor="let tip of budgetEstimate.tips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+                <li *ngFor="let tip of budgetEstimate?.tips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
                   <span class="material-symbols-outlined mt-0.5 text-sm text-[#ffc96b]">lightbulb</span>{{ tip }}
                 </li>
               </ul>
@@ -255,8 +258,10 @@
         </div>
       </div>
     </section>
+    </ng-container>
 
     <!-- ── Phase 4: Flight Info ───────────────────────────────────────────────── -->
+    <ng-container *ngIf="false">
     <section class="mb-14">
       <div class="mb-7">
         <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 4</p>
@@ -294,87 +299,98 @@
             </div>
           </div>
         </div>
-        <p *ngIf="!flights.length && !flightsLoading" class="mt-4 text-sm text-[#8ea5b0]">Enter origin and click "Search Flights" for AI-simulated options.</p>
       </div>
     </section>
+    </ng-container>
 
-    <!-- ── Phase 4: Smart Plan ────────────────────────────────────────────────── -->
-    <section class="mb-14">
+    <!-- ── AI Refinement / Revision ──────────────────────────────────────────── -->
+    <section class="mb-14" *ngIf="canEdit">
       <div class="mb-7">
-        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 4 · Smart Planning</p>
-        <h2 class="text-3xl font-bold text-white">AI-Generated Itinerary</h2>
-        <p class="mt-2 max-w-xl text-sm text-[#8ea5b0]">Generate a complete day-by-day itinerary with meals, activities, and budget, powered by Gemini AI.</p>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">AI Copilot</p>
+        <h2 class="text-3xl font-bold text-white">Ask AI to refine this trip</h2>
+        <p class="mt-2 max-w-xl text-sm text-[#8ea5b0]">Describe what you'd like to change—budget, pace, activities, or styling—and preview the revised plan instantly.</p>
       </div>
+
       <div class="glass-panel rounded-2xl p-6">
-        <div class="mb-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Duration (days)
-            <input [(ngModel)]="smartPlanDuration" type="number" min="1" max="30" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
-          </label>
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Travelers
-            <input [(ngModel)]="smartPlanTravelers" type="number" min="1" max="50" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
-          </label>
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Travel Style
-            <select [(ngModel)]="smartPlanTravelStyle" class="mt-2 w-full rounded-xl border border-white/10 bg-[#102733] px-4 py-3 text-sm text-white outline-none">
-              <option value="budget">Budget</option>
-              <option value="balanced">Balanced</option>
-              <option value="premium">Premium</option>
-            </select>
-          </label>
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Interests
-            <input [(ngModel)]="smartPlanInterests" type="text" placeholder="history, food, nature" class="mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case tracking-normal text-white outline-none transition focus:border-[#7ae0c3]/50">
-          </label>
+        <!-- Quick Chips -->
+        <div class="mb-5 flex flex-wrap gap-2">
+          <button *ngFor="let chip of [
+            'Make this trip cheaper',
+            'Add more adventure',
+            'Replace a day with relaxation',
+            'Add local food suggestions',
+            'Make it family friendly'
+          ]" (click)="applyChip(chip)"
+             class="rounded-full bg-white/5 px-4 py-1.5 text-xs text-[#b0c3cf] transition hover:bg-[#7ae0c3]/15 hover:text-[#a6ebd7]">
+            + {{ chip }}
+          </button>
         </div>
-        <button (click)="loadSmartPlan()" [disabled]="smartPlanLoading" class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-sm font-bold text-[#05201f] disabled:opacity-60">
-          {{ smartPlanLoading ? 'Generating…' : 'Generate Smart Plan' }}
-        </button>
-        <div *ngIf="smartPlanError" class="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ smartPlanError }}</div>
 
-        <div *ngIf="smartPlan" class="mt-6 space-y-6">
-          <div class="flex flex-wrap items-center gap-4">
-            <span class="rounded-full bg-[#7ae0c3]/15 px-4 py-1.5 text-sm font-bold text-[#a6ebd7]">{{ smartPlan.destination }} · {{ smartPlan.duration }} days</span>
-            <span class="rounded-full bg-white/8 px-3 py-1 text-xs text-[#8ea5b0] capitalize">{{ smartPlan.travelStyle }}</span>
-            <span class="text-sm text-[#8ea5b0]">Budget: {{ smartPlan.estimatedBudget?.currency }} {{ smartPlan.estimatedBudget?.total | number }}</span>
-          </div>
+        <!-- Instruction Input -->
+        <div class="relative">
+          <textarea [(ngModel)]="revisionInstruction" rows="3"
+                    placeholder="e.g. swap out day 2 activities with visits to local cafés and a historical museum, and reduce the budget slightly..."
+                    class="w-full resize-none rounded-xl border border-white/12 bg-white/6 p-4 text-sm text-white outline-none transition focus:border-[#7ae0c3] placeholder:text-[#708995]"></textarea>
+        </div>
 
-          <div *ngFor="let day of smartPlan.dailyPlan" class="rounded-xl border border-white/10 bg-white/[0.035] overflow-hidden">
-            <div class="flex items-center gap-3 bg-[#7ae0c3]/10 p-4">
-              <span class="flex h-9 w-9 items-center justify-center rounded-full bg-[#7ae0c3] text-sm font-bold text-[#05201f]">{{ day.day }}</span>
-              <div>
-                <p class="font-bold text-white">{{ day.title }}</p>
-                <p *ngIf="day.meals" class="text-xs text-[#8ea5b0]">🍳 {{ day.meals.breakfast }} · 🥗 {{ day.meals.lunch }} · 🍽️ {{ day.meals.dinner }}</p>
-              </div>
+        <div class="mt-3 flex items-center justify-between">
+          <button (click)="previewRevision()" [disabled]="revisionLoading || !revisionInstruction.trim()"
+                  class="signature-gradient rounded-xl px-5 py-2.5 text-sm font-bold text-white disabled:opacity-60 disabled:pointer-events-none">
+            {{ revisionLoading ? 'Refining Itinerary...' : 'Preview Changes' }}
+          </button>
+        </div>
+
+        <div *ngIf="revisionError" class="mt-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">
+          {{ revisionError }}
+        </div>
+
+        <!-- Spinner / Progress -->
+        <div *ngIf="revisionLoading" class="mt-6 flex flex-col items-center justify-center p-8 rounded-xl bg-white/[0.02]">
+          <span class="material-symbols-outlined text-4xl text-[#7ae0c3] animate-spin">sync</span>
+          <p class="mt-3 text-sm text-[#8ea5b0] animate-pulse">Gemma 3 is editing the daily schedule and budget...</p>
+        </div>
+
+        <!-- Preview Area -->
+        <div *ngIf="revisedItineraryPreview && !revisionLoading" class="mt-6 border-t border-white/10 pt-6 space-y-6">
+          <div class="rounded-xl border border-[#7ae0c3]/30 bg-[#7ae0c3]/5 p-5">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+              <span class="material-symbols-outlined text-[#7ae0c3]">preview</span>
+              Draft preview ready
+            </h3>
+            
+            <div *ngIf="changeSummary.length > 0" class="mt-3">
+              <p class="text-xs font-bold uppercase tracking-wider text-[#a6ebd7]">Detected Changes:</p>
+              <ul class="mt-1 list-inside list-disc text-sm text-[#b0c3cf] space-y-1">
+                <li *ngFor="let change of changeSummary">{{ change }}</li>
+              </ul>
             </div>
-            <div class="space-y-3 p-4">
-              <div *ngFor="let activity of day.activities" class="flex items-start gap-3">
-                <span class="mt-1 text-xs font-bold text-[#7ae0c3]">{{ activity.time }}</span>
-                <div class="flex-1">
-                  <p class="text-sm font-semibold text-white">{{ activity.activity }}</p>
-                  <p class="text-xs text-[#b0c3cf]">{{ activity.description }}</p>
-                  <p *ngIf="activity.location" class="mt-0.5 text-xs text-[#8ea5b0]">📍 {{ activity.location }}</p>
+
+            <!-- Revised Plan Preview Collapse -->
+            <div class="mt-4 space-y-3">
+              <div *ngFor="let day of revisedItineraryPreview.dailyPlan" class="rounded-lg bg-black/20 overflow-hidden">
+                <div class="bg-white/5 px-4 py-2.5 flex items-center justify-between">
+                  <span class="text-xs font-bold text-[#7ae0c3]">Day {{ day.day }}: {{ day.title }}</span>
+                </div>
+                <div class="p-3 space-y-2">
+                  <div *ngFor="let act of day.activities" class="text-xs text-[#b0c3cf]">
+                    <span class="font-semibold text-white">{{ act.time }}</span> - {{ act.activity }}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div *ngIf="smartPlan.recommendations?.length" class="rounded-xl border border-[#7ae0c3]/20 bg-[#7ae0c3]/5 p-4">
-            <p class="mb-2 text-xs font-bold uppercase text-[#a6ebd7]">Recommendations</p>
-            <ul class="space-y-1">
-              <li *ngFor="let rec of smartPlan.recommendations" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
-                <span class="material-symbols-outlined mt-0.5 text-sm text-[#7ae0c3]">check_circle</span>{{ rec }}
-              </li>
-            </ul>
-          </div>
-
-          <div *ngIf="smartPlan.packingTips?.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
-            <p class="mb-2 text-xs font-bold uppercase text-[#ffd996]">Packing tips</p>
-            <ul class="space-y-1">
-              <li *ngFor="let tip of smartPlan.packingTips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
-                <span class="material-symbols-outlined mt-0.5 text-sm text-[#ffc96b]">backpack</span>{{ tip }}
-              </li>
-            </ul>
+            <div class="mt-5 flex gap-3">
+              <button (click)="applyRevision()" [disabled]="isSavingRevision"
+                      class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-sm font-bold text-[#05201f] disabled:opacity-60">
+                {{ isSavingRevision ? 'Saving...' : 'Apply Changes' }}
+              </button>
+              <button (click)="discardRevision()" [disabled]="isSavingRevision"
+                      class="rounded-xl border border-white/20 px-5 py-2.5 text-sm font-bold text-[#b0c3cf] transition hover:bg-white/5 disabled:opacity-60">
+                Discard
+              </button>
+            </div>
           </div>
         </div>
-        <p *ngIf="!smartPlan && !smartPlanLoading" class="mt-4 text-sm text-[#8ea5b0]">Configure parameters and click "Generate Smart Plan" for an AI-powered day-by-day itinerary.</p>
       </div>
     </section>
 

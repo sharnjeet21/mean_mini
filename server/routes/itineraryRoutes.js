@@ -20,6 +20,7 @@ const EDITABLE_FIELDS = [
   'accommodationType',
   'budgetBreakdown',
   'description',
+  'imageUrl',
   'stops',
   'dailyPlan',
   'tripSummary',
@@ -215,8 +216,22 @@ router.post('/', authenticate, async (req, res) => {
     const validationError = validateItinerary(payload, true);
     if (validationError) return res.status(400).json({ message: validationError });
 
+    let imageUrl = payload.imageUrl;
+    if (!imageUrl && payload.destination) {
+      try {
+        const { enrichWithImage } = require('../services/imageService');
+        const imageData = await enrichWithImage(payload.destination);
+        if (imageData && imageData.image) {
+          imageUrl = imageData.image;
+        }
+      } catch (err) {
+        console.error('Failed to resolve image during creation:', err.message);
+      }
+    }
+
     const itinerary = await Itinerary.create({
       ...payload,
+      imageUrl,
       stops: Array.isArray(payload.stops)
         ? payload.stops
           .filter((stop) => stop?.name?.trim())
