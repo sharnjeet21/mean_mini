@@ -2,7 +2,8 @@ import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angu
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { finalize, timeout } from 'rxjs/operators';
+import { Subject, of } from 'rxjs';
+import { finalize, timeout, debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
@@ -57,10 +58,12 @@ export class DashboardComponent implements OnInit {
   // Suggestions lists
   showManualSuggestions = false;
   manualSuggestions: string[] = [];
+  destinationSearchSubject = new Subject<string>();
 
   // For AI draft flow
   extractedIntent: any = null;
   generatedDraft: any = null;
+  durationConflictMessage = '';
   clarificationForm = {
     destination: '',
     duration: 4
@@ -83,6 +86,23 @@ export class DashboardComponent implements OnInit {
       this.loading = false;
       return;
     }
+
+    this.destinationSearchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((query) => {
+        if (!query || query.length < 2) {
+          return of([]);
+        }
+        return this.ai.getSuggestions(query).pipe(
+          catchError(() => of([]))
+        );
+      })
+    ).subscribe((sugs) => {
+      this.manualSuggestions = sugs;
+      this.showManualSuggestions = sugs.length > 0;
+      this.cdr.detectChanges();
+    });
 
     this.loadItineraries();
     const destination = this.route.snapshot.queryParamMap.get('destination') || '';
@@ -206,6 +226,7 @@ export class DashboardComponent implements OnInit {
     this.aiLoading = false;
     this.extractedIntent = null;
     this.generatedDraft = null;
+    this.durationConflictMessage = '';
     this.clarificationForm = {
       destination: prefilledDestination,
       duration: 4
@@ -393,6 +414,20 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
+    // Detect duration conflict (e.g. 6 days and 7 nights)
+    const dayMatch = this.aiPromptText.match(/(\d+)\s*day/i);
+    const nightMatch = this.aiPromptText.match(/(\d+)\s*night/i);
+    let hasConflict = false;
+    let conflictMsg = '';
+    if (dayMatch && nightMatch) {
+      const days = parseInt(dayMatch[1], 10);
+      const nights = parseInt(nightMatch[1], 10);
+      if (nights > days) {
+        hasConflict = true;
+        conflictMsg = `You mentioned ${days} days and ${nights} nights. Could you confirm the trip duration?`;
+      }
+    }
+
     this.aiLoading = true;
     this.formError = '';
     this.startLoadingTexts();
@@ -406,7 +441,7 @@ export class DashboardComponent implements OnInit {
         const hasDest = extracted.destination && extracted.destination.trim();
         const hasDur = extracted.duration && Number.isInteger(extracted.duration) && extracted.duration > 0;
         
-        if (hasDest && hasDur) {
+        if (hasDest && hasDur && !hasConflict) {
           // Proceed directly to draft generation
           this.callDraftGeneration(extracted);
         } else {
@@ -415,8 +450,9 @@ export class DashboardComponent implements OnInit {
           this.aiLoading = false;
           this.clarificationForm = {
             destination: extracted.destination || '',
-            duration: extracted.duration || 4
+            duration: hasConflict ? Math.max(1, parseInt(dayMatch![1], 10)) : (extracted.duration || 4)
           };
+          this.durationConflictMessage = conflictMsg;
           this.creationMode = 'clarify';
           this.cdr.detectChanges();
         }
@@ -524,13 +560,7 @@ export class DashboardComponent implements OnInit {
       this.showManualSuggestions = false;
       return;
     }
-    this.ai.getSuggestions(value).subscribe({
-      next: (sugs) => {
-        this.manualSuggestions = sugs;
-        this.showManualSuggestions = sugs.length > 0;
-        this.cdr.detectChanges();
-      }
-    });
+    this.destinationSearchSubject.next(value);
   }
 
   selectManualSuggestion(suggestion: string): void {

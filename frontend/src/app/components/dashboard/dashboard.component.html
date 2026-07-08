@@ -250,7 +250,11 @@
 
       <!-- CLARIFICATION STATE -->
       <div *ngIf="creationMode === 'clarify'" class="space-y-5">
-        <p class="text-sm text-[#8fa6b1]">We couldn't capture a valid destination or duration. Let's add them manually to start generating:</p>
+        <div *ngIf="durationConflictMessage" class="rounded-2xl border border-[#ff8d70]/25 bg-[#ff8d70]/10 p-4 text-sm text-[#ffb4a1] flex items-start gap-3">
+          <span class="material-symbols-outlined text-[#ff8d70] mt-0.5">warning</span>
+          <p class="leading-relaxed">{{ durationConflictMessage }}</p>
+        </div>
+        <p *ngIf="!durationConflictMessage" class="text-sm text-[#8fa6b1]">We couldn't capture a valid destination or duration. Let's add them manually to start generating:</p>
         
         <div class="relative w-full">
           <label class="block text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Primary Destination *
