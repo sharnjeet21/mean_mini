@@ -169,6 +169,7 @@ function parseDurationChange(instruction, currentDuration) {
     const isRelativeAdd = /\b(?:add|extend\s+by|give\s+me|extra|more)\b/.test(norm);
     const isRelativeRemove = /\b(?:remove|shorten|reduce)\b/.test(norm);
 
+
     if (isAbsolute) {
       durationMode = 'absolute';
       targetDuration = numericValue;
