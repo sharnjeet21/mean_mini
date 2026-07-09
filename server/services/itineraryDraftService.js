@@ -377,6 +377,26 @@ function validateConstrainedCandidate(candidate, original, scope) {
   }
 }
 
+function shouldBypassAiScope(instruction) {
+  const norm = instruction.toLowerCase();
+  
+  const patterns = [
+    /\bday\s+\d+\b/,
+    /\bfirst\s+\d+\s+days?\b/,
+    /\bextend\s+(?:to\s+)?\d+\s+days?\b/,
+    /\bremove\s+(?:the\s+)?(?:last\s+day|day\s+\d+)\b/,
+    /\badd\s+(?:one\s+day|day)\b/,
+    /\bwithout\s+changing\s+locations?\b/,
+    /\bdo\s+not\s+change\s+locations?\b/,
+    /\bpreserve\s+locations?\b/,
+    /\bdo\s+not\s+change\s+day\b/,
+    /\bpreserve\s+day\b/,
+    /\bkeep\s+day\b/
+  ];
+
+  return patterns.some(pattern => pattern.test(norm));
+}
+
 async function extractTripIntent(text) {
   if (!text || typeof text !== 'string' || !text.trim()) {
     throw new Error('Text input is required for intent extraction.');
@@ -395,16 +415,20 @@ async function reviseItinerary(itinerary, instruction, userId = '') {
   }
 
   const durationVal = parseInt(itinerary.duration) || (itinerary.dailyPlan ? itinerary.dailyPlan.length : 1);
+  const provider = getAiProvider();
 
   // 1. Extract Scope (Deterministic + AI)
   const detScope = parseScopeDeterministically(instruction, durationVal);
   let aiScope = { scopeType: 'full_revision', targetDays: [], preserveDays: [], allowedFields: [], protectedFields: [], intent: instruction };
   
-  const provider = getAiProvider();
-  try {
-    aiScope = await provider.extractRevisionScope(instruction.trim(), durationVal);
-  } catch (err) {
-    console.warn('[itineraryDraftService] Semantic scope extraction failed, falling back to deterministic scope:', err.message);
+  if (shouldBypassAiScope(instruction)) {
+    console.log('[itineraryDraftService] Bypassing AI scope extraction for deterministic instruction:', instruction);
+  } else {
+    try {
+      aiScope = await provider.extractRevisionScope(instruction.trim(), durationVal);
+    } catch (err) {
+      console.warn('[itineraryDraftService] Semantic scope extraction failed, falling back to deterministic scope:', err.message);
+    }
   }
 
   // Merge scopes (giving deterministic checks priority for specific day numbers)
