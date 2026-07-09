@@ -865,6 +865,27 @@ Future security and platform items:
 - [ ] Add conversational travel assistant/chatbot mode
 - [ ] Add maps integration
 
+## 16.6 Phase 0.7 - Trip Manager Manual Itinerary Editing
+
+Status: `Completed`
+
+Problem statement:
+Trip managers need precise control over itineraries, but manual editing was not supported, and there were no access level controls to distinguish between normal travelers and trip managers.
+
+Goal:
+Implement a secure, clean, optimistic-concurrency-protected manual itinerary editor for authorized trip managers and admins, fully integrated with the AI Copilot.
+
+Checklist:
+- [x] Audit role model and authorization.
+- [x] Extend Mongoose User schema to support `trip-manager` role.
+- [x] Enforce backend access controls for `user`, `trip-manager`, and `admin` roles.
+- [x] Implement optimistic concurrency checks on the backend (updatedAt and version key).
+- [x] Create a localized, non-autosaved edit state on the frontend.
+- [x] Extend daily itinerary accordion to support day addition/removal and activity addition/removal/reordering.
+- [x] Verify legacy itineraries can render and be edited safely.
+- [x] Confirm AI Copilot uses the latest saved manual edits.
+- [x] Run backend, frontend, and production builds successfully.
+
 ## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:
@@ -876,6 +897,7 @@ Recommended practical order for implementation:
 - [ ] Phase 16.3: Destination Suggestions in Wizard
 - [ ] Phase 16.4: My Bookings Routed View Issues
 - [x] Phase 16.5: AI Travel Search and Itinerary Assistant
+- [x] Phase 16.6: Trip Manager Manual Itinerary Editing ✅
 - [ ] Phase 1: Visual Discovery MVP
 - [ ] Phase 2: Smart Itinerary Builder MVP
 - [ ] Phase 3: Route Intelligence

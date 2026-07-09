@@ -63,6 +63,10 @@ export class ItineraryDetailComponent implements OnInit {
   changeSummary: string[] = [];
   isSavingRevision = false;
 
+  // Manual editing state
+  editMode = false;
+  editItinerary: any = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -85,6 +89,163 @@ export class ItineraryDetailComponent implements OnInit {
     const isOwner = this.itinerary.createdBy && (this.itinerary.createdBy._id || this.itinerary.createdBy) === this.auth.currentUser()?.id;
     const isAdmin = ['admin', 'superadmin'].includes(this.auth.currentUser()?.role || '');
     return !!(isOwner || isAdmin);
+  }
+
+  get canEditDetailed(): boolean {
+    if (!this.itinerary) return false;
+    const isOwner = this.itinerary.createdBy && (this.itinerary.createdBy._id || this.itinerary.createdBy) === this.auth.currentUser()?.id;
+    const role = this.auth.currentUser()?.role || '';
+    const isAdmin = ['admin', 'superadmin'].includes(role);
+    const isTripManager = role === 'trip-manager';
+    return !!(isAdmin || (isTripManager && isOwner));
+  }
+
+  startEditing() {
+    this.editItinerary = JSON.parse(JSON.stringify(this.itinerary));
+    this.editMode = true;
+  }
+
+  cancelEditing() {
+    const currentJson = JSON.stringify(this.itinerary);
+    const editJson = JSON.stringify(this.editItinerary);
+    // Compare only content fields to see if dirty
+    if (currentJson !== editJson) {
+      if (!confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+        return;
+      }
+    }
+    this.editMode = false;
+    this.editItinerary = null;
+  }
+
+  addDay() {
+    if (!this.editItinerary) return;
+    if (!this.editItinerary.dailyPlan) {
+      this.editItinerary.dailyPlan = [];
+    }
+    const nextDayNum = this.editItinerary.dailyPlan.length + 1;
+    this.editItinerary.dailyPlan.push({
+      day: nextDayNum,
+      title: 'New Day',
+      activities: []
+    });
+    this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
+  }
+
+  removeDay(index: number) {
+    if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
+    if (confirm(`Are you sure you want to remove Day ${this.editItinerary.dailyPlan[index].day || (index + 1)}?`)) {
+      this.editItinerary.dailyPlan.splice(index, 1);
+      this.editItinerary.dailyPlan.forEach((d: any, i: number) => {
+        d.day = i + 1;
+      });
+      const nextDayNum = this.editItinerary.dailyPlan.length;
+      this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
+    }
+  }
+
+  addActivity(dayIndex: number) {
+    if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
+    const day = this.editItinerary.dailyPlan[dayIndex];
+    if (!day.activities) {
+      day.activities = [];
+    }
+    day.activities.push({
+      time: '09:00 AM',
+      activity: 'New Activity',
+      description: '',
+      location: '',
+      category: 'leisure',
+      suggestedDuration: '1h',
+      whyThisStop: ''
+    });
+  }
+
+  removeActivity(dayIndex: number, actIndex: number) {
+    if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
+    const day = this.editItinerary.dailyPlan[dayIndex];
+    if (!day.activities) return;
+    if (confirm('Are you sure you want to remove this activity?')) {
+      day.activities.splice(actIndex, 1);
+    }
+  }
+
+  moveActivity(dayIndex: number, actIndex: number, direction: 'up' | 'down') {
+    if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
+    const day = this.editItinerary.dailyPlan[dayIndex];
+    if (!day.activities) return;
+    const targetIndex = direction === 'up' ? actIndex - 1 : actIndex + 1;
+    if (targetIndex < 0 || targetIndex >= day.activities.length) return;
+    
+    const temp = day.activities[actIndex];
+    day.activities[actIndex] = day.activities[targetIndex];
+    day.activities[targetIndex] = temp;
+  }
+
+  saveChanges() {
+    if (!this.editItinerary) return;
+    
+    if (!this.editItinerary.title || !this.editItinerary.title.trim()) {
+      alert('Title cannot be empty.');
+      return;
+    }
+    if (!this.editItinerary.destination || !this.editItinerary.destination.trim()) {
+      alert('Destination cannot be empty.');
+      return;
+    }
+    if (this.editItinerary.budget !== undefined && this.editItinerary.budget !== null && this.editItinerary.budget < 0) {
+      alert('Budget cannot be negative.');
+      return;
+    }
+    if (this.editItinerary.travelerCount !== undefined && this.editItinerary.travelerCount !== null && this.editItinerary.travelerCount < 1) {
+      alert('Traveler count must be at least 1.');
+      return;
+    }
+    if (this.editItinerary.dailyPlan) {
+      for (const day of this.editItinerary.dailyPlan) {
+        if (!day.title || !day.title.trim()) {
+          alert(`Day ${day.day} must have a title.`);
+          return;
+        }
+        if (day.activities) {
+          for (let j = 0; j < day.activities.length; j++) {
+            const act = day.activities[j];
+            if (!act.activity || !act.activity.trim()) {
+              alert(`Activity ${j + 1} on Day ${day.day} must have a name.`);
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    this.actionLoading = 'save';
+    this.clearFeedback();
+    
+    const payload = {
+      ...this.editItinerary,
+      updatedAt: this.itinerary.updatedAt,
+      __v: this.itinerary.__v
+    };
+
+    this.api.updateItinerary(this.itineraryId, payload)
+      .pipe(finalize(() => { this.actionLoading = ''; this.cdr.detectChanges(); }))
+      .subscribe({
+        next: (updated) => {
+          this.itinerary = updated;
+          this.imageUrl = getItineraryImage(updated);
+          this.editMode = false;
+          this.editItinerary = null;
+          this.actionMessage = 'Itinerary updated successfully.';
+          this.loadAnalysis();
+        },
+        error: (err) => {
+          this.errorMessage = err?.error?.message || err?.message || 'Failed to save changes.';
+          if (err?.status === 409) {
+            alert('Conflict error: ' + this.errorMessage);
+          }
+        }
+      });
   }
 
   ngOnInit() {
