@@ -49,15 +49,36 @@ const ITINERARY_DRAFT_SCHEMA = {
   required: ['destination', 'duration', 'summary', 'days', 'recommendations', 'packingTips']
 };
 
-const ITINERARY_REVISION_SCHEMA = {
+const ITINERARY_PATCH_SCHEMA = {
   type: 'object',
   properties: {
-    title: { type: 'string' },
-    destination: { type: 'string' },
-    duration: { type: 'integer' },
-    budget: { type: 'integer' },
-    description: { type: 'string' },
-    dailyPlan: {
+    operation: { type: 'string', enum: ['replace_day', 'replace_days', 'update_fields', 'extend_days'] },
+    targetDuration: { type: 'integer' },
+    day: { type: 'integer' },
+    dayData: {
+      type: 'object',
+      properties: {
+        day: { type: 'integer' },
+        title: { type: 'string' },
+        activities: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              time: { type: 'string' },
+              activity: { type: 'string' },
+              description: { type: 'string' },
+              location: { type: 'string' },
+              category: { type: 'string' },
+              suggestedDuration: { type: 'string' },
+              whyThisStop: { type: 'string' }
+            },
+            required: ['time', 'activity', 'description']
+          }
+        }
+      }
+    },
+    days: {
       type: 'array',
       items: {
         type: 'object',
@@ -84,18 +105,24 @@ const ITINERARY_REVISION_SCHEMA = {
         required: ['day', 'title', 'activities']
       }
     },
-    tripSummary: {
+    changes: {
       type: 'object',
       properties: {
-        highlights: {
-          type: 'array',
-          items: { type: 'string' }
+        estimatedBudget: { type: 'integer' },
+        budget: { type: 'integer' },
+        title: { type: 'string' },
+        description: { type: 'string' },
+        destination: { type: 'string' },
+        tripSummary: {
+          type: 'object',
+          properties: {
+            highlights: { type: 'array', items: { type: 'string' } }
+          }
         }
-      },
-      required: ['highlights']
+      }
     }
   },
-  required: ['title', 'destination', 'duration', 'budget', 'description', 'dailyPlan', 'tripSummary']
+  required: ['operation']
 };
 
 class OllamaProvider {
@@ -656,33 +683,60 @@ User Edit Instruction: "${instruction}"
     return parsed;
   }
 
-  async reviseItinerary(currentData, instruction) {
+  async reviseItinerary(currentData, instruction, scope, operation) {
+    let editableInput = '';
+    let compactContext = '';
+
+    if (operation === 'replace_day') {
+      const targetDayNum = scope.targetDays[0] || 1;
+      const targetDay = currentData.dailyPlan.find(d => d.day === targetDayNum) || {};
+      editableInput = `EDITABLE DAY ${targetDayNum} CONTENT:\n${JSON.stringify(targetDay, null, 2)}`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Title: ${currentData.title}\n- Duration: ${currentData.duration} days\n- Budget: ${currentData.budget}`;
+    } else if (operation === 'replace_days') {
+      const targetDays = currentData.dailyPlan.filter(d => scope.targetDays.includes(d.day));
+      editableInput = `EDITABLE DAYS CONTENT:\n${JSON.stringify(targetDays, null, 2)}`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Title: ${currentData.title}\n- Duration: ${currentData.duration} days\n- Budget: ${currentData.budget}`;
+    } else if (operation === 'update_fields') {
+      editableInput = `EDITABLE METADATA FIELDS:\n- budget: ${currentData.budget}\n- title: ${currentData.title}\n- description: ${currentData.description}\n- highlights: ${JSON.stringify(currentData.tripSummary?.highlights || [])}`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Duration: ${currentData.duration} days`;
+    } else if (operation === 'extend_days') {
+      editableInput = `DURATION CHANGE DETAILS:\n- Current Duration: ${currentData.duration} days\n- Target Duration: ${scope.targetDuration} days`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Title: ${currentData.title}\n- Budget: ${currentData.budget}`;
+    } else {
+      editableInput = JSON.stringify(currentData, null, 2);
+    }
+
     const prompt = `
 You are an expert travel assistant. Your task is to revise an existing travel itinerary based on a user's instruction.
-You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+Instead of rewriting the entire itinerary, you MUST generate a targeted PATCH JSON matching the exact schema below.
 
-Current Itinerary:
-${JSON.stringify(currentData, null, 2)}
+Output JSON Schema:
+{
+  "operation": "${operation}",
+  ${operation === 'replace_day' ? `"day": Number (the target day number),\n  "dayData": { "day": Number, "title": "string", "activities": [{ "time": "string", "activity": "string", "description": "string", "location": "string" }] }` : ''}
+  ${operation === 'replace_days' ? `"days": [{ "day": Number, "title": "string", "activities": [{ "time": "string", "activity": "string", "description": "string", "location": "string" }] }]` : ''}
+  ${operation === 'update_fields' ? `"changes": { "budget": Number, "title": "string", "description": "string", "tripSummary": { "highlights": ["string"] } }` : ''}
+  ${operation === 'extend_days' ? `"targetDuration": Number (e.g. ${scope.targetDuration || currentData.duration}),\n  "days": [{ "day": Number, "title": "string", "activities": [{ "time": "string", "activity": "string", "description": "string", "location": "string" }] }] (ONLY generate the newly added day objects, e.g. Days ${(currentData.duration + 1)} to ${(scope.targetDuration || currentData.duration)})` : ''}
+}
 
-User edit instruction:
+Constraint Rules:
+- Only generate data required for the operation "${operation}".
+- Do NOT include any unmodified/preserved days in your output.
+- Do NOT wrap your response in markdown code blocks. Start directly with the JSON object.
+
+User Edit Instruction:
 "${instruction}"
 
-Revision Rules:
-- Preserve itinerary content unrelated to the requested change.
-- Modify only what is reasonably required.
-- Avoid duplicate stops.
-- Avoid generic placeholder activities such as "Sightseeing" or "Museum". Be specific.
-- Preserve destination relevance.
-- Maintain the required structured itinerary schema.
-- Do not silently invent live prices, hotel availability, flight availability, or exact travel times.
-- Ensure duration (number of days) matches the count of daily plans.
+${compactContext}
+
+${editableInput}
 `;
 
     const payload = {
       model: this.model,
       prompt: prompt,
       stream: false,
-      format: ITINERARY_REVISION_SCHEMA,
+      format: ITINERARY_PATCH_SCHEMA,
       options: {
         temperature: 0.2
       }

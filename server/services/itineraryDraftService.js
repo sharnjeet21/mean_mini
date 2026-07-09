@@ -180,12 +180,12 @@ function parseScopeDeterministically(instruction, currentDaysCount) {
     }
   }
 
-  // Match "extend to X days" / "make the itinerary X days" / "6 days"
-  const durationRegex = /\b(?:extend|duration|make it|total)\s+(?:to\s+)?(\d+)\s+days?\b/;
-  const durationMatch = norm.match(durationRegex);
-  if (durationMatch) {
-    targetDuration = parseInt(durationMatch[1], 10);
-    scopeType = 'structural';
+  if (norm.includes('extend') || norm.includes('duration') || norm.includes('total') || norm.includes('make it') || norm.includes('add') || norm.includes('remove')) {
+    const durationMatch = norm.match(/\b(\d+)\s+days?\b/);
+    if (durationMatch) {
+      targetDuration = parseInt(durationMatch[1], 10);
+      scopeType = 'structural';
+    }
   }
 
   if (norm.includes('budget')) {
@@ -195,7 +195,9 @@ function parseScopeDeterministically(instruction, currentDaysCount) {
     protectedFields.push('location');
   }
 
-  if (targetDays.length > 0 && preserveDays.length === 0) {
+  if (allowedFields.length > 0 && targetDays.length === 0) {
+    scopeType = 'global_field';
+  } else if (targetDays.length > 0 && preserveDays.length === 0) {
     scopeType = 'day_specific';
     for (let i = 1; i <= currentDaysCount; i++) {
       if (!targetDays.includes(i)) {
@@ -442,7 +444,147 @@ async function reviseItinerary(itinerary, instruction, userId = '') {
     intent: instruction.trim()
   };
 
-  // If structural duration target exists, make sure allowedFields includes duration
+function validatePatch(patch, scope, operation) {
+  if (!patch || typeof patch !== 'object') {
+    throw new Error('Patch is not a valid JSON object.');
+  }
+  if (patch.operation !== operation) {
+    throw new Error(`Patch operation mismatch. Expected "${operation}", got "${patch.operation}".`);
+  }
+
+  if (operation === 'replace_day') {
+    const targetDay = scope.targetDays[0] || 1;
+    if (patch.day !== targetDay) {
+      throw new Error(`Patch target day mismatch. Expected Day ${targetDay}, got Day ${patch.day}.`);
+    }
+    if (!patch.dayData || typeof patch.dayData !== 'object') {
+      throw new Error(`Patch is missing "dayData" for replace_day operation.`);
+    }
+    if (scope.preserveDays.includes(patch.day)) {
+      throw new Error(`Patch alters protected Day ${patch.day}.`);
+    }
+    if (!patch.dayData.title || !Array.isArray(patch.dayData.activities)) {
+      throw new Error(`Invalid Day ${patch.day} structure in patch.`);
+    }
+  } else if (operation === 'replace_days') {
+    if (!Array.isArray(patch.days)) {
+      throw new Error(`Patch is missing "days" array for replace_days operation.`);
+    }
+    for (const d of patch.days) {
+      if (scope.preserveDays.includes(d.day)) {
+        throw new Error(`Patch alters protected Day ${d.day}.`);
+      }
+      if (!d.day || !d.title || !Array.isArray(d.activities)) {
+        throw new Error(`Invalid day structure in replace_days patch.`);
+      }
+    }
+  } else if (operation === 'update_fields') {
+    if (!patch.changes || typeof patch.changes !== 'object') {
+      throw new Error(`Patch is missing "changes" object for update_fields operation.`);
+    }
+    if (scope.protectedFields && scope.protectedFields.length > 0) {
+      for (const field of scope.protectedFields) {
+        if (patch.changes[field] !== undefined) {
+          throw new Error(`Patch modifies protected field "${field}".`);
+        }
+      }
+    }
+  } else if (operation === 'extend_days') {
+    if (!patch.targetDuration || !Array.isArray(patch.days)) {
+      throw new Error(`Patch is missing "targetDuration" or "days" for extend_days operation.`);
+    }
+    if (patch.targetDuration !== scope.targetDuration) {
+      throw new Error(`Patch duration mismatch. Expected ${scope.targetDuration}, got ${patch.targetDuration}.`);
+    }
+    for (const d of patch.days) {
+      if (scope.preserveDays.includes(d.day)) {
+        throw new Error(`Patch alters protected Day ${d.day}.`);
+      }
+    }
+  }
+}
+
+function mergePatch(original, patch, scope, operation) {
+  const merged = JSON.parse(JSON.stringify(original));
+
+  if (operation === 'replace_day') {
+    const targetDay = patch.day;
+    merged.dailyPlan = (merged.dailyPlan || []).map(d => {
+      if (d.day === targetDay) {
+        return {
+          ...patch.dayData,
+          day: targetDay
+        };
+      }
+      return d;
+    });
+  } else if (operation === 'replace_days') {
+    const patchDaysMap = new Map();
+    patch.days.forEach(d => patchDaysMap.set(d.day, d));
+
+    merged.dailyPlan = (merged.dailyPlan || []).map(d => {
+      if (patchDaysMap.has(d.day)) {
+        return {
+          ...patchDaysMap.get(d.day),
+          day: d.day
+        };
+      }
+      return d;
+    });
+  } else if (operation === 'update_fields') {
+    const changes = patch.changes;
+    if (changes.budget !== undefined) merged.budget = Number(changes.budget);
+    if (changes.estimatedBudget !== undefined) merged.budget = Number(changes.estimatedBudget);
+    if (changes.title !== undefined) merged.title = String(changes.title);
+    if (changes.description !== undefined) merged.description = String(changes.description);
+    if (changes.destination !== undefined) merged.destination = String(changes.destination);
+    if (changes.tripSummary && changes.tripSummary.highlights) {
+      if (!merged.tripSummary) merged.tripSummary = {};
+      merged.tripSummary.highlights = changes.tripSummary.highlights;
+    }
+  } else if (operation === 'extend_days') {
+    merged.duration = patch.targetDuration;
+    const newDays = patch.days.filter(d => !scope.preserveDays.includes(d.day));
+    merged.dailyPlan = [...(merged.dailyPlan || []), ...newDays];
+  }
+
+  // Preserve location field if protected
+  if (scope.protectedFields && scope.protectedFields.includes('location')) {
+    const origDaysMap = new Map();
+    (original.dailyPlan || []).forEach(d => {
+      origDaysMap.set(d.day, d);
+    });
+
+    merged.dailyPlan = (merged.dailyPlan || []).map((dayObj, index) => {
+      const dayNum = dayObj.day || (index + 1);
+      const origDay = origDaysMap.get(dayNum);
+      if (origDay && dayObj.activities && origDay.activities) {
+        dayObj.activities = dayObj.activities.map((act, actIndex) => {
+          const origAct = origDay.activities[actIndex];
+          if (origAct) {
+            return {
+              ...act,
+              location: origAct.location
+            };
+          }
+          return act;
+        });
+      }
+      return dayObj;
+    });
+  }
+
+  if (merged.dailyPlan) {
+    merged.dailyPlan.forEach((d, index) => {
+      d.day = index + 1;
+    });
+  }
+
+  return merged;
+}
+
+
+
   if (mergedScope.targetDuration) {
     mergedScope.allowedFields.push('duration');
   }
@@ -491,33 +633,70 @@ async function reviseItinerary(itinerary, instruction, userId = '') {
     }
   };
 
+  // Determine Operation
+  let operation = 'replace_days';
+  if (mergedScope.scopeType === 'day_specific') {
+    operation = 'replace_day';
+  } else if (mergedScope.scopeType === 'multi_day') {
+    operation = 'replace_days';
+  } else if (mergedScope.scopeType === 'global_field') {
+    operation = 'update_fields';
+  } else if (mergedScope.scopeType === 'structural') {
+    operation = 'extend_days';
+  }
+
   // 3. New Revision Generation
   console.log(`[itineraryDraftService] Starting new AI revision for fingerprint: ${fingerprint}`);
   const generationPromise = (async () => {
-    // Build revision prompt rules
-    const preserveRulesStr = mergedScope.preserveDays.length > 0 
-      ? `PROTECTED DAYS — MUST REMAIN SEMANTICALLY AND STRUCTURALLY UNCHANGED:\n` +
-        mergedScope.preserveDays.map(d => `Day ${d}: ${JSON.stringify(currentData.dailyPlan.find(day => day.day === d) || {})}`).join('\n')
-      : '';
-    const editableRulesStr = `EDITABLE CONTENT:\n` +
-      `You may modify: ${mergedScope.targetDays.length > 0 ? `Days ${mergedScope.targetDays.join(', ')}` : 'the overall itinerary dailyPlan'}` +
-      ` and fields: ${mergedScope.allowedFields.length > 0 ? mergedScope.allowedFields.join(', ') : 'overall metadata'}.`;
+    // Build character count metrics
+    let editableInput = '';
+    let compactContext = '';
 
-    const instructionWithScope = `
-${instruction}
-
-Constraint Rules:
-${editableRulesStr}
-${preserveRulesStr}
-`;
-
-    const rawRevised = await provider.reviseItinerary(currentData, instructionWithScope);
-    if (!rawRevised || typeof rawRevised !== 'object') {
-      throw new Error('Revised itinerary returned by AI is invalid.');
+    if (operation === 'replace_day') {
+      const targetDayNum = mergedScope.targetDays[0] || 1;
+      const targetDay = currentData.dailyPlan.find(d => d.day === targetDayNum) || {};
+      editableInput = `EDITABLE DAY ${targetDayNum} CONTENT:\n${JSON.stringify(targetDay, null, 2)}`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Title: ${currentData.title}\n- Duration: ${currentData.duration} days\n- Budget: ${currentData.budget}`;
+    } else if (operation === 'replace_days') {
+      const targetDays = currentData.dailyPlan.filter(d => mergedScope.targetDays.includes(d.day));
+      editableInput = `EDITABLE DAYS CONTENT:\n${JSON.stringify(targetDays, null, 2)}`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Title: ${currentData.title}\n- Duration: ${currentData.duration} days\n- Budget: ${currentData.budget}`;
+    } else if (operation === 'update_fields') {
+      editableInput = `EDITABLE METADATA FIELDS:\n- budget: ${currentData.budget}\n- title: ${currentData.title}\n- description: ${currentData.description}\n- highlights: ${JSON.stringify(currentData.tripSummary?.highlights || [])}`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Duration: ${currentData.duration} days`;
+    } else if (operation === 'extend_days') {
+      editableInput = `DURATION CHANGE DETAILS:\n- Current Duration: ${currentData.duration} days\n- Target Duration: ${mergedScope.targetDuration} days`;
+      compactContext = `COMPACT TRIP CONTEXT:\n- Destination: ${currentData.destination}\n- Title: ${currentData.title}\n- Budget: ${currentData.budget}`;
     }
 
+    const editInputCharCount = editableInput.length;
+    const compactContextCharCount = compactContext.length;
+    const promptOverhead = 1200;
+    const totalPromptCharCount = editInputCharCount + compactContextCharCount + promptOverhead;
+
+    const startGen = Date.now();
+    const patch = await provider.reviseItinerary(currentData, instruction, mergedScope, operation);
+    const genTime = ((Date.now() - startGen) / 1000).toFixed(2);
+
+    let patchValidationResult = 'SUCCESS';
+    try {
+      validatePatch(patch, mergedScope, operation);
+    } catch (e) {
+      patchValidationResult = `FAILED: ${e.message}`;
+      throw e;
+    }
+
+    console.log(`[TARGETED PATCH REVISION METRICS]`);
+    console.log(`- Revision Operation: ${operation}`);
+    console.log(`- Target Day Count: ${mergedScope.targetDays.length}`);
+    console.log(`- Editable Input Size: ${editInputCharCount} chars`);
+    console.log(`- Compact Context Size: ${compactContextCharCount} chars`);
+    console.log(`- Total Prompt Size: ${totalPromptCharCount} chars`);
+    console.log(`- Generation Time: ${genTime}s`);
+    console.log(`- Patch Validation Result: ${patchValidationResult}`);
+
     // 4. Merge server-side
-    const mergedCandidate = mergeAndPreserve(itinerary, rawRevised, mergedScope);
+    const mergedCandidate = mergePatch(itinerary, patch, mergedScope, operation);
 
     // 5. Backend safety validation
     validateConstrainedCandidate(mergedCandidate, itinerary, mergedScope);

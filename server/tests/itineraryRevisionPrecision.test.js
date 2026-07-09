@@ -2,7 +2,6 @@
 
 const { describe, it, beforeEach, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
-const crypto = require('crypto');
 const itineraryDraftService = require('../services/itineraryDraftService');
 const OllamaProvider = require('../services/providers/ollamaProvider');
 const GeminiProvider = require('../services/providers/geminiProvider');
@@ -55,31 +54,58 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
       };
     };
 
-    const mockRevise = async (currentData, instruction) => {
-      const revised = JSON.parse(JSON.stringify(currentData));
-      const norm = instruction.toLowerCase();
-      if (norm.includes('6 days')) {
-        revised.duration = 6;
-        revised.dailyPlan[0].title = 'Wrong Day 1 Title';
-        revised.dailyPlan.push({ day: 5, title: 'Day 5', activities: [{ time: '10:00 AM', activity: 'Chill' }] });
-        revised.dailyPlan.push({ day: 6, title: 'Day 6', activities: [{ time: '12:00 PM', activity: 'Fly home' }] });
-      } else if (norm.includes('day 3')) {
-        revised.dailyPlan[0].title = 'Modified Day 1 (AI Mistake)';
-        revised.dailyPlan[2].title = 'Day 3 - Extreme Adventurous Activities';
-        revised.dailyPlan[2].activities.push({
-          time: '02:00 PM',
-          activity: 'Skydiving',
-          description: 'Jump out of a plane.'
-        });
-      } else if (norm.includes('day 2')) {
-        revised.dailyPlan[1].title = 'Modified Day 2 (AI Mistake)';
-      } else if (norm.includes('budget')) {
-        revised.budget = 500;
-        if (revised.dailyPlan[0] && revised.dailyPlan[0].activities[0]) {
-          revised.dailyPlan[0].activities[0].location = 'Wrong Location';
-        }
+    const mockRevise = async (currentData, instruction, scope, operation) => {
+      if (operation === 'replace_day') {
+        return {
+          operation: 'replace_day',
+          day: 3,
+          dayData: {
+            day: 3,
+            title: 'Day 3 - Extreme Adventurous Activities',
+            activities: [
+              { time: '10:00 AM', activity: 'Local Walk', description: 'Walk around', location: 'Solan' },
+              { time: '02:00 PM', activity: 'Skydiving', description: 'Jump out of a plane.', location: 'Drop Zone' }
+            ]
+          }
+        };
+      } else if (operation === 'replace_days') {
+        return {
+          operation: 'replace_days',
+          days: [
+            {
+              day: 1,
+              title: 'Modified Day 1 Theme',
+              activities: [{ time: '10:00 AM', activity: 'Local Walk', description: 'Walk around', location: 'Solan Mall' }]
+            },
+            {
+              day: 3,
+              title: 'Modified Day 3 Theme',
+              activities: [{ time: '11:00 AM', activity: 'Forest Walk', description: 'Walk', location: 'Barog' }]
+            },
+            {
+              day: 4,
+              title: 'Modified Day 4 Theme',
+              activities: [{ time: '12:00 PM', activity: 'Shopping', description: 'Shop', location: 'Solan Bazaar' }]
+            }
+          ]
+        };
+      } else if (operation === 'update_fields') {
+        return {
+          operation: 'update_fields',
+          changes: {
+            budget: 500
+          }
+        };
+      } else if (operation === 'extend_days') {
+        return {
+          operation: 'extend_days',
+          targetDuration: 6,
+          days: [
+            { day: 5, title: 'Day 5', activities: [{ time: '10:00 AM', activity: 'Chill', description: 'Relax', location: 'Solan' }] },
+            { day: 6, title: 'Day 6', activities: [{ time: '12:00 PM', activity: 'Fly home', description: 'Departure', location: 'Airport' }] }
+          ]
+        };
       }
-      return revised;
     };
 
     OllamaProvider.prototype.extractRevisionScope = mockExtract;
@@ -100,6 +126,7 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
     title: 'Trip to Solan',
     destination: 'Solan',
     duration: 4,
+    budget: 1000,
     dailyPlan: [
       { day: 1, title: 'Day 1: Arrival', activities: [{ time: '10:00 AM', activity: 'Local Walk', location: 'Solan Mall' }] },
       { day: 2, title: 'Day 2: Trekking', activities: [{ time: '09:00 AM', activity: 'Karol Tibba Trek', location: 'Karol Caves' }] },
@@ -155,19 +182,33 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
     let callCount = 0;
     
     const originalRevise = OllamaProvider.prototype.reviseItinerary;
-    OllamaProvider.prototype.reviseItinerary = async function(data, inst) {
+    OllamaProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
       callCount++;
-      return await mockRevise(data, inst);
+      return {
+        operation: op,
+        day: 3,
+        dayData: {
+          day: 3,
+          title: 'Day 3 - Extreme Adventurous Activities',
+          activities: [
+            { time: '10:00 AM', activity: 'Walk', description: 'Walk', location: 'Solan' }
+          ]
+        }
+      };
     };
-    GeminiProvider.prototype.reviseItinerary = async function(data, inst) {
+    GeminiProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
       callCount++;
-      return await mockRevise(data, inst);
-    };
-
-    const mockRevise = async (currentData, instruction) => {
-      const revised = JSON.parse(JSON.stringify(currentData));
-      revised.dailyPlan[2].title = 'Day 3 - Extreme Adventurous Activities';
-      return revised;
+      return {
+        operation: op,
+        day: 3,
+        dayData: {
+          day: 3,
+          title: 'Day 3 - Extreme Adventurous Activities',
+          activities: [
+            { time: '10:00 AM', activity: 'Walk', description: 'Walk', location: 'Solan' }
+          ]
+        }
+      };
     };
 
     const [res1, res2] = await Promise.all([
@@ -194,19 +235,33 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
 
     let callCount = 0;
     const originalRevise = OllamaProvider.prototype.reviseItinerary;
-    OllamaProvider.prototype.reviseItinerary = async function(data, inst) {
+    OllamaProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
       callCount++;
-      return await mockRevise(data, inst);
+      return {
+        operation: op,
+        day: 3,
+        dayData: {
+          day: 3,
+          title: 'Day 3 - Extreme Adventurous Activities',
+          activities: [
+            { time: '10:00 AM', activity: 'Walk', description: 'Walk', location: 'Solan' }
+          ]
+        }
+      };
     };
-    GeminiProvider.prototype.reviseItinerary = async function(data, inst) {
+    GeminiProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
       callCount++;
-      return await mockRevise(data, inst);
-    };
-
-    const mockRevise = async (currentData, instruction) => {
-      const revised = JSON.parse(JSON.stringify(currentData));
-      revised.dailyPlan[2].title = 'Day 3 - Extreme Adventurous Activities';
-      return revised;
+      return {
+        operation: op,
+        day: 3,
+        dayData: {
+          day: 3,
+          title: 'Day 3 - Extreme Adventurous Activities',
+          activities: [
+            { time: '10:00 AM', activity: 'Walk', description: 'Walk', location: 'Solan' }
+          ]
+        }
+      };
     };
 
     await itineraryDraftService.reviseItinerary(modifiedItinerary, 'Only make Day 3 more adventurous', 'user123');
