@@ -605,7 +605,17 @@ router.post("/itinerary-revision", authenticate, rateLimiter, async (req, res, n
 
     const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
     const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    if (!isOwner && !isAdmin) {
+    const isTripManager = req.user.role === 'trip-manager';
+
+    if (req.user.role === 'user') {
+      if (!isOwner || itinerary.status !== 'draft') {
+        return res.status(403).json({ message: "Insufficient permissions." });
+      }
+    } else if (isTripManager) {
+      if (!isOwner) {
+        return res.status(403).json({ message: "Insufficient permissions." });
+      }
+    } else if (!isAdmin) {
       return res.status(403).json({ message: "Insufficient permissions." });
     }
 

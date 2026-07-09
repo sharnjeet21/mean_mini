@@ -8,7 +8,7 @@ const roleRequestSchema = new mongoose.Schema({
   },
   requestedRole: {
     type: String,
-    enum: ['admin'],
+    enum: ['admin', 'trip-manager'],
     required: true,
   },
   reason: {

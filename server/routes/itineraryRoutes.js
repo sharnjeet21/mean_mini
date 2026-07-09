@@ -54,6 +54,35 @@ function validateItinerary(payload, requireAll = false) {
   if (payload.travelerCount !== undefined && payload.travelerCount !== null && (!Number.isInteger(Number(payload.travelerCount)) || Number(payload.travelerCount) < 1)) {
     return 'Traveler count must be a positive whole number.';
   }
+
+  if (payload.dailyPlan) {
+    if (!Array.isArray(payload.dailyPlan)) {
+      return 'Daily plan must be an array.';
+    }
+    for (let i = 0; i < payload.dailyPlan.length; i++) {
+      const day = payload.dailyPlan[i];
+      if (day.day === undefined || day.day === null || !Number.isInteger(Number(day.day)) || Number(day.day) <= 0) {
+        return `Day at index ${i} must have a valid positive day number.`;
+      }
+      if (!day.title || typeof day.title !== 'string' || day.title.trim() === '') {
+        return `Day ${day.day || (i + 1)} must have a non-empty title.`;
+      }
+      if (day.activities) {
+        if (!Array.isArray(day.activities)) {
+          return `Activities for Day ${day.day || (i + 1)} must be an array.`;
+        }
+        for (let j = 0; j < day.activities.length; j++) {
+          const act = day.activities[j];
+          if (!act || typeof act !== 'object') {
+            return `Activity at index ${j} on Day ${day.day || (i + 1)} is malformed.`;
+          }
+          if (!act.activity || typeof act.activity !== 'string' || act.activity.trim() === '') {
+            return `Activity ${j + 1} on Day ${day.day || (i + 1)} must have a name.`;
+          }
+        }
+      }
+    }
+  }
   return null;
 }
 
@@ -208,8 +237,8 @@ router.post('/', authenticate, async (req, res) => {
     const payload = pickItineraryFields(req.body);
     
     // Normal users must create itineraries as drafts.
-    const isAdmin = canManageItinerary(req.user);
-    if (!isAdmin) {
+    const canPublish = ['admin', 'superadmin', 'trip-manager'].includes(req.user.role);
+    if (!canPublish) {
       payload.status = 'draft';
     }
 
@@ -447,15 +476,46 @@ router.put('/:id', authenticate, ensureValidId, async (req, res) => {
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
     
     const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
-    const isAdmin = canManageItinerary(req.user);
-    if (!isOwner && !isAdmin) {
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+    const isTripManager = req.user.role === 'trip-manager';
+
+    // 1. Authorization checks
+    if (req.user.role === 'user') {
+      if (!isOwner) {
+        return res.status(403).json({ message: 'Insufficient permissions.' });
+      }
+      if (itinerary.status !== 'draft') {
+        return res.status(403).json({ message: 'Travelers cannot edit published itineraries.' });
+      }
+    } else if (isTripManager) {
+      if (!isOwner) {
+        return res.status(403).json({ message: 'Insufficient permissions.' });
+      }
+    } else if (!isAdmin) {
       return res.status(403).json({ message: 'Insufficient permissions.' });
     }
 
+    // 2. Concurrency Check
+    const clientUpdatedAt = req.body.updatedAt;
+    const clientVersion = req.body.__v;
+    if (clientUpdatedAt && itinerary.updatedAt) {
+      if (new Date(clientUpdatedAt).getTime() !== new Date(itinerary.updatedAt).getTime()) {
+        return res.status(409).json({ message: 'The itinerary has been modified by another process. Please reload and try again.' });
+      }
+    }
+    if (clientVersion !== undefined && itinerary.__v !== undefined) {
+      if (Number(clientVersion) !== Number(itinerary.__v)) {
+        return res.status(409).json({ message: 'The itinerary has been modified by another process. Please reload and try again.' });
+      }
+    }
+
     const payload = pickItineraryFields(req.body);
+    
+    // Normal travelers & trip managers cannot edit other users' active state
     if (!isAdmin) {
       delete payload.isActive;
-      if (payload.status && payload.status !== 'draft') {
+      // Normal travelers cannot change status to anything other than draft
+      if (req.user.role === 'user' && payload.status && payload.status !== 'draft') {
         return res.status(403).json({ message: 'Only trip managers can publish itineraries.' });
       }
     }
@@ -483,7 +543,14 @@ router.delete('/:id', authenticate, ensureValidId, async (req, res) => {
   try {
     const itinerary = await Itinerary.findById(req.params.id);
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
-    if (!canManageItinerary(req.user)) return res.status(403).json({ message: 'Insufficient permissions.' });
+    
+    const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+    const isTripManager = req.user.role === 'trip-manager';
+
+    if (!isAdmin && !(isTripManager && isOwner)) {
+      return res.status(403).json({ message: 'Insufficient permissions.' });
+    }
 
     await itinerary.deleteOne();
     return res.json({ message: 'Itinerary deleted.' });
