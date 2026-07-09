@@ -137,6 +137,72 @@ async function generateItineraryDraft(input, userId = '') {
   }
 }
 
+function parseDurationChange(instruction, currentDuration) {
+  const norm = instruction.toLowerCase();
+  let durationMode = null;
+  let durationDelta = null;
+  let targetDuration = null;
+  let numericValue = null;
+
+  const textNumbers = {
+    'one': 1, 'two': 2, 'three': 3, 'four': 4, 'five': 5,
+    'six': 6, 'seven': 7, 'eight': 8, 'nine': 9, 'ten': 10
+  };
+
+  const match = norm.match(/\b(\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s+(?:more\s+|extra\s+)?days?\b/);
+  if (match) {
+    const rawVal = match[1];
+    numericValue = textNumbers[rawVal] !== undefined ? textNumbers[rawVal] : parseInt(rawVal, 10);
+  }
+
+  if (numericValue === null) {
+    for (const [word, val] of Object.entries(textNumbers)) {
+      if (norm.includes(`${word} day`)) {
+        numericValue = val;
+        break;
+      }
+    }
+  }
+
+  if (numericValue !== null) {
+    const isAbsolute = /\b(?:extend\s+to|make\s+it|change\s+(?:the\s+)?trip\s+to|total\s+of|make\s+this\s+a)\b/.test(norm);
+    const isRelativeAdd = /\b(?:add|extend\s+by|give\s+me|extra|more)\b/.test(norm);
+    const isRelativeRemove = /\b(?:remove|shorten|reduce)\b/.test(norm);
+
+    if (isAbsolute) {
+      durationMode = 'absolute';
+      targetDuration = numericValue;
+      durationDelta = targetDuration - currentDuration;
+    } else if (isRelativeAdd) {
+      durationMode = 'relative';
+      durationDelta = numericValue;
+      targetDuration = currentDuration + durationDelta;
+    } else if (isRelativeRemove) {
+      durationMode = 'relative';
+      durationDelta = -numericValue;
+      targetDuration = currentDuration + durationDelta;
+    } else {
+      durationMode = 'absolute';
+      targetDuration = numericValue;
+      durationDelta = targetDuration - currentDuration;
+    }
+
+    console.log(`[STRUCTURAL DURATION PARSE]`);
+    console.log(`- currentDuration: ${currentDuration}`);
+    console.log(`- durationMode: ${durationMode}`);
+    console.log(`- parsed numeric value: ${numericValue}`);
+    console.log(`- durationDelta: ${durationDelta}`);
+    console.log(`- calculated targetDuration: ${targetDuration}`);
+  }
+
+  return {
+    durationMode,
+    numericValue,
+    durationDelta,
+    targetDuration
+  };
+}
+
 function parseScopeDeterministically(instruction, currentDaysCount) {
   const norm = instruction.toLowerCase();
   const targetDays = [];
@@ -180,12 +246,11 @@ function parseScopeDeterministically(instruction, currentDaysCount) {
     }
   }
 
-  if (norm.includes('extend') || norm.includes('duration') || norm.includes('total') || norm.includes('make it') || norm.includes('add') || norm.includes('remove')) {
-    const durationMatch = norm.match(/\b(\d+)\s+days?\b/);
-    if (durationMatch) {
-      targetDuration = parseInt(durationMatch[1], 10);
-      scopeType = 'structural';
-    }
+  // Handle absolute/relative duration changes
+  const durChange = parseDurationChange(instruction, currentDaysCount);
+  if (durChange.targetDuration !== null) {
+    targetDuration = durChange.targetDuration;
+    scopeType = 'structural';
   }
 
   if (norm.includes('budget')) {
@@ -544,8 +609,12 @@ function mergePatch(original, patch, scope, operation) {
     }
   } else if (operation === 'extend_days') {
     merged.duration = patch.targetDuration;
-    const newDays = patch.days.filter(d => !scope.preserveDays.includes(d.day));
-    merged.dailyPlan = [...(merged.dailyPlan || []), ...newDays];
+    if (patch.targetDuration < (original.dailyPlan || []).length) {
+      merged.dailyPlan = (merged.dailyPlan || []).slice(0, patch.targetDuration);
+    } else {
+      const newDays = patch.days.filter(d => !scope.preserveDays.includes(d.day));
+      merged.dailyPlan = [...(merged.dailyPlan || []), ...newDays];
+    }
   }
 
   // Preserve location field if protected

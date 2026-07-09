@@ -25,10 +25,10 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
       let protectedFields = [];
       let targetDuration = null;
 
-      if (norm.includes('6 days')) {
+      if (norm.includes('6 days') || norm.includes('7 days')) {
         scopeType = 'structural';
         preserveDays = [1, 2, 3];
-        targetDuration = 6;
+        targetDuration = norm.includes('6 days') ? 6 : 7;
       } else if (norm.includes('day 3')) {
         scopeType = 'day_specific';
         targetDays = [3];
@@ -97,13 +97,19 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
           }
         };
       } else if (operation === 'extend_days') {
+        const target = scope.targetDuration || 6;
+        const newDays = [];
+        for (let d = currentData.dailyPlan.length + 1; d <= target; d++) {
+          newDays.push({
+            day: d,
+            title: `Day ${d}`,
+            activities: [{ time: '10:00 AM', activity: 'Chill', description: 'Relax', location: 'Solan' }]
+          });
+        }
         return {
           operation: 'extend_days',
-          targetDuration: 6,
-          days: [
-            { day: 5, title: 'Day 5', activities: [{ time: '10:00 AM', activity: 'Chill', description: 'Relax', location: 'Solan' }] },
-            { day: 6, title: 'Day 6', activities: [{ time: '12:00 PM', activity: 'Fly home', description: 'Departure', location: 'Airport' }] }
-          ]
+          targetDuration: target,
+          days: newDays
         };
       }
     };
@@ -267,6 +273,111 @@ describe('AI Itinerary Revision Precision & Constraints', () => {
     await itineraryDraftService.reviseItinerary(modifiedItinerary, 'Only make Day 3 more adventurous', 'user123');
     assert.equal(callCount, 1);
 
+    OllamaProvider.prototype.reviseItinerary = originalRevise;
+  });
+
+  it('Regression: add 2 days to 5-day itinerary (expected targetDuration = 7)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.duration = 5;
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'add 2 days');
+    assert.equal(result.dailyPlan.length, 7);
+  });
+
+  it('Regression: add two more days to 5-day itinerary (expected targetDuration = 7)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.duration = 5;
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'add two more days');
+    assert.equal(result.dailyPlan.length, 7);
+  });
+
+  it('Regression: extend by 2 days to 5-day itinerary (expected targetDuration = 7)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.duration = 5;
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'extend by 2 days');
+    assert.equal(result.dailyPlan.length, 7);
+  });
+
+  it('Regression: extend to 7 days for 5-day itinerary (expected targetDuration = 7)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.duration = 5;
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'extend to 7 days');
+    assert.equal(result.dailyPlan.length, 7);
+  });
+
+  it('Regression: remove 2 days for 7-day itinerary (expected targetDuration = 5)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.dailyPlan.push({ day: 6, title: 'Day 6', activities: [] });
+    original.dailyPlan.push({ day: 7, title: 'Day 7', activities: [] });
+    original.duration = 7;
+
+    const originalRevise = OllamaProvider.prototype.reviseItinerary;
+    OllamaProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
+      assert.equal(scope.targetDuration, 5);
+      return {
+        operation: op,
+        targetDuration: 5,
+        days: data.dailyPlan.slice(0, 5)
+      };
+    };
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'remove 2 days');
+    assert.equal(result.dailyPlan.length, 5);
+    OllamaProvider.prototype.reviseItinerary = originalRevise;
+  });
+
+  it('Regression: shorten by 2 days for 7-day itinerary (expected targetDuration = 5)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.dailyPlan.push({ day: 6, title: 'Day 6', activities: [] });
+    original.dailyPlan.push({ day: 7, title: 'Day 7', activities: [] });
+    original.duration = 7;
+
+    const originalRevise = OllamaProvider.prototype.reviseItinerary;
+    OllamaProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
+      assert.equal(scope.targetDuration, 5);
+      return {
+        operation: op,
+        targetDuration: 5,
+        days: data.dailyPlan.slice(0, 5)
+      };
+    };
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'shorten by 2 days');
+    assert.equal(result.dailyPlan.length, 5);
+    OllamaProvider.prototype.reviseItinerary = originalRevise;
+  });
+
+  it('Regression: compound relaxation day instruction (expected final duration = 7)', async () => {
+    const original = getOriginalItinerary();
+    original.dailyPlan.push({ day: 5, title: 'Day 5', activities: [] });
+    original.duration = 5;
+
+    const result = await itineraryDraftService.reviseItinerary(original, 'add 2 days and also add a relaxation day in between');
+    assert.equal(result.dailyPlan.length, 7);
+  });
+
+  it('Regression: add a relaxation day without duration extension (no structural change parsed)', async () => {
+    const original = getOriginalItinerary();
+    
+    const originalRevise = OllamaProvider.prototype.reviseItinerary;
+    OllamaProvider.prototype.reviseItinerary = async function(data, inst, scope, op) {
+      assert.notEqual(op, 'extend_days');
+      return {
+        operation: 'replace_days',
+        days: []
+      };
+    };
+
+    await itineraryDraftService.reviseItinerary(original, 'add a relaxation day');
     OllamaProvider.prototype.reviseItinerary = originalRevise;
   });
 });
