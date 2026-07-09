@@ -594,6 +594,68 @@ User query: ${query}
     return combined.slice(0, 8);
   }
 
+  async extractRevisionScope(instruction, duration) {
+    const prompt = `
+You are a travel assistant. Analyze the user's travel itinerary edit instruction and extract the revision scope.
+You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Output JSON Schema:
+{
+  "scopeType": "day_specific | multi_day | global_field | structural | full_revision",
+  "targetDays": [1, 2, 3], // list of day numbers (1-indexed integers) that need to be edited or added
+  "preserveDays": [4, 5], // list of day numbers (1-indexed integers) that MUST remain unchanged
+  "allowedFields": ["string"], // fields allowed to change, e.g. ["budget", "title", "description", "activities", "theme"]
+  "protectedFields": ["string"], // fields that MUST remain unchanged, e.g. ["location", "activity"]
+  "intent": "brief description of the change intent"
+}
+
+Rules:
+- duration = ${duration} (total days currently).
+- targetDays: Day numbers user wants to modify.
+- preserveDays: Day numbers user explicitly or implicitly wants to keep unchanged. If user says "Only make Day 3 more adventurous", targetDays is [3] and preserveDays is all other day numbers.
+- scopeType:
+  * "day_specific": changes apply to one specific day.
+  * "multi_day": changes apply to multiple specific days but not all.
+  * "global_field": changes apply to overall trip fields like budget, title, description, traveler count but not daily plans.
+  * "structural": changes the number of days (duration) or adds/removes days.
+  * "full_revision": a broad edit that might affect any or all parts.
+
+User Edit Instruction: "${instruction}"
+`;
+
+    const REVISION_SCOPE_SCHEMA = {
+      type: 'object',
+      properties: {
+        scopeType: { type: 'string', enum: ['day_specific', 'multi_day', 'global_field', 'structural', 'full_revision'] },
+        targetDays: { type: 'array', items: { type: 'integer' } },
+        preserveDays: { type: 'array', items: { type: 'integer' } },
+        allowedFields: { type: 'array', items: { type: 'string' } },
+        protectedFields: { type: 'array', items: { type: 'string' } },
+        intent: { type: 'string' }
+      },
+      required: ['scopeType', 'targetDays', 'preserveDays', 'allowedFields', 'protectedFields', 'intent']
+    };
+
+    const payload = {
+      model: this.model,
+      prompt: prompt,
+      stream: false,
+      format: REVISION_SCOPE_SCHEMA,
+      options: {
+        temperature: 0.1
+      }
+    };
+
+    const response = await this._callOllama(payload);
+    let parsed;
+    try {
+      parsed = JSON.parse(response);
+    } catch (err) {
+      throw new Error('Ollama returned malformed JSON for scope extraction');
+    }
+    return parsed;
+  }
+
   async reviseItinerary(currentData, instruction) {
     const prompt = `
 You are an expert travel assistant. Your task is to revise an existing travel itinerary based on a user's instruction.

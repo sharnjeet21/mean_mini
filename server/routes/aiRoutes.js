@@ -619,7 +619,7 @@ router.post("/itinerary-revision", authenticate, rateLimiter, async (req, res, n
       return res.status(403).json({ message: "Insufficient permissions." });
     }
 
-    const revised = await itineraryDraftService.reviseItinerary(itinerary, instruction);
+    const revised = await itineraryDraftService.reviseItinerary(itinerary, instruction, req.user._id);
     if (!revised || typeof revised !== 'object' || !revised.dailyPlan) {
       throw new Error('Revised itinerary structure is invalid or missing dailyPlan.');
     }

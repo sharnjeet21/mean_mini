@@ -256,6 +256,49 @@ User query: ${query}
       : [];
   }
 
+  async extractRevisionScope(instruction, duration) {
+    const prompt = `
+You are a travel assistant. Analyze the user's travel itinerary edit instruction and extract the revision scope.
+You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Output JSON Schema:
+{
+  "scopeType": "day_specific | multi_day | global_field | structural | full_revision",
+  "targetDays": [1, 2, 3],
+  "preserveDays": [4, 5],
+  "allowedFields": ["string"],
+  "protectedFields": ["string"],
+  "intent": "brief description of the change intent"
+}
+
+Rules:
+- duration = ${duration} (total days currently).
+- targetDays: Day numbers user wants to modify.
+- preserveDays: Day numbers user explicitly or implicitly wants to keep unchanged. If user says "Only make Day 3 more adventurous", targetDays is [3] and preserveDays is all other day numbers.
+- scopeType:
+  * "day_specific": changes apply to one specific day.
+  * "multi_day": changes apply to multiple specific days but not all.
+  * "global_field": changes apply to overall trip fields like budget, title, description, traveler count but not daily plans.
+  * "structural": changes the number of days (duration) or adds/removes days.
+  * "full_revision": a broad edit that might affect any or all parts.
+
+User Edit Instruction: "${instruction}"
+`;
+
+    const text = await this._callGemini(prompt);
+    const cleaned = this._cleanJson(text);
+    const parsed = JSON.parse(cleaned);
+
+    return {
+      scopeType: parsed.scopeType || 'full_revision',
+      targetDays: Array.isArray(parsed.targetDays) ? parsed.targetDays : [],
+      preserveDays: Array.isArray(parsed.preserveDays) ? parsed.preserveDays : [],
+      allowedFields: Array.isArray(parsed.allowedFields) ? parsed.allowedFields : [],
+      protectedFields: Array.isArray(parsed.protectedFields) ? parsed.protectedFields : [],
+      intent: parsed.intent || ''
+    };
+  }
+
   async reviseItinerary(currentData, instruction) {
     const prompt = `
 You are an expert travel assistant. Your task is to revise an existing travel itinerary based on a user's instruction.
