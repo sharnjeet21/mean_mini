@@ -886,6 +886,28 @@ Checklist:
 - [x] Confirm AI Copilot uses the latest saved manual edits.
 - [x] Run backend, frontend, and production builds successfully.
 
+## 16.7 Phase 0.8 - AI Itinerary Revision Precision and Scope Preservation
+
+Status: `Completed`
+
+Problem statement:
+General LLM prompts can lead to arbitrary rewriting of unaffected days or protected fields during itinerary revisions, causing loss of user changes.
+
+Goal:
+Implement server-side scope extraction, protected constraints, and deterministic merging to guarantee that unchanged days and protected fields remain untouched.
+
+Checklist:
+- [x] Add semantic scope extraction `extractRevisionScope` in providers.
+- [x] Implement deterministic parser for day numbers and extensions.
+- [x] Pass explicit `EDITABLE CONTENT` and `PROTECTED CONTENT` prompts.
+- [x] Merge original content for preserved days server-side.
+- [x] Protect specific fields (locations, budget) from AI modifications.
+- [x] sequentially re-number days post-merge.
+- [x] Support extension and contraction structural edits.
+- [x] Improve frontend change detection layout.
+- [x] Enforce backend constraints validation.
+- [x] Incorporate user context and version/updatedAt in revision fingerprints.
+
 ## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:
@@ -898,6 +920,7 @@ Recommended practical order for implementation:
 - [ ] Phase 16.4: My Bookings Routed View Issues
 - [x] Phase 16.5: AI Travel Search and Itinerary Assistant
 - [x] Phase 16.6: Trip Manager Manual Itinerary Editing ✅
+- [x] Phase 16.7: AI Itinerary Revision Precision and Scope Preservation ✅
 - [ ] Phase 1: Visual Discovery MVP
 - [ ] Phase 2: Smart Itinerary Builder MVP
 - [ ] Phase 3: Route Intelligence

@@ -444,6 +444,12 @@ export class ItineraryDetailComponent implements OnInit {
     if (Number(original.budget) !== Number(revised.budget)) {
       summary.push(`Budget updated from $${original.budget} to $${revised.budget}`);
     }
+    if (original.travelerCount !== revised.travelerCount) {
+      summary.push(`Traveler count updated from ${original.travelerCount} to ${revised.travelerCount}`);
+    }
+    if (original.duration !== revised.duration) {
+      summary.push(`Duration updated from ${original.duration} to ${revised.duration}`);
+    }
     if (original.description !== revised.description) {
       summary.push('Trip overview updated');
     }
@@ -455,15 +461,19 @@ export class ItineraryDetailComponent implements OnInit {
     for (let i = 0; i < maxDays; i++) {
       const origDay = origDays[i];
       const revDay = revDays[i];
-      if (!origDay || !revDay) {
-        summary.push(`Day ${i + 1} added/removed`);
+      if (!origDay && revDay) {
+        summary.push(`Day ${revDay.day || (i + 1)} added`);
+        continue;
+      }
+      if (origDay && !revDay) {
+        summary.push(`Day ${origDay.day || (i + 1)} removed`);
         continue;
       }
       
       const origActivities = JSON.stringify(origDay.activities || []);
       const revActivities = JSON.stringify(revDay.activities || []);
       if (origDay.title !== revDay.title || origActivities !== revActivities) {
-        summary.push(`Day ${origDay.day || (i + 1)} activities updated`);
+        summary.push(`Day ${origDay.day || (i + 1)} updated`);
       }
     }
     
