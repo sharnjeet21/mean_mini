@@ -1,17 +1,19 @@
-import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { Subject, of } from 'rxjs';
+import { Subject, Subscription, of } from 'rxjs';
 import { finalize, timeout, debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
 import { MatButtonModule } from '@angular/material/button';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { AiService, AiTravelSearchResult } from '../../services/ai.service';
 import { DestinationSearchComponent } from '../destination-search/destination-search.component';
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 import { getItineraryImage } from '../../utils/itinerary-image';
-import { AiService, AiTravelSearchResult } from '../../services/ai.service';
+
+
 
 export interface Stop {
   name: string;
@@ -32,7 +34,7 @@ export interface Stop {
   ],
   templateUrl: './dashboard.component.html',
 })
-export class DashboardComponent implements OnInit {
+export class DashboardComponent implements OnInit, OnDestroy {
   itineraries: any[] = [];
   loading = true;
   activeFilter = 'Date';
@@ -48,6 +50,7 @@ export class DashboardComponent implements OnInit {
   currentStep = 1;
   readonly TOTAL_STEPS = 4;
   readonly stepLabels = ['Basics', 'Dates', 'Budget', 'Stops'];
+
 
   // AI-first itinerary creation states
   creationMode: 'ai' | 'manual' | 'clarify' | 'preview' = 'ai';
@@ -70,6 +73,12 @@ export class DashboardComponent implements OnInit {
     duration: 4
   };
 
+  wizardSuggestions: string[] = [];
+  showWizardSuggestions = false;
+  activeWizardIndex = -1;
+  private wizardInputSubject = new Subject<string>();
+  private wizardSubscriptions = new Subscription();
+
   private platformId = inject(PLATFORM_ID);
 
   form = this.emptyForm();
@@ -77,9 +86,10 @@ export class DashboardComponent implements OnInit {
   constructor(
     public auth: AuthService,
     private api: ApiService,
+    public ai: AiService,
     private route: ActivatedRoute,
+    private router: Router,
     private cdr: ChangeDetectorRef,
-    private ai: AiService,
   ) {}
 
   ngOnInit(): void {
@@ -105,15 +115,57 @@ export class DashboardComponent implements OnInit {
       this.cdr.detectChanges();
     });
 
-    this.loadItineraries();
-    const destination = this.route.snapshot.queryParamMap.get('destination') || '';
-    const create = this.route.snapshot.queryParamMap.get('create') === '1';
-    if ((destination || create) && this.auth.isAdmin) {
-      setTimeout(() => this.openModal(destination), 200);
-    } else if (destination) {
-      this.destinationToast = `${destination} is ready to explore below. Save a route or ask a trip manager to publish a custom plan.`;
-    }
+    // Subscribe to queryParamMap to handle view switching reactively
+    const routeSub = this.route.queryParamMap.subscribe((params) => {
+      const viewParam = params.get('view') as 'explore' | 'saved' | 'bookings';
+      if (viewParam && ['explore', 'saved', 'bookings'].includes(viewParam)) {
+        this.activeView = viewParam;
+      } else {
+        this.activeView = 'explore';
+      }
+      this.loadItineraries();
+
+      const destination = params.get('destination') || '';
+      const create = params.get('create') === '1';
+      if ((destination || create) && this.auth.isAdmin) {
+        setTimeout(() => this.openModal(destination), 200);
+      } else if (destination) {
+        this.destinationToast = `${destination} is ready to explore below. Save a route or ask a trip manager to publish a custom plan.`;
+      }
+    });
+    this.wizardSubscriptions.add(routeSub);
+
+    // Setup wizard autocomplete suggestions
+    const debouncedWizardInput$ = this.wizardInputSubject.pipe(debounceTime(400));
+    const wizardSub = debouncedWizardInput$
+      .pipe(
+        switchMap((value) => {
+          if (value.length < 2) {
+            this.wizardSuggestions = [];
+            this.showWizardSuggestions = false;
+            return [];
+          }
+          return this.ai.getSuggestions(value);
+        })
+      )
+      .subscribe({
+        next: (results) => {
+          this.wizardSuggestions = results;
+          this.showWizardSuggestions = results.length > 0;
+          this.activeWizardIndex = -1;
+        },
+        error: () => {
+          this.wizardSuggestions = [];
+          this.showWizardSuggestions = false;
+        }
+      });
+    this.wizardSubscriptions.add(wizardSub);
   }
+
+  ngOnDestroy(): void {
+    this.wizardSubscriptions.unsubscribe();
+  }
+
 
   private emptyForm(destination = '') {
     return {
@@ -210,8 +262,11 @@ export class DashboardComponent implements OnInit {
   }
 
   setView(view: 'explore' | 'saved' | 'bookings'): void {
-    this.activeView = view;
-    this.loadItineraries();
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { view },
+      queryParamsHandling: 'merge',
+    });
   }
 
   openModal(prefilledDestination = ''): void {
@@ -356,6 +411,7 @@ export class DashboardComponent implements OnInit {
     this.rateLimitMessage = message;
     setTimeout(() => { this.rateLimitMessage = ''; }, 5000);
   }
+
 
   onCreateItineraryRequested(result: AiTravelSearchResult): void {
     const destination = result.normalizedDestination || result.destination;
@@ -583,5 +639,62 @@ export class DashboardComponent implements OnInit {
     this.showManualSuggestions = false;
     this.manualSuggestions = [];
     this.cdr.detectChanges();
+  }
+
+  onDestinationInput(): void {
+    const val = this.form.destination.trim();
+    if (val.length >= 2) {
+      this.wizardInputSubject.next(val);
+    } else {
+      this.wizardSuggestions = [];
+      this.showWizardSuggestions = false;
+      this.activeWizardIndex = -1;
+    }
+  }
+
+  onDestinationKeydown(event: KeyboardEvent): void {
+    if (!this.showWizardSuggestions) return;
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        this.activeWizardIndex = Math.min(this.activeWizardIndex + 1, this.wizardSuggestions.length - 1);
+        break;
+      case 'ArrowUp':
+        event.preventDefault();
+        this.activeWizardIndex = Math.max(this.activeWizardIndex - 1, -1);
+        break;
+      case 'Enter':
+        event.preventDefault();
+        if (this.activeWizardIndex >= 0 && this.activeWizardIndex < this.wizardSuggestions.length) {
+          this.selectWizardSuggestion(this.wizardSuggestions[this.activeWizardIndex]);
+        }
+        break;
+      case 'Escape':
+        this.showWizardSuggestions = false;
+        this.activeWizardIndex = -1;
+        break;
+    }
+  }
+
+  selectWizardSuggestion(place: string, event?: MouseEvent): void {
+    event?.stopPropagation();
+    this.form.destination = place;
+    this.showWizardSuggestions = false;
+    this.activeWizardIndex = -1;
+  }
+
+  getWizardHighlightedParts(suggestion: string, query: string) {
+    if (!query) return [{ text: suggestion, highlight: false }];
+    const lowerSuggestion = suggestion.toLowerCase();
+    const lowerQuery = query.toLowerCase();
+    const index = lowerSuggestion.indexOf(lowerQuery);
+    if (index === -1) return [{ text: suggestion, highlight: false }];
+    const parts = [];
+    if (index > 0) parts.push({ text: suggestion.slice(0, index), highlight: false });
+    parts.push({ text: suggestion.slice(index, index + query.length), highlight: true });
+    if (index + query.length < suggestion.length) {
+      parts.push({ text: suggestion.slice(index + query.length), highlight: false });
+    }
+    return parts;
   }
 }

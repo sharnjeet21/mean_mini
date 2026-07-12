@@ -1,98 +1,96 @@
-import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
-import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
-import { RouterModule, Router } from '@angular/router';
-import { forkJoin, of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { CommonModule, isPlatformBrowser, Location } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
+import { MatButtonModule } from '@angular/material/button';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
 
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    RouterModule,
+    MatButtonModule,
+    MatProgressSpinnerModule,
+  ],
   templateUrl: './profile.component.html',
 })
 export class ProfileComponent implements OnInit {
+  profileData: any = null;
+  stats: any = { itineraryCount: 0, bookingCount: 0 };
+  loading = true;
+  updating = false;
+  editName = '';
+  errorMessage = '';
+  successMessage = '';
+  hasHistory = false;
+
   private platformId = inject(PLATFORM_ID);
-  public auth       = inject(AuthService);
-  private api       = inject(ApiService);
-  private location  = inject(Location);
-  private router    = inject(Router);
 
-  // Resolved after injection — safe to call auth here
-  user = this.auth.currentUser();
-
-  // Stats
-  itineraryCount = 0;
-  bookingCount = 0;
-  favoritesCount = 0;
-  statsLoading = true;
-  statsError = '';
-
+  constructor(
+    public auth: AuthService,
+    private api: ApiService,
+    private location: Location
+  ) {}
 
   ngOnInit(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-    this.loadStats();
+    if (isPlatformBrowser(this.platformId)) {
+      this.hasHistory = window.history.length > 1;
+    }
+    this.loadProfile();
   }
 
-  loadStats(): void {
-    this.statsLoading = true;
-    this.statsError = '';
-    forkJoin({
-      itineraries: this.api.getItineraries().pipe(catchError(() => of([]))),
-      bookings:    this.api.getUserBookings().pipe(catchError(() => of([]))),
-      favorites:   this.api.getFavorites().pipe(catchError(() => of([]))),
-    }).subscribe({
-      next: ({ itineraries, bookings, favorites }) => {
-        const uid = this.user?.id;
-        this.itineraryCount = uid
-          ? itineraries.filter((i: any) => (i.createdBy?._id || i.createdBy) === uid).length
-          : itineraries.length;
-        this.bookingCount   = bookings.length;
-        this.favoritesCount = favorites.length;
-        this.statsLoading   = false;
+  loadProfile(): void {
+    this.loading = true;
+    this.api.getUserProfile().subscribe({
+      next: (res) => {
+        this.profileData = res.user;
+        this.stats = res.stats || { itineraryCount: 0, bookingCount: 0 };
+        this.editName = res.user?.name || '';
+        this.loading = false;
       },
-      error: () => {
-        this.statsError   = 'Unable to load activity data.';
-        this.statsLoading = false;
+      error: (err) => {
+        this.errorMessage = err?.error?.message || err?.message || 'Failed to load profile details.';
+        this.loading = false;
+      }
+    });
+  }
+
+  updateProfile(): void {
+    if (!this.editName.trim()) {
+      this.errorMessage = 'Name cannot be empty.';
+      return;
+    }
+
+    this.updating = true;
+    this.errorMessage = '';
+    this.successMessage = '';
+
+    this.api.updateUserProfileName(this.editName).subscribe({
+      next: (res) => {
+        const updatedUser = res.user;
+        if (updatedUser) {
+          this.auth.currentUser.set(updatedUser);
+          if (isPlatformBrowser(this.platformId)) {
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+          }
+        }
+        this.updating = false;
+        this.successMessage = 'Display name updated successfully.';
+        setTimeout(() => this.successMessage = '', 3000);
       },
+      error: (err) => {
+        this.updating = false;
+        this.errorMessage = err?.error?.message || err?.message || 'Failed to update name.';
+      }
     });
   }
 
   goBack(): void {
-    if (history.length > 1) {
-      this.location.back();
-    } else {
-      this.router.navigate(['/dashboard']);
-    }
-  }
-
-  get initials(): string {
-    const name = this.user?.name || '';
-    return name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
-  }
-
-  get roleLabel(): string {
-    switch (this.user?.role) {
-      case 'superadmin': return 'Super Admin';
-      case 'admin':      return 'Trip Manager';
-      default:           return 'Traveler';
-    }
-  }
-
-  get roleColor(): string {
-    switch (this.user?.role) {
-      case 'superadmin': return 'text-[#ffc96b] border-[#ffc96b]/30 bg-[#ffc96b]/10';
-      case 'admin':      return 'text-[#8cbcff] border-[#8cbcff]/30 bg-[#8cbcff]/10';
-      default:           return 'text-[#7ae0c3] border-[#7ae0c3]/30 bg-[#7ae0c3]/10';
-    }
-  }
-
-  navigateTo(path: string, queryParams?: any): void {
-    this.router.navigate([path], queryParams ? { queryParams } : {});
-  }
-
-  logout(): void {
-    this.auth.logout();
+    this.location.back();
   }
 }

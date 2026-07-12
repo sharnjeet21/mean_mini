@@ -735,10 +735,10 @@ Files to change:
 - `frontend/src/app/components/itinerary-detail/itinerary-detail.component.html`
 
 Checklist:
-- [ ] Add back button to itinerary detail page
-- [ ] Add back button to profile page
-- [ ] Add back button to admin dashboard
-- [ ] Back button hidden on root-level routes
+- [x] Add back button to itinerary detail page
+- [x] Add back button to profile page
+- [x] Add back button to admin dashboard
+- [x] Back button hidden on root-level routes
 
 ### 16.2 Profile Page
 
@@ -764,11 +764,11 @@ Files to change:
 - `frontend/src/app/components/navbar/navbar.component.html` — link avatar to `/profile`
 
 Checklist:
-- [ ] Create profile component
-- [ ] Add `/profile` route with `authGuard`
-- [ ] Wire navbar avatar to `/profile`
-- [ ] Show user stats (itinerary count, booking count)
-- [ ] Allow name update via PATCH
+- [x] Create profile component
+- [x] Add `/profile` route with `authGuard`
+- [x] Wire navbar avatar to `/profile`
+- [x] Show user stats (itinerary count, booking count)
+- [x] Allow name update via PATCH
 
 ### 16.3 Destination Search Suggestions in Create Itinerary
 
@@ -786,11 +786,11 @@ Files to change:
 - `frontend/src/app/components/dashboard/dashboard.component.ts` — wire suggestion selection to form field
 
 Checklist:
-- [ ] Add suggestion dropdown to wizard destination field
-- [ ] Debounced input calls `AiService.getSuggestions()`
-- [ ] Selecting suggestion fills `form.destination` without closing wizard
-- [ ] Keyboard navigation works in dropdown
-- [ ] No image or attractions panel shown inside wizard
+- [x] Add suggestion dropdown to wizard destination field
+- [x] Debounced input calls `AiService.getSuggestions()`
+- [x] Selecting suggestion fills `form.destination` without closing wizard
+- [x] Keyboard navigation works in dropdown
+- [x] No image or attractions panel shown inside wizard
 
 ### 16.4 My Bookings Routed View Issues (Planned)
 
@@ -802,9 +802,9 @@ Requirements:
 - Render booking status (`item.userBooking?.status`) instead of the itinerary status (`item.isActive`) on the dashboard card badge when in Bookings view.
 
 Checklist:
-- [ ] Implement queryParamMap subscription in DashboardComponent
-- [ ] Modify setView() to update query parameters in URL
-- [ ] Conditionalize card status badge for activeView === 'bookings'
+- [x] Implement queryParamMap subscription in DashboardComponent
+- [x] Modify setView() to update query parameters in URL
+- [x] Conditionalize card status badge for activeView === 'bookings'
 
 ## 16.5 Phase 0.6 - AI Travel Search and Itinerary Assistant
 
@@ -914,10 +914,10 @@ Recommended practical order for implementation:
 
 - [ ] Phase 0: Platform Foundation
 - [ ] Phase 0.5: Search Intelligence Cleanup ✅
-- [ ] Phase 16.1: Back Button
-- [ ] Phase 16.2: Profile Page
-- [ ] Phase 16.3: Destination Suggestions in Wizard
-- [ ] Phase 16.4: My Bookings Routed View Issues
+- [x] Phase 16.1: Back Button
+- [x] Phase 16.2: Profile Page
+- [x] Phase 16.3: Destination Suggestions in Wizard
+- [x] Phase 16.4: My Bookings Routed View Issues
 - [x] Phase 16.5: AI Travel Search and Itinerary Assistant
 - [x] Phase 16.6: Trip Manager Manual Itinerary Editing ✅
 - [x] Phase 16.7: AI Itinerary Revision Precision and Scope Preservation ✅

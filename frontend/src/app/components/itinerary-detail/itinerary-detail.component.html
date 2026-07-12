@@ -1,15 +1,17 @@
 <div *ngIf="itinerary" class="min-h-screen text-[#f5fbff]">
-  <div class="flex items-center gap-3 px-6 pt-20 pb-2 mx-auto max-w-7xl lg:px-12">
-    <button (click)="goBack()" class="back-btn" aria-label="Go back to previous page">
-      <span class="material-symbols-outlined">arrow_back</span>
-      Back
+  <!-- Breadcrumbs -->
+  <div class="px-6 lg:px-12 py-4 max-w-7xl mx-auto flex items-center justify-between pt-20">
+    <button *ngIf="hasHistory" (click)="goBack()" class="flex items-center gap-1.5 text-xs text-[#757684] hover:text-[#3953bd] transition-colors font-medium">
+      <span class="material-symbols-outlined text-sm">arrow_back</span> Back
     </button>
+    <nav class="flex items-center gap-2 text-xs text-[#757684] font-medium">
+      <a routerLink="/" class="hover:text-[#3953bd] transition-colors">Home</a>
+      <span class="material-symbols-outlined text-xs">chevron_right</span>
+      <a routerLink="/dashboard" class="hover:text-[#3953bd] transition-colors">Dashboard</a>
+      <span class="material-symbols-outlined text-xs">chevron_right</span>
+      <span class="text-[#191c1d]">{{ itinerary.title }}</span>
+    </nav>
   </div>
-  <nav class="flex items-center gap-2 px-6 pb-4 text-xs font-medium text-[#8ea5b0] mx-auto max-w-7xl lg:px-12">
-    <a routerLink="/dashboard" class="transition-colors hover:text-[#a6ebd7]">Dashboard</a>
-    <span class="material-symbols-outlined text-xs">chevron_right</span>
-    <span class="text-white">{{ itinerary.title }}</span>
-  </nav>
 
   <!-- Hero -->
   <section class="relative min-h-[430px] w-full overflow-hidden bg-gradient-to-br from-[#0f8f8a] via-[#0b1d29] to-[#ff8d70]">

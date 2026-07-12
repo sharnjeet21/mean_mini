@@ -47,10 +47,15 @@
           Back
         </button>
       </div>
-      <nav class="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#6f8996]">
-        <a routerLink="/dashboard" class="transition-colors hover:text-white">Manager</a>
-        <span class="material-symbols-outlined text-sm">chevron_right</span>
-        <span class="text-[#a9bac2]">Itineraries</span>
+      <nav class="mb-4 flex items-center justify-between">
+        <button *ngIf="hasHistory" (click)="goBack()" class="flex items-center gap-1.5 text-xs font-bold uppercase tracking-[0.16em] text-[#78919d] hover:text-[#7ae0c3] transition duration-300">
+          <span class="material-symbols-outlined text-sm">arrow_back</span> Back
+        </button>
+        <div class="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#6f8996]">
+          <a routerLink="/dashboard" class="transition-colors hover:text-white">Manager</a>
+          <span class="material-symbols-outlined text-sm">chevron_right</span>
+          <span class="text-[#a9bac2]">Itineraries</span>
+        </div>
       </nav>
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>

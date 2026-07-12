@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import { Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { RouterModule, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
@@ -20,6 +20,9 @@ export class AdminDashboardComponent implements OnInit {
   searchTerm = '';
   loading = true;
   errorMessage = '';
+  hasHistory = false;
+
+  private platformId = inject(PLATFORM_ID);
 
   constructor(
     public auth: AuthService,
@@ -37,8 +40,12 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   ngOnInit() {
+    if (isPlatformBrowser(this.platformId)) {
+      this.hasHistory = window.history.length > 1;
+    }
     this.loadDashboard();
   }
+
 
   loadDashboard() {
     this.loading = true;

@@ -27,6 +27,7 @@ export class ItineraryDetailComponent implements OnInit {
   reviewRating = 5;
   reviewComment = '';
   readonly stars = [1, 2, 3, 4, 5];
+  hasHistory = false;
   private platformId = inject(PLATFORM_ID);
   private cdr = inject(ChangeDetectorRef);
   private itineraryId = '';
@@ -253,6 +254,8 @@ export class ItineraryDetailComponent implements OnInit {
       this.loading = false;
       return;
     }
+
+    this.hasHistory = window.history.length > 1;
 
     this.itineraryId = this.route.snapshot.paramMap.get('id') || '';
     if (!this.itineraryId) {

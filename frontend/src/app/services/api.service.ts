@@ -193,4 +193,12 @@ export class ApiService {
   generateItineraryDraft(input: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/ai/itinerary-draft`, input);
   }
+
+  getUserProfile(): Observable<any> {
+    return this.http.get(`${this.baseUrl}/users/me`);
+  }
+
+  updateUserProfileName(name: string): Observable<any> {
+    return this.http.patch(`${this.baseUrl}/users/me`, { name });
+  }
 }

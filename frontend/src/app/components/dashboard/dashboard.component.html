@@ -132,7 +132,9 @@
           <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
           <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
           <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
-            <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">{{ item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused') }}</span>
+            <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">
+              {{ activeView === 'bookings' ? (item.userBooking?.status || 'booked') : (item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused')) }}
+            </span>
             <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
           </div>
           <div class="absolute bottom-4 left-5 right-5">
