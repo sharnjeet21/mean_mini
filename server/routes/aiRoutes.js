@@ -7,6 +7,8 @@ const { enrichWithImage } = require("../services/imageService");
 const { authenticate } = require("../middleware/auth");
 const { getAiProvider } = require("../services/aiProviderResolver");
 const itineraryDraftService = require("../services/itineraryDraftService");
+const { MapboxProviderAdapter } = require("../adapters/mapboxAdapter");
+const mapboxAdapter = new MapboxProviderAdapter(process.env.MAPBOX_TOKEN || "mock_token");
 
 const router = express.Router();
 
@@ -160,13 +162,22 @@ function fallbackSuggestions(query) {
 }
 
 function fallbackAttractions(destination) {
-  return [
+  const base = [
     { name: `${destination} Old Quarter`, description: 'Begin with a guided orientation through the historic center and its everyday local life.' },
     { name: 'Signature viewpoint', description: `Choose a sunrise or golden-hour viewpoint that reveals the landscape around ${destination}.` },
     { name: 'Local food market', description: 'Taste regional specialties with time to speak to vendors and learn what is in season.' },
     { name: 'Craft and culture studio', description: 'Meet local makers through a small workshop or independently run cultural space.' },
     { name: 'Slow neighborhood walk', description: 'Leave one unhurried afternoon for cafés, side streets, and spontaneous discoveries.' },
   ];
+  return base.map((a, idx) => {
+    const angle = (idx / 5) * 2 * Math.PI;
+    const radius = 0.01 + 0.02 * Math.random();
+    return {
+      ...a,
+      latOffset: Math.cos(angle) * radius,
+      lngOffset: Math.sin(angle) * radius
+    };
+  });
 }
 
 const TRAVEL_SEARCH_SCHEMA = {
@@ -533,10 +544,16 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
       return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json({ attractions });
     }
 
-    const attractions = parsed.slice(0, 5).map((a) => ({
-      name:        String(a.name        || '').trim(),
-      description: String(a.description || '').trim().slice(0, 150),
-    })).filter((a) => a.name.length > 0);
+    const attractions = parsed.slice(0, 5).map((a, idx) => {
+      const angle = (idx / 5) * 2 * Math.PI;
+      const radius = 0.01 + 0.02 * Math.random();
+      return {
+        name:        String(a.name        || '').trim(),
+        description: String(a.description || '').trim().slice(0, 150),
+        latOffset:   Math.cos(angle) * radius,
+        lngOffset:   Math.sin(angle) * radius
+      };
+    }).filter((a) => a.name.length > 0);
 
     if (attractions.length < 5) {
       console.error('[aiRoutes] Itinerary: fewer than 5 valid attractions after normalisation');
@@ -628,6 +645,66 @@ router.post("/itinerary-revision", authenticate, rateLimiter, async (req, res, n
   } catch (err) {
     console.error('[aiRoutes] Itinerary revision error:', err.message);
     return res.status(503).json({ message: "We couldn't revise your itinerary right now.", details: err.message });
+  }
+});
+
+router.get("/geocode", rateLimiter, validateQueryParam("place"), async (req, res) => {
+  const place = req.query.place;
+  if (!place || !place.trim()) {
+    return res.status(400).json({ error: "place query parameter is required" });
+  }
+
+  const cacheKey = `geocode:${place.trim().toLowerCase()}`;
+  const cached = travelSearchCache.get(cacheKey);
+  if (cached) {
+    return res.set({ 'X-Cache': 'HIT', 'X-Source': 'cache' }).json(cached);
+  }
+
+  const FALLBACK_COORDS = {
+    "kyoto": { lat: 35.0116, lng: 135.7681, name: "Kyoto, Japan", bbox: [135.55, 34.88, 135.87, 35.32] },
+    "tokyo": { lat: 35.6762, lng: 139.6503, name: "Tokyo, Japan", bbox: [138.94, 35.52, 140.22, 35.92] },
+    "paris": { lat: 48.8566, lng: 2.3522, name: "Paris, France", bbox: [2.22, 48.81, 2.47, 48.90] },
+    "santorini": { lat: 36.3932, lng: 25.4615, name: "Santorini, Greece", bbox: [25.31, 36.31, 25.49, 36.48] },
+    "solan": { lat: 30.9045, lng: 77.0967, name: "Solan, Himachal Pradesh, India", bbox: [77.00, 30.85, 77.15, 30.95] },
+    "goa": { lat: 15.2993, lng: 74.1240, name: "Goa, India", bbox: [73.68, 14.89, 74.34, 15.80] },
+    "jaipur": { lat: 26.9124, lng: 75.7873, name: "Jaipur, Rajasthan, India", bbox: [75.68, 26.80, 75.90, 27.02] }
+  };
+
+  try {
+    if (!process.env.MAPBOX_TOKEN || process.env.MAPBOX_TOKEN === "mock_token") {
+      throw new Error("Mapbox token not configured");
+    }
+    const result = await mapboxAdapter.geocode(place);
+    travelSearchCache.set(cacheKey, result);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'mapbox' }).json(result);
+  } catch (err) {
+    console.warn(`[aiRoutes] Mapbox geocoding failed/not-configured for '${place}':`, err.message);
+    const normPlace = place.toLowerCase().trim();
+    let result = null;
+    for (const key of Object.keys(FALLBACK_COORDS)) {
+      if (normPlace.includes(key)) {
+        result = FALLBACK_COORDS[key];
+        break;
+      }
+    }
+
+    if (!result) {
+      let hash = 0;
+      for (let i = 0; i < normPlace.length; i++) {
+        hash = normPlace.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      const lat = 20.0 + (Math.abs(hash % 300) / 10.0);
+      const lng = 70.0 + (Math.abs((hash >> 3) % 600) / 10.0);
+      result = {
+        name: `${place}, Simulated Location`,
+        lat,
+        lng,
+        bbox: [lng - 0.2, lat - 0.2, lng + 0.2, lat + 0.2]
+      };
+    }
+
+    travelSearchCache.set(cacheKey, result);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback-coordinates' }).json(result);
   }
 });
 

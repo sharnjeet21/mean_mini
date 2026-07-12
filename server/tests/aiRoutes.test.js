@@ -359,3 +359,35 @@ describe('POST /travel-search', { concurrency: false }, () => {
     }
   });
 });
+
+// ── /geocode route ────────────────────────────────────────────────────────────
+describe('GET /geocode', { concurrency: false }, () => {
+  it('returns 200 + coordinates + X-Cache: MISS on geocoding request', async () => {
+    const app = createApp();
+    const { server, port } = await startServer(app);
+    try {
+      const { status, headers, body } = await httpGet(port, '/geocode?place=Kyoto');
+      assert.equal(status, 200);
+      assert.equal(body.name, 'Kyoto, Japan');
+      assert.equal(body.lat, 35.0116);
+      assert.equal(body.lng, 135.7681);
+      assert.equal(headers['x-cache'], 'MISS');
+    } finally {
+      await stopServer(server);
+    }
+  });
+
+  it('returns simulated coordinates for non-matching queries when Mapbox is off', async () => {
+    const app = createApp();
+    const { server, port } = await startServer(app);
+    try {
+      const { status, body } = await httpGet(port, '/geocode?place=UnknownRandomTown');
+      assert.equal(status, 200);
+      assert.ok(body.lat);
+      assert.ok(body.lng);
+      assert.equal(body.name, 'UnknownRandomTown, Simulated Location');
+    } finally {
+      await stopServer(server);
+    }
+  });
+});

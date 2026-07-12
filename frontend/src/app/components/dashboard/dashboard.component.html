@@ -37,19 +37,8 @@
 
     <section class="glass-panel mb-10 overflow-hidden rounded-[30px]">
       <div class="grid lg:grid-cols-[minmax(0,.78fr)_minmax(0,1.22fr)]">
-        <div class="relative min-h-[280px] min-w-0 overflow-hidden p-7 sm:p-9">
-          <img src="/images/santorini.jpg" alt="Santorini coast" class="absolute inset-0 h-full w-full object-cover opacity-55">
-          <div class="absolute inset-0 bg-gradient-to-r from-[#071721]/95 via-[#071721]/80 to-[#071721]/20"></div>
-          <div class="relative">
-            <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#7ae0c3] text-[#05201f]">
-              <span class="material-symbols-outlined">auto_awesome</span>
-            </span>
-            <p class="eyebrow mt-6">Destination spark</p>
-            <h2 class="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-white">Where are you curious about?</h2>
-            <p class="mt-3 max-w-sm text-sm leading-6 text-white/60">
-              Search a place and let the assistant surface a visual preview, suggestions, and signature stops.
-            </p>
-          </div>
+        <div class="relative min-h-[350px] min-w-0 overflow-hidden">
+          <app-map-canvas [lat]="mapLat" [lng]="mapLng" [pins]="mapPins"></app-map-canvas>
         </div>
         <div class="min-w-0 bg-[#071721]/45 p-6 sm:p-9">
           <div *ngIf="rateLimitMessage"
@@ -61,6 +50,17 @@
             <span class="material-symbols-outlined text-lg">check_circle</span>{{ destinationToast }}
           </div>
           <app-destination-search (destinationSelected)="onDestinationSelected($event)"></app-destination-search>
+          
+          <!-- Handoff from map to itinerary wizard -->
+          <div *ngIf="mapPins.length > 0" class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#7ae0c3]/10 border border-[#7ae0c3]/20 rounded-2xl p-4 transition-all duration-300 hover:border-[#7ae0c3]/40">
+            <div>
+              <p class="text-xs font-bold text-white uppercase tracking-wider">Visual Planning Active</p>
+              <p class="text-[10px] text-[#8ea5b0] mt-1">{{ mapPins.length }} recommended places loaded on the map workspace.</p>
+            </div>
+            <button mat-flat-button class="primary-action !min-h-9 !px-4 !text-xs !font-bold" (click)="openModalFromMap()">
+              Generate Itinerary
+            </button>
+          </div>
           <div class="mt-8 border-t border-white/10 pt-6">
             <app-trending-cards (destinationSelected)="onDestinationSelected($event)"></app-trending-cards>
           </div>

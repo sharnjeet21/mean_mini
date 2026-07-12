@@ -220,6 +220,16 @@ export class AiService {
     );
   }
 
+  geocode(place: string): Observable<any> {
+    const params = new HttpParams().set('place', place);
+    return this.http.get<any>(`${this.baseUrl}/geocode`, { params }).pipe(
+      catchError(err => {
+        if (err?.status === 429) return throwError(() => new Error('Too many requests — please wait a moment before trying again.'));
+        return throwError(() => err);
+      })
+    );
+  }
+
   getTrendingDestinations(): Observable<TrendingDestination[]> {
     const key = 'trending';
     const cached = this.lsGet<TrendingDestination[]>(key);

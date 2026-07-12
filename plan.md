@@ -4,7 +4,7 @@ This document turns the product vision into an execution-ready roadmap for the c
 
 Status legend:
 
-- [x] Implemented
+- [ ] Implemented
 - [ ] Planned
 
 ## 1. Product Vision
@@ -457,9 +457,9 @@ User flow:
 
 Exit criteria:
 
-- [ ] A user can search a destination and see recommendation pins on a map.
-- [ ] A user can add recommended attractions to a saved draft.
-- [ ] The experience still works with fallbacks if AI responses or provider calls fail.
+- [x] A user can search a destination and see recommendation pins on a map.
+- [x] A user can add recommended attractions to a saved draft.
+- [x] The experience still works with fallbacks if AI responses or provider calls fail.
 
 ## 8. Phase 2 - Smart Itinerary Builder
 

@@ -12,6 +12,7 @@ import { AiService, AiTravelSearchResult } from '../../services/ai.service';
 import { DestinationSearchComponent } from '../destination-search/destination-search.component';
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 import { getItineraryImage } from '../../utils/itinerary-image';
+import { MapCanvasComponent } from '../map-canvas/map-canvas.component';
 
 
 
@@ -31,6 +32,7 @@ export interface Stop {
     MatProgressSpinnerModule,
     DestinationSearchComponent,
     TrendingCardsComponent,
+    MapCanvasComponent,
   ],
   templateUrl: './dashboard.component.html',
 })
@@ -50,7 +52,10 @@ export class DashboardComponent implements OnInit, OnDestroy {
   currentStep = 1;
   readonly TOTAL_STEPS = 4;
   readonly stepLabels = ['Basics', 'Dates', 'Budget', 'Stops'];
-
+  // Map parameters for visual discovery
+  mapLat: number | null = null;
+  mapLng: number | null = null;
+  mapPins: { name: string; description: string; lat: number; lng: number }[] = [];
 
   // AI-first itinerary creation states
   creationMode: 'ai' | 'manual' | 'clarify' | 'preview' = 'ai';
@@ -400,11 +405,54 @@ export class DashboardComponent implements OnInit, OnDestroy {
   }
 
   onDestinationSelected(place: string): void {
-    if (this.auth.isLoggedIn) {
-      this.openModal(place);
-    } else {
-      this.destinationToast = `${place} selected. Browse the live routes below, then save or book the one that fits.`;
-    }
+    // Stage 1: Call geocode API to center map
+    this.destinationToast = `Searching location and geocoding '${place}'...`;
+    this.ai.geocode(place).subscribe({
+      next: (geo) => {
+        this.mapLat = geo.lat;
+        this.mapLng = geo.lng;
+        this.destinationToast = `Centering map on ${geo.name || place}...`;
+
+        // Stage 2: Fetch attractions suggestions
+        this.ai.getItinerarySuggestions(place).subscribe({
+          next: (res) => {
+            const attractions = res || [];
+            this.mapPins = attractions.map((a: any) => ({
+              name: a.name,
+              description: a.description,
+              lat: geo.lat + (a.latOffset || 0),
+              lng: geo.lng + (a.lngOffset || 0)
+            }));
+            this.destinationToast = `Centered on ${geo.name || place} with ${this.mapPins.length} recommended attractions plotted on the map.`;
+            this.cdr.detectChanges();
+          },
+          error: () => {
+            this.mapPins = [];
+            this.destinationToast = `Centered on ${geo.name || place}, but couldn't load attraction suggestions.`;
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        this.destinationToast = `Could not geocode location '${place}'.`;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  openModalFromMap(): void {
+    const destination = this.mapPins.length > 0 ? (this.mapPins[0].name.split(' ').slice(-1)[0] || 'Selected Destination') : 'Selected Destination';
+    this.openModal(destination);
+    // Prefill the manual steps with the plotted pins as stops
+    this.form.stops = this.mapPins.map((pin, idx) => ({
+      name: pin.name,
+      notes: pin.description,
+      order: idx
+    }));
+    this.form.destination = destination;
+    this.creationMode = 'manual'; // open in manual/wizard creation mode
+    this.currentStep = 3; // jump directly to budget/stops step where they are populated!
+    this.cdr.detectChanges();
   }
 
   onRateLimitError(message: string): void {
