@@ -715,11 +715,11 @@ The business roadmap is successful when the platform can also:
 - [ ] Support agency workflows without rebuilding the core product
 - [ ] Keep the experience simple even as features expand
 
-## 16. Immediate UI Improvements (Planned)
+## 16. Immediate UI Improvements
 
 Small, high-value improvements to existing screens that do not require new phases or backend changes.
 
-Status: `Planned`
+Status: `Completed`
 
 ### 16.1 Back Button
 
