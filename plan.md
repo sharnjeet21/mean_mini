@@ -51,8 +51,8 @@ Already implemented in the repository:
 
 Still missing before the long-term vision is complete:
 
-- [ ] Interactive map planning
-- [ ] Attraction pin workflow
+- [x] Interactive map planning
+- [x] Attraction pin workflow
 - [ ] Route intelligence
 - [ ] Cost intelligence
 - [ ] Export and sharing workflows
@@ -100,8 +100,8 @@ Phase 0 checklist:
 - [x] Attempt frontend test validation
 - [x] Attempt frontend build validation
 - [x] Attempt Docker build validation
-- [ ] Complete clean install and frontend validation under Node 24 on the host machine
-- [ ] Re-run Docker build with confirmed local Docker access
+- [x] Complete clean install and frontend validation under Node 24 on the host machine
+- [x] Re-run Docker build with confirmed local Docker access
 
 Completed work:
 
@@ -169,14 +169,14 @@ Recommendations:
 
 Exit criteria:
 
-- [ ] Host machine is using Node `24.17.0`
-- [ ] Root clean install succeeds
-- [ ] Frontend clean install succeeds
-- [ ] Frontend unit tests run successfully
-- [ ] Frontend build succeeds
-- [ ] Root production-style build succeeds
-- [ ] Backend startup is validated with expected dependency availability
-- [ ] Docker build succeeds
+- [x] Host machine is using Node `24.17.0`
+- [x] Root clean install succeeds
+- [x] Frontend clean install succeeds
+- [x] Frontend unit tests run successfully
+- [x] Frontend build succeeds
+- [x] Root production-style build succeeds
+- [x] Backend startup is validated with expected dependency availability
+- [x] Docker build succeeds
 
 ## 6.5 Phase 0.5 — Search Intelligence Cleanup
 
@@ -912,8 +912,8 @@ Checklist:
 
 Recommended practical order for implementation:
 
-- [ ] Phase 0: Platform Foundation
-- [ ] Phase 0.5: Search Intelligence Cleanup ✅
+- [x] Phase 0: Platform Foundation
+- [x] Phase 0.5: Search Intelligence Cleanup ✅
 - [x] Phase 16.1: Back Button
 - [x] Phase 16.2: Profile Page
 - [x] Phase 16.3: Destination Suggestions in Wizard
@@ -921,7 +921,7 @@ Recommended practical order for implementation:
 - [x] Phase 16.5: AI Travel Search and Itinerary Assistant
 - [x] Phase 16.6: Trip Manager Manual Itinerary Editing ✅
 - [x] Phase 16.7: AI Itinerary Revision Precision and Scope Preservation ✅
-- [ ] Phase 1: Visual Discovery MVP
+- [x] Phase 1: Visual Discovery MVP
 - [ ] Phase 2: Smart Itinerary Builder MVP
 - [ ] Phase 3: Route Intelligence
 - [ ] Phase 4: Cost Intelligence
