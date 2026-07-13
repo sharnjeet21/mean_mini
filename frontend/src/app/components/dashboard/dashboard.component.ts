@@ -13,6 +13,7 @@ import { DestinationSearchComponent } from '../destination-search/destination-se
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 import { getItineraryImage } from '../../utils/itinerary-image';
 import { MapCanvasComponent } from '../map-canvas/map-canvas.component';
+import { CurrencyService } from '../../services/currency.service';
 
 
 
@@ -37,6 +38,11 @@ export interface Stop {
   templateUrl: './dashboard.component.html',
 })
 export class DashboardComponent implements OnInit, OnDestroy {
+  auth = inject(AuthService);
+  api = inject(ApiService);
+  ai = inject(AiService);
+  currencyService = inject(CurrencyService);
+  private router = inject(Router);
   itineraries: any[] = [];
   loading = true;
   activeFilter = 'Date';
@@ -55,7 +61,9 @@ export class DashboardComponent implements OnInit, OnDestroy {
   // Map parameters for visual discovery
   mapLat: number | null = null;
   mapLng: number | null = null;
-  mapPins: { name: string; description: string; lat: number; lng: number }[] = [];
+  mapPins: { name: string; description: string; lat: number; lng: number, selected?: boolean }[] = [];
+  selectedMapPins: any[] = [];
+  routeSegments: { start: any; end: any; points: string }[] = [];
 
   // AI-first itinerary creation states
   creationMode: 'ai' | 'manual' | 'clarify' | 'preview' = 'ai';
@@ -85,17 +93,12 @@ export class DashboardComponent implements OnInit, OnDestroy {
   private wizardSubscriptions = new Subscription();
 
   private platformId = inject(PLATFORM_ID);
+  private route = inject(ActivatedRoute);
+  private cdr = inject(ChangeDetectorRef);
 
   form = this.emptyForm();
 
-  constructor(
-    public auth: AuthService,
-    private api: ApiService,
-    public ai: AiService,
-    private route: ActivatedRoute,
-    private router: Router,
-    private cdr: ChangeDetectorRef,
-  ) {}
+  constructor() {}
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
@@ -200,14 +203,16 @@ export class DashboardComponent implements OnInit, OnDestroy {
   get stats() {
     const total = this.itineraries.length;
     const destinations = new Set(this.itineraries.map((item) => item.destination)).size;
-    const averageBudget = total
+    const averageBudgetRaw = total
       ? Math.round(this.itineraries.reduce((sum, item) => sum + (item.budget || 0), 0) / total)
       : 0;
+
+    const conv = this.currencyService.convert(averageBudgetRaw);
 
     return [
       { icon: 'map', label: 'Total Itineraries', value: total, badge: 'All' },
       { icon: 'explore', label: 'Unique Destinations', value: destinations, badge: 'Global' },
-      { icon: 'payments', label: 'Avg Budget', value: `$${averageBudget.toLocaleString()}`, badge: 'Avg' },
+      { icon: 'payments', label: 'Avg Budget', value: `${conv.symbol}${conv.amount.toLocaleString()}`, badge: 'Avg' },
       {
         icon: 'favorite',
         label: 'Community Saves',
@@ -252,6 +257,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
     ).subscribe({
       next: (result) => {
         this.itineraries = Array.isArray(result) ? result : [];
+        this.loadImagesForItineraries();
       },
       error: (error) => {
         this.itineraries = [];
@@ -264,6 +270,28 @@ export class DashboardComponent implements OnInit, OnDestroy {
         }
       },
     });
+  }
+
+  async loadImagesForItineraries() {
+    for (const item of this.itineraries) {
+      if (item.sliderImages?.length) continue;
+      
+      const locations = [item.destination];
+      if (item.stops && Array.isArray(item.stops)) {
+        item.stops.forEach((s: any) => {
+          if (s.name && s.name.trim()) locations.push(s.name);
+        });
+      }
+      
+      const images = await Promise.all(
+        locations.map(loc => 
+          import('../../utils/itinerary-image').then(m => m.fetchItineraryImage(loc))
+        )
+      );
+      
+      item.sliderImages = [...new Set(images)];
+      this.cdr.detectChanges();
+    }
   }
 
   setView(view: 'explore' | 'saved' | 'bookings'): void {
@@ -377,10 +405,19 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.saving = true;
     this.formError = '';
 
+    const budgetUsd = this.form.budget ? this.currencyService.convertToUsd(Number(this.form.budget)) : 0;
+    const bb = this.form.budgetBreakdown;
     const payload = {
       ...this.form,
       status: 'draft', // Converge manual flow into itinerary draft lifecycle
-      budget: this.form.budget ? Number(this.form.budget) : 0,
+      budget: budgetUsd,
+      budgetBreakdown: {
+        transport: this.currencyService.convertToUsd(Number(bb.transport) || 0),
+        accommodation: this.currencyService.convertToUsd(Number(bb.accommodation) || 0),
+        food: this.currencyService.convertToUsd(Number(bb.food) || 0),
+        activities: this.currencyService.convertToUsd(Number(bb.activities) || 0),
+        contingency: this.currencyService.convertToUsd(Number(bb.contingency) || 0),
+      },
       stops: this.form.stops.filter((stop) => stop.name.trim()),
     };
 
@@ -420,10 +457,11 @@ export class DashboardComponent implements OnInit, OnDestroy {
             this.mapPins = attractions.map((a: any) => ({
               name: a.name,
               description: a.description,
-              lat: geo.lat + (a.latOffset || 0),
-              lng: geo.lng + (a.lngOffset || 0)
+              lat: (typeof a.lat === 'number') ? a.lat : geo.lat + (a.latOffset || 0),
+              lng: (typeof a.lng === 'number') ? a.lng : geo.lng + (a.lngOffset || 0)
             }));
             this.destinationToast = `Centered on ${geo.name || place} with ${this.mapPins.length} recommended attractions plotted on the map.`;
+            this.fetchRouteOverlay(this.mapPins);
             this.cdr.detectChanges();
           },
           error: () => {
@@ -453,6 +491,80 @@ export class DashboardComponent implements OnInit, OnDestroy {
     this.creationMode = 'manual'; // open in manual/wizard creation mode
     this.currentStep = 3; // jump directly to budget/stops step where they are populated!
     this.cdr.detectChanges();
+  }
+
+  togglePinSelection(pin: any): void {
+    pin.selected = !pin.selected;
+    if (pin.selected) {
+      this.selectedMapPins.push(pin);
+    } else {
+      this.selectedMapPins = this.selectedMapPins.filter(p => p.name !== pin.name);
+    }
+    this.cdr.detectChanges();
+  }
+
+  generateSmartItineraryFromSelection(): void {
+    if (this.selectedMapPins.length === 0) return;
+    this.aiLoading = true;
+    this.aiLoadingText = 'Generating smart itinerary from your selections...';
+    this.cdr.detectChanges();
+
+    const destination = this.selectedMapPins[0].name.split(' ').slice(-1)[0] || 'Selected Destination';
+    const duration = Math.min(Math.max(Math.ceil(this.selectedMapPins.length / 3), 1), 7); // Rough estimate: 3 attractions per day, max 7 days
+
+    this.ai.generateItineraryFromAttractions(destination, duration, this.selectedMapPins).subscribe({
+      next: (draft) => {
+        // Create an itinerary with the generated dailyPlan
+        const payload = {
+          title: `Trip to ${destination}`,
+          destination: destination,
+          duration: `${duration} Days`,
+          travelerCount: 1,
+          dailyPlan: draft.dailyPlan || [],
+          description: draft.description || '',
+          status: 'draft'
+        };
+
+        this.api.createItinerary(payload).subscribe({
+          next: (created) => {
+            this.aiLoading = false;
+            this.router.navigate(['/itinerary', created._id]);
+          },
+          error: (err) => {
+            this.aiLoading = false;
+            this.destinationToast = 'Failed to save generated itinerary.';
+            this.cdr.detectChanges();
+          }
+        });
+      },
+      error: (err) => {
+        this.aiLoading = false;
+        this.destinationToast = 'Failed to generate itinerary from selections.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  private fetchRouteOverlay(pins: any[]): void {
+    this.routeSegments = [];
+    if (!pins || pins.length < 2) return;
+    
+    let totalTime = 0;
+    for (let i = 0; i < pins.length - 1; i++) {
+      const origin = { lat: pins[i].lat, lng: pins[i].lng, name: pins[i].name };
+      const dest = { lat: pins[i+1].lat, lng: pins[i+1].lng, name: pins[i+1].name };
+      this.ai.getRouteDirections(origin, dest, 'driving').subscribe({
+        next: (res) => {
+          if (res) {
+            this.routeSegments = [...this.routeSegments, res];
+            totalTime += res.durationMin || 0;
+            this.destinationToast = `Mapped ${this.routeSegments.length}/${pins.length-1} legs. ~${totalTime} mins drive.`;
+            this.cdr.detectChanges();
+          }
+        },
+        error: (err) => console.error('Route error:', err)
+      });
+    }
   }
 
   onRateLimitError(message: string): void {
@@ -624,7 +736,7 @@ export class DashboardComponent implements OnInit, OnDestroy {
           duration: `${draft.duration} Days`,
           startDate: new Date().toISOString(), // default start today
           endDate: new Date(Date.now() + (draft.duration - 1) * 86400000).toISOString(),
-          budget: intent.budget || 0,
+          budget: intent.budget ? this.currencyService.convertToUsd(Number(intent.budget)) : 0,
           travelerCount: intent.travelers || 1,
           travelStyle: intent.travelStyle || 'balanced',
           status: 'draft',

@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { getAiProvider } = require('./aiProviderResolver');
+const aiProvider = require('./aiProvider');
 
 // Active generations registry: fingerprint -> Promise
 const activeGenerations = new Map();
@@ -110,7 +110,7 @@ async function generateItineraryDraft(input, userId = '') {
   // 3. Start a new generation
   console.log(`[itineraryDraftService] Starting new Ollama/Gemini generation for fingerprint: ${fingerprint}`);
   const generationPromise = (async () => {
-    const provider = getAiProvider();
+    const provider = aiProvider;
     const result = await provider.generateItineraryDraft(sanitizedInput);
     
     if (!result || typeof result !== 'object' || !result.destination || !result.days) {
@@ -470,7 +470,7 @@ async function extractTripIntent(text) {
     throw new Error('Text input is required for intent extraction.');
   }
 
-  const provider = getAiProvider();
+  const provider = aiProvider;
   return await provider.extractTripIntent(text.trim());
 }
 
@@ -483,7 +483,7 @@ async function reviseItinerary(itinerary, instruction, userId = '') {
   }
 
   const durationVal = parseInt(itinerary.duration) || (itinerary.dailyPlan ? itinerary.dailyPlan.length : 1);
-  const provider = getAiProvider();
+  const provider = aiProvider;
 
   // 1. Extract Scope (Deterministic + AI)
   const detScope = parseScopeDeterministically(instruction, durationVal);
@@ -791,8 +791,86 @@ function mergePatch(original, patch, scope, operation) {
   }
 }
 
+async function generateFromAttractions(destination, duration, attractions) {
+  const provider = aiProvider;
+  
+  // Format the attractions for the prompt
+  const attractionsList = attractions.map((a, i) => `${i + 1}. ${a.name} - ${a.description || ''} (lat: ${a.lat}, lng: ${a.lng})`).join('\n');
+  
+  const systemPrompt = `You are an expert travel planner. The user wants to visit the following specific attractions in ${destination} over ${duration} days:
+${attractionsList}
+
+Your task is to organize these selected attractions into a logical, day-by-day itinerary.
+Rules:
+1. Group the attractions logically by geographic proximity to minimize travel time.
+2. Assign realistic times for each activity (e.g., 09:00 AM).
+3. Do NOT invent new attractions. Only use the attractions provided in the list above, plus logical meal stops (breakfast/lunch/dinner) or a hotel check-in/out.
+4. Ensure the schedule is realistic (don't cram 10 things into one day). If there are too many attractions for ${duration} days, drop the least important ones or warn the user in the overall description.
+5. Provide a 'suggestedDuration' for each activity.
+
+Return ONLY a valid JSON object with the following schema:
+{
+  "description": "A brief overview of how you organized the trip.",
+  "dailyPlan": [
+    {
+      "day": 1,
+      "title": "Day title",
+      "activities": [
+        {
+          "time": "09:00 AM",
+          "activity": "Attraction Name",
+          "description": "Brief description",
+          "location": "Address or Name",
+          "category": "exploration",
+          "suggestedDuration": "2 hours"
+        }
+      ]
+    }
+  ]
+}`;
+
+  try {
+    const rawOutput = await provider.generateText(systemPrompt, {
+      temperature: 0.2,
+      maxOutputTokens: 2000,
+      responseMimeType: "application/json"
+    });
+    
+    // Parse the output
+    const match = rawOutput.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("Failed to extract JSON from AI response.");
+    
+    const parsed = JSON.parse(match[0]);
+    
+    // Enhance the parsed activities with lat/lng from the original attractions
+    if (parsed.dailyPlan && Array.isArray(parsed.dailyPlan)) {
+      parsed.dailyPlan.forEach(day => {
+        if (day.activities && Array.isArray(day.activities)) {
+          day.activities.forEach(act => {
+            // Try to find the original attraction to map lat/lng
+            const original = attractions.find(a => 
+              a.name.toLowerCase() === act.activity.toLowerCase() || 
+              act.activity.toLowerCase().includes(a.name.toLowerCase())
+            );
+            if (original) {
+              act.lat = original.lat;
+              act.lng = original.lng;
+            }
+          });
+        }
+      });
+    }
+    
+    return parsed;
+  } catch (error) {
+    console.error("[itineraryDraftService] Error generating from attractions:", error);
+    throw new Error("Failed to generate itinerary from selected attractions.");
+  }
+}
+
 module.exports = {
   generateItineraryDraft,
   extractTripIntent,
-  reviseItinerary
+  reviseItinerary,
+  generateFromAttractions
 };

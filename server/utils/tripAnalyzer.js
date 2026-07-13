@@ -72,8 +72,8 @@ function analyzeTrip(source) {
 
   let budgetScore = 100;
   if (budget <= 0) budgetScore = 15;
-  else if (budgetPerTravelerPerDay < 20) budgetScore = 45;
-  else if (budgetPerTravelerPerDay < 35) budgetScore = 70;
+  else if (budgetPerTravelerPerDay < 25) budgetScore = 45;
+  else if (budgetPerTravelerPerDay < 50) budgetScore = 70;
   if (budgetBreakdownTotal > 0 && Math.abs(budgetVariance) > budget * 0.15) budgetScore -= 20;
   if (Number(itinerary.budgetBreakdown?.contingency || 0) < budget * 0.05) budgetScore -= 8;
   budgetScore = clamp(budgetScore);
@@ -105,7 +105,7 @@ function analyzeTrip(source) {
       message: `The plan averages ${averageActivitiesPerDay.toFixed(1)} activities per day. Consider keeping one flexible block each day.`,
     });
   }
-  if (budgetPerTravelerPerDay < 20) {
+  if (budgetPerTravelerPerDay < 25) {
     risks.push({
       severity: 'high',
       code: 'LOW_DAILY_BUDGET',
@@ -129,6 +129,46 @@ function analyzeTrip(source) {
       message: 'A flight-heavy trip of three days or fewer has a comparatively high emissions footprint.',
     });
   }
+
+  // Phase 3: Route conflict detection
+  dailyPlan.forEach(day => {
+    if (Array.isArray(day.activities) && day.activities.length > 1) {
+      for (let i = 0; i < day.activities.length - 1; i++) {
+        const act1 = day.activities[i];
+        const act2 = day.activities[i + 1];
+
+        // Very basic time string parsing (e.g., '09:00 AM')
+        const parseTime = (t) => {
+          if (!t) return null;
+          const match = String(t).match(/(\d{1,2}):(\d{2})\s*(AM|PM)?/i);
+          if (!match) return null;
+          let hours = parseInt(match[1], 10);
+          if (match[3] && match[3].toUpperCase() === 'PM' && hours < 12) hours += 12;
+          if (match[3] && match[3].toUpperCase() === 'AM' && hours === 12) hours = 0;
+          return hours * 60 + parseInt(match[2], 10);
+        };
+
+        const time1 = parseTime(act1.time);
+        const time2 = parseTime(act2.time);
+
+        if (time1 !== null && time2 !== null && time2 < time1) {
+          risks.push({
+            severity: 'high',
+            code: 'TIME_TRAVEL_DETECTED',
+            title: `Time sequence error on Day ${day.day || '?'}`,
+            message: `Activity '${act2.activity}' is scheduled before '${act1.activity}'.`,
+          });
+        } else if (time1 !== null && time2 !== null && (time2 - time1) < 45 && act1.location !== act2.location && act1.location && act2.location) {
+          risks.push({
+            severity: 'medium',
+            code: 'ROUTE_CONFLICT',
+            title: `Possible route conflict on Day ${day.day || '?'}`,
+            message: `Not enough transit time between '${act1.activity}' and '${act2.activity}'.`,
+          });
+        }
+      }
+    }
+  });
 
   const recommendations = [];
   if (plannedDays < durationDays) recommendations.push('Add activities for every travel day to improve plan completeness.');

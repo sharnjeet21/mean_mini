@@ -96,6 +96,9 @@ export interface Hotel {
 
 export interface BudgetEstimate {
   totalEstimated: number;
+  confidenceRange?: { min: number; max: number };
+  budgetScore?: number;
+  budgetWarning?: string;
   perPerson: number;
   currency: string;
   costLevel: string;
@@ -286,6 +289,12 @@ export class AiService {
     );
   }
 
+  getRouteDirections(origin: {lat: number, lng: number}, destination: {lat: number, lng: number}, mode: string = 'driving'): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/route-directions`, { origin, destination, mode }).pipe(
+      catchError(err => this.handleError(err))
+    );
+  }
+
   /**
    * Get AI-powered hotel suggestions for a destination.
    */
@@ -306,6 +315,7 @@ export class AiService {
     duration: number;
     travelerCount: number;
     travelStyle?: string;
+    userBudget?: number;
   }): Observable<BudgetEstimate> {
     return this.http.post<{ estimate: BudgetEstimate }>(`${this.baseUrl}/budget-estimate`, params).pipe(
       map(res => res.estimate),
@@ -345,6 +355,12 @@ export class AiService {
 
   previewItineraryRevision(itineraryId: string, instruction: string): Observable<any> {
     return this.http.post<any>(`${this.baseUrl}/itinerary-revision`, { itineraryId, instruction }).pipe(
+      catchError(err => this.handleError(err))
+    );
+  }
+
+  generateItineraryFromAttractions(destination: string, duration: number, attractions: Attraction[]): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/generate-from-attractions`, { destination, duration, attractions }).pipe(
       catchError(err => this.handleError(err))
     );
   }

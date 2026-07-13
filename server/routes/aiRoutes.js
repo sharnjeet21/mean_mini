@@ -5,10 +5,9 @@ const { InMemoryCache } = require("../utils/inMemoryCache");
 const aiController = require("../controllers/aiController");
 const { enrichWithImage } = require("../services/imageService");
 const { authenticate } = require("../middleware/auth");
-const { getAiProvider } = require("../services/aiProviderResolver");
+const aiProvider = require("../services/aiProvider");
 const itineraryDraftService = require("../services/itineraryDraftService");
-const { MapboxProviderAdapter } = require("../adapters/mapboxAdapter");
-const mapboxAdapter = new MapboxProviderAdapter(process.env.MAPBOX_TOKEN || "mock_token");
+const mapboxAdapter = require("../adapters/mapboxAdapter");
 
 const router = express.Router();
 
@@ -345,7 +344,7 @@ async function fetchTravelSearchImage(destination) {
 
 
 async function generateStructuredTravelSearch(query) {
-  const provider = getAiProvider();
+  const provider = aiProvider;
   return await provider.generateStructuredTravelSearch(query);
 }
 
@@ -465,7 +464,7 @@ router.get('/suggestions', rateLimiter, validateQueryParam('q'), async (req, res
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ suggestions: cached });
 
   try {
-    const provider = getAiProvider();
+    const provider = aiProvider;
     const suggestions = await provider.generateAutocompleteSuggestions(query);
 
     if (!Array.isArray(suggestions) || suggestions.length === 0) {
@@ -490,7 +489,7 @@ router.get('/trending', rateLimiter, async (req, res) => {
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ destinations: cached });
 
   try {
-    const provider = getAiProvider();
+    const provider = aiProvider;
     const parsed = await provider.generateTrendingDestinations();
 
     if (!Array.isArray(parsed) || parsed.length < 5) {
@@ -534,7 +533,7 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
   if (cached !== null) return res.set('X-Cache', 'HIT').json({ attractions: cached });
 
   try {
-    const provider = getAiProvider();
+    const provider = aiProvider;
     const parsed = await provider.generateItinerarySuggestions(destination);
 
     if (!Array.isArray(parsed) || parsed.length < 5) {
@@ -547,12 +546,15 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
     const attractions = parsed.slice(0, 5).map((a, idx) => {
       const angle = (idx / 5) * 2 * Math.PI;
       const radius = 0.01 + 0.02 * Math.random();
-      return {
+      const item = {
         name:        String(a.name        || '').trim(),
         description: String(a.description || '').trim().slice(0, 150),
         latOffset:   Math.cos(angle) * radius,
         lngOffset:   Math.sin(angle) * radius
       };
+      if (typeof a.lat === 'number') item.lat = a.lat;
+      if (typeof a.lng === 'number') item.lng = a.lng;
+      return item;
     }).filter((a) => a.name.length > 0);
 
     if (attractions.length < 5) {
@@ -576,6 +578,22 @@ router.get('/itinerary-suggestions', rateLimiter, validateQueryParam('place'), a
 router.get("/route-plan", rateLimiter, (req, res, next) => {
   if (!req.query.origin || !req.query.destination) return res.status(400).json({ error: "origin and destination are required" });
   aiController.handleRoutePlan(req, res, next);
+});
+
+router.post("/route-directions", rateLimiter, async (req, res, next) => {
+  if (!req.body.origin || !req.body.destination) return res.status(400).json({ error: "origin and destination are required in body" });
+  const cacheKey = `directions:${req.body.origin.lat},${req.body.origin.lng}:${req.body.destination.lat},${req.body.destination.lng}:${req.body.mode || 'driving'}`;
+  const cached = travelSearchCache.get(cacheKey);
+  if (cached) return res.set({ 'X-Cache': 'HIT' }).json(cached);
+  
+  // Intercept the json response from controller to cache it
+  const oldJson = res.json;
+  res.json = function(data) {
+    if (res.statusCode === 200 && data) travelSearchCache.set(cacheKey, data);
+    return oldJson.call(res, data);
+  };
+  
+  aiController.handleDirections(req, res, next);
 });
 
 router.get("/hotel-suggestions", rateLimiter, (req, res, next) => {
@@ -656,7 +674,7 @@ router.get("/geocode", rateLimiter, validateQueryParam("place"), async (req, res
 
   const cacheKey = `geocode:${place.trim().toLowerCase()}`;
   const cached = travelSearchCache.get(cacheKey);
-  if (cached) {
+  if (cached && !String(cached.name || '').includes('Simulated Location') && !(cached.lat === 25.0 && cached.lng === 45.0)) {
     return res.set({ 'X-Cache': 'HIT', 'X-Source': 'cache' }).json(cached);
   }
 
@@ -670,42 +688,48 @@ router.get("/geocode", rateLimiter, validateQueryParam("place"), async (req, res
     "jaipur": { lat: 26.9124, lng: 75.7873, name: "Jaipur, Rajasthan, India", bbox: [75.68, 26.80, 75.90, 27.02] }
   };
 
-  try {
-    if (!process.env.MAPBOX_TOKEN || process.env.MAPBOX_TOKEN === "mock_token") {
-      throw new Error("Mapbox token not configured");
+  const normPlace = place.toLowerCase().trim();
+  let fallbackResult = null;
+  for (const key of Object.keys(FALLBACK_COORDS)) {
+    if (normPlace.includes(key)) {
+      fallbackResult = FALLBACK_COORDS[key];
+      break;
     }
+  }
+
+  if (fallbackResult) {
+    travelSearchCache.set(cacheKey, fallbackResult);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback' }).json(fallbackResult);
+  }
+
+  try {
     const result = await mapboxAdapter.geocode(place);
+    if (result && result.lat === 25.0 && result.lng === 45.0 && result.name === place) {
+      throw new Error("Geocoding failed, returned mock coords");
+    }
     travelSearchCache.set(cacheKey, result);
     return res.set({ 'X-Cache': 'MISS', 'X-Source': 'mapbox' }).json(result);
   } catch (err) {
-    console.warn(`[aiRoutes] Mapbox geocoding failed/not-configured for '${place}':`, err.message);
-    const normPlace = place.toLowerCase().trim();
-    let result = null;
-    for (const key of Object.keys(FALLBACK_COORDS)) {
-      if (normPlace.includes(key)) {
-        result = FALLBACK_COORDS[key];
-        break;
-      }
+    console.warn(`[aiRoutes] Geocoding failed for '${place}':`, err.message);
+    
+    // Final fallback to simulated location
+    let hash = 0;
+    for (let i = 0; i < normPlace.length; i++) {
+      hash = normPlace.charCodeAt(i) + ((hash << 5) - hash);
     }
-
-    if (!result) {
-      let hash = 0;
-      for (let i = 0; i < normPlace.length; i++) {
-        hash = normPlace.charCodeAt(i) + ((hash << 5) - hash);
-      }
-      const lat = 20.0 + (Math.abs(hash % 300) / 10.0);
-      const lng = 70.0 + (Math.abs((hash >> 3) % 600) / 10.0);
-      result = {
-        name: `${place}, Simulated Location`,
-        lat,
-        lng,
-        bbox: [lng - 0.2, lat - 0.2, lng + 0.2, lat + 0.2]
-      };
-    }
-
-    travelSearchCache.set(cacheKey, result);
-    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback-coordinates' }).json(result);
+    const lat = 20.0 + (Math.abs(hash % 300) / 10.0);
+    const lng = 70.0 + (Math.abs((hash >> 3) % 600) / 10.0);
+    const simulated = {
+      name: `${place}, Simulated Location`,
+      lat,
+      lng,
+      bbox: [lng - 0.2, lat - 0.2, lng + 0.2, lat + 0.2]
+    };
+    travelSearchCache.set(cacheKey, simulated);
+    return res.set({ 'X-Cache': 'MISS', 'X-Source': 'fallback-coordinates' }).json(simulated);
   }
 });
+
+router.post("/generate-from-attractions", rateLimiter, aiController.handleGenerateFromAttractions);
 
 module.exports = router;

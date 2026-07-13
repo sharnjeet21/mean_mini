@@ -1,4 +1,5 @@
 const aiService = require("../services/ai.service");
+const mapboxAdapter = require("../adapters/mapboxAdapter");
 const itineraryDraftService = require("../services/itineraryDraftService");
 
 async function handleSuggestions(req, res, next) {
@@ -36,6 +37,19 @@ async function handleRoutePlan(req, res, next) {
   }
 }
 
+async function handleDirections(req, res, next) {
+  try {
+    const { origin, destination, mode } = req.body;
+    if (!origin || !destination) {
+      return res.status(400).json({ error: "origin and destination objects with lat, lng are required" });
+    }
+    const result = await mapboxAdapter.getDirections(origin, destination, mode || 'driving');
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 async function handleHotels(req, res, next) {
   try {
     const { place, budget } = req.query;
@@ -50,17 +64,12 @@ async function handleHotels(req, res, next) {
   }
 }
 
+const { estimateCost } = require("../services/costEstimationService");
+
 async function handleBudgetEstimate(req, res, next) {
   try {
-    const { destination, duration, travelerCount, travelStyle } = req.body;
-    const data = {
-      totalEstimated: duration * travelerCount * 120,
-      perPerson: duration * 120,
-      currency: "USD",
-      costLevel: "moderate",
-      breakdown: { transport: 200, accommodation: 350, food: 180, activities: 150, miscellaneous: 80 },
-      tips: ["Book flights early", "Use city travel cards"],
-    };
+    const { destination, duration, travelerCount, travelStyle, userBudget } = req.body;
+    const data = await estimateCost({ destination, duration, travelerCount, travelStyle, userBudget });
     res.json({ estimate: data });
   } catch (err) {
     next(err);
@@ -122,13 +131,28 @@ async function handleItineraryDraft(req, res, next) {
   }
 }
 
+const billingService = require('../services/billingService');
+
 async function handleExtractIntent(req, res, next) {
   try {
     const { text } = req.body;
     if (!text) {
       return res.status(400).json({ error: 'text is required' });
     }
+    
+    // Ponytail LLM Firewall: Lightweight prompt injection protection
+    // Reject abnormally long inputs or those containing common injection markers
+    if (text.length > 500) {
+      return res.status(400).json({ error: 'Input too long' });
+    }
+    const injectionMarkers = /ignore previous|system prompt|bypass|system override|<\|im_start\|>|\[INST\]/i;
+    if (injectionMarkers.test(text)) {
+      return res.status(400).json({ error: 'Invalid input characters detected' });
+    }
     const extracted = await itineraryDraftService.extractTripIntent(text);
+    if (req.user?.organization) {
+      await billingService.trackUsageHook(req.user.organization, 'ai_intent_extraction');
+    }
     res.json(extracted);
   } catch (err) {
     console.error('[aiController] Intent extraction error:', err.message);
@@ -136,13 +160,29 @@ async function handleExtractIntent(req, res, next) {
   }
 }
 
+async function handleGenerateFromAttractions(req, res, next) {
+  try {
+    const { destination, duration, attractions } = req.body;
+    if (!destination || !duration || !attractions || !Array.isArray(attractions)) {
+      return res.status(400).json({ error: 'destination, duration, and attractions array are required' });
+    }
+    const draftedPlan = await itineraryDraftService.generateFromAttractions(destination, duration, attractions);
+    res.json(draftedPlan);
+  } catch (err) {
+    console.error('[aiController] Generate from attractions error:', err.message);
+    res.status(503).json({ message: 'We couldn\'t generate your itinerary from the selected attractions.', details: err.message });
+  }
+}
+
 module.exports = {
   handleSuggestions,
   handleRoutePlan,
+  handleDirections,
   handleHotels,
   handleBudgetEstimate,
   handleFlightInfo,
   handleSmartPlan,
   handleItineraryDraft,
   handleExtractIntent,
+  handleGenerateFromAttractions,
 };

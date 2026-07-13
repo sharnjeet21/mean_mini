@@ -1,16 +1,41 @@
 <div *ngIf="itinerary" class="min-h-screen text-[#f5fbff]">
-  <!-- Breadcrumbs -->
+  <!-- Breadcrumbs & Actions -->
   <div class="px-6 lg:px-12 py-4 max-w-7xl mx-auto flex items-center justify-between pt-20">
-    <button *ngIf="hasHistory" (click)="goBack()" class="flex items-center gap-1.5 text-xs text-[#757684] hover:text-[#3953bd] transition-colors font-medium">
-      <span class="material-symbols-outlined text-sm">arrow_back</span> Back
-    </button>
-    <nav class="flex items-center gap-2 text-xs text-[#757684] font-medium">
-      <a routerLink="/" class="hover:text-[#3953bd] transition-colors">Home</a>
-      <span class="material-symbols-outlined text-xs">chevron_right</span>
-      <a routerLink="/dashboard" class="hover:text-[#3953bd] transition-colors">Dashboard</a>
-      <span class="material-symbols-outlined text-xs">chevron_right</span>
-      <span class="text-[#191c1d]">{{ itinerary.title }}</span>
-    </nav>
+    <div class="flex items-center gap-4">
+      <button *ngIf="hasHistory" (click)="goBack()" class="flex items-center gap-1.5 text-xs text-[#757684] hover:text-[#3953bd] transition-colors font-medium">
+        <span class="material-symbols-outlined text-sm">arrow_back</span> Back
+      </button>
+      <nav class="flex items-center gap-2 text-xs text-[#757684] font-medium">
+        <a routerLink="/" class="hover:text-[#3953bd] transition-colors">Home</a>
+        <span class="material-symbols-outlined text-xs">chevron_right</span>
+        <a routerLink="/dashboard" class="hover:text-[#3953bd] transition-colors">Dashboard</a>
+        <span class="material-symbols-outlined text-xs">chevron_right</span>
+        <span class="text-[#191c1d]">{{ itinerary.title }}</span>
+      </nav>
+    </div>
+    
+    <select [ngModel]="(currencyService.currentCurrency$ | async)" (ngModelChange)="currencyService.setCurrency($event)"
+            class="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-bold text-white outline-none backdrop-blur-md appearance-none cursor-pointer">
+      <option *ngFor="let cur of currencyService.supportedCurrencies" [value]="cur" class="bg-[#071721] text-white">
+        {{ cur }} {{ currencyService.getSymbol(cur) }}
+      </option>
+    </select>
+  </div>
+  <!-- Conversion Info Banner -->
+  <div *ngIf="currencyService.currentCurrency !== 'USD'" class="px-6 lg:px-12 max-w-7xl mx-auto">
+    <div class="flex flex-wrap items-center gap-3 text-[10px] text-[#8ea5b0] py-1.5">
+      <span class="flex items-center gap-1">
+        <span class="material-symbols-outlined text-[12px] text-[#7ae0c3]">currency_exchange</span>
+        1 USD = {{ currencyService.getSymbol(currencyService.currentCurrency) }}{{ currencyService.getConversionInfo().rate | number:'1.2-2' }}
+      </span>
+      <span class="opacity-40">·</span>
+      <span>Includes {{ currencyService.getConversionInfo().feePercent }}% conversion markup</span>
+      <span class="opacity-40">·</span>
+      <span class="flex items-center gap-1">
+        <span class="inline-block h-1.5 w-1.5 rounded-full" [class]="currencyService.getConversionInfo().isLive ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+        {{ currencyService.getConversionInfo().lastUpdated }}
+      </span>
+    </div>
   </div>
 
   <!-- Hero -->
@@ -23,7 +48,7 @@
       <div *ngIf="editMode" class="flex flex-wrap items-center gap-3 mb-5">
         <input [(ngModel)]="editItinerary.duration" type="text" placeholder="Duration" class="bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 outline-none focus:border-[#7ae0c3]">
         <div class="flex items-center bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">
-          <span>$</span>
+          <span>{{ currencyService.getSymbol(currencyService.currentCurrency) }}</span>
           <input [(ngModel)]="editItinerary.budget" type="number" placeholder="Budget" class="bg-transparent text-white outline-none w-20 ml-1">
         </div>
         <select [(ngModel)]="editItinerary.travelStyle" class="bg-white/10 text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 outline-none">
@@ -35,7 +60,7 @@
       <!-- View mode fields in Hero -->
       <div *ngIf="!editMode" class="flex flex-wrap items-center gap-3 mb-5">
         <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">{{ itinerary.duration }}</span>
-        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">${{ itinerary.budget | number }} total</span>
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">{{ currencyService.convert(itinerary.budget).symbol }}{{ currencyService.convert(itinerary.budget).amount | number }} total</span>
         <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 capitalize">{{ itinerary.travelStyle || 'balanced' }}</span>
       </div>
 
@@ -95,7 +120,12 @@
             <button *ngIf="canEditDetailed" (click)="startEditing()"
                     class="rounded-xl border border-[#7ae0c3]/30 bg-[#7ae0c3]/10 px-7 py-3.5 font-semibold text-[#a6ebd7] transition hover:bg-[#7ae0c3]/20">
               <span class="material-symbols-outlined mr-1">edit</span>
-              Edit Itinerary
+              Edit
+            </button>
+            <button *ngIf="canEditDetailed" (click)="shareProposal()"
+                    class="rounded-xl border border-white/12 bg-white/6 px-7 py-3.5 font-semibold text-white transition hover:bg-white/10">
+              <span class="material-symbols-outlined mr-1">share</span>
+              Share Proposal
             </button>
           </ng-container>
 
@@ -137,7 +167,7 @@
           <span class="material-symbols-outlined rounded-lg border border-white/10 bg-white/8 p-2 text-[#a6ebd7]">payments</span>
           <div *ngIf="!editMode">
             <p class="text-xs font-bold uppercase tracking-wider text-[#8ea5b0]">Estimated budget</p>
-            <p class="font-semibold text-white">${{ itinerary.budget | number }}</p>
+            <p class="font-semibold text-white">{{ currencyService.convert(itinerary.budget).symbol }}{{ currencyService.convert(itinerary.budget).amount | number }}</p>
           </div>
           <div *ngIf="editMode">
             <p class="text-xs font-bold uppercase tracking-wider text-[#8ea5b0]">Estimated budget</p>
@@ -171,6 +201,15 @@
           </div>
         </div>
       </aside>
+    </section>
+
+    <!-- Map View -->
+    <section class="mb-14 h-[400px] w-full rounded-3xl overflow-hidden glass-panel relative">
+      <app-map-canvas *ngIf="mapLat && mapLng" [lat]="mapLat" [lng]="mapLng" [pins]="mapPins" [routeSegments]="mapRouteSegments"></app-map-canvas>
+      <div *ngIf="!mapLat || !mapLng" class="absolute inset-0 flex flex-col items-center justify-center text-[#8ea5b0] bg-white/5">
+        <span class="material-symbols-outlined text-4xl mb-3 opacity-50 text-[#a6ebd7]">map</span>
+        <p class="text-sm">Loading map view...</p>
+      </div>
     </section>
 
     <!-- Trip Intelligence -->
@@ -260,13 +299,12 @@
     </section>
     </ng-container>
 
-    <!-- ── Phase 3: Hotel Suggestions + Budget ────────────────────────────────── -->
-    <ng-container *ngIf="false">
+    <!-- ── Phase 4: Cost Intelligence ────────────────────────────────── -->
     <section class="mb-14 grid grid-cols-1 gap-8 lg:grid-cols-2">
       <!-- Hotels -->
       <div>
         <div class="mb-4">
-          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 3</p>
+          <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Phase 4</p>
           <h3 class="text-2xl font-bold text-white">Hotel Recommendations</h3>
         </div>
         <div class="glass-panel rounded-2xl p-6">
@@ -282,16 +320,21 @@
                   <p class="text-xs text-[#8ea5b0]">{{ hotel.location }} · {{ hotel.type }}</p>
                 </div>
                 <div class="text-right">
-                  <p class="text-lg font-bold text-[#7ae0c3]">${{ hotel.estimatedPricePerNight }}</p>
+                  <p class="text-lg font-bold text-[#7ae0c3]">{{ currencyService.convert(hotel.estimatedPricePerNight).symbol }}{{ currencyService.convert(hotel.estimatedPricePerNight).amount | number }}</p>
                   <p class="text-xs text-[#8ea5b0]">/ night</p>
                 </div>
               </div>
               <p class="mt-2 text-sm text-[#b0c3cf]">{{ hotel.description }}</p>
-              <div class="mt-2 flex items-center gap-3">
-                <span class="flex items-center text-sm text-[#ffc96b]">★ {{ hotel.rating }}</span>
-                <div class="flex flex-wrap gap-1.5">
-                  <span *ngFor="let amenity of hotel.amenities" class="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-[#8ea5b0]">{{ amenity }}</span>
+              <div class="mt-2 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <span class="flex items-center text-sm text-[#ffc96b]">★ {{ hotel.rating }}</span>
+                  <div class="flex flex-wrap gap-1.5">
+                    <span *ngFor="let amenity of hotel.amenities" class="rounded-full bg-white/8 px-2 py-0.5 text-[10px] text-[#8ea5b0]">{{ amenity }}</span>
+                  </div>
                 </div>
+                <a [href]="'/api/v1/affiliates/redirect?provider=booking.com&type=hotel&name=' + hotel.name + '&url=https://booking.com'" target="_blank" rel="noopener noreferrer" class="rounded bg-[#003580] px-3 py-1 text-xs font-bold text-white transition hover:bg-[#00224f] flex items-center gap-1">
+                  Book <span class="material-symbols-outlined text-[12px]">open_in_new</span>
+                </a>
               </div>
             </div>
           </div>
@@ -311,14 +354,24 @@
           </button>
           <div *ngIf="budgetError" class="mb-4 rounded-xl border border-rose-400/20 bg-rose-500/10 p-3 text-sm text-rose-100">{{ budgetError }}</div>
           <div *ngIf="budgetEstimate" class="space-y-4">
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between border-b border-white/5 pb-4">
               <div>
                 <p class="text-xs uppercase text-[#8ea5b0]">Total estimated</p>
-                <p class="text-3xl font-bold text-white">{{ budgetEstimate?.currency }} {{ budgetEstimate?.totalEstimated | number }}</p>
+                <p class="text-3xl font-bold text-white">{{ currencyService.convert(budgetEstimate.totalEstimated).symbol }}{{ currencyService.convert(budgetEstimate.totalEstimated).amount | number }}</p>
+                <p *ngIf="budgetEstimate.confidenceRange" class="text-xs text-[#8ea5b0] mt-1">Expected range: {{ currencyService.convert(budgetEstimate.confidenceRange.min).symbol }}{{ currencyService.convert(budgetEstimate.confidenceRange.min).amount | number }} – {{ currencyService.convert(budgetEstimate.confidenceRange.max).symbol }}{{ currencyService.convert(budgetEstimate.confidenceRange.max).amount | number }}</p>
               </div>
-              <span class="rounded-full px-3 py-1 text-sm font-bold" [class]="budgetEstimate?.costLevel === 'budget' ? 'bg-emerald-500/10 text-emerald-200' : budgetEstimate?.costLevel === 'expensive' ? 'bg-rose-500/10 text-rose-200' : 'bg-amber-500/10 text-amber-200'">{{ budgetEstimate?.costLevel }}</span>
+              <div class="text-right flex flex-col items-end gap-2">
+                <span class="rounded-full px-3 py-1 text-sm font-bold" [class]="budgetEstimate.costLevel === 'budget' ? 'bg-emerald-500/10 text-emerald-200' : budgetEstimate.costLevel === 'expensive' ? 'bg-rose-500/10 text-rose-200' : 'bg-amber-500/10 text-amber-200'">{{ budgetEstimate.costLevel }}</span>
+                <span *ngIf="budgetEstimate.budgetScore" class="text-xs font-semibold px-2 py-0.5 rounded border border-white/10" [ngClass]="(budgetEstimate.budgetScore || 0) > 80 ? 'text-emerald-400 bg-emerald-400/10' : (budgetEstimate.budgetScore || 0) > 60 ? 'text-amber-400 bg-amber-400/10' : 'text-rose-400 bg-rose-400/10'">Score: {{ budgetEstimate.budgetScore }}/100</span>
+              </div>
             </div>
-            <div *ngIf="budgetEstimate?.perPerson" class="text-sm text-[#8ea5b0]">{{ budgetEstimate?.currency }} {{ budgetEstimate?.perPerson | number }} per person</div>
+            
+            <div *ngIf="budgetEstimate && budgetEstimate.budgetWarning" class="rounded-xl border border-rose-500/20 bg-rose-500/10 p-4 flex items-start gap-3">
+              <span class="material-symbols-outlined text-rose-400">warning</span>
+              <p class="text-sm text-rose-200">{{ budgetEstimate.budgetWarning }}</p>
+            </div>
+            
+            <div *ngIf="budgetEstimate && budgetEstimate.perPerson" class="text-sm text-[#8ea5b0]">{{ currencyService.convert(budgetEstimate.perPerson).symbol }}{{ currencyService.convert(budgetEstimate.perPerson).amount | number }} per person</div>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-5">
               <div *ngFor="let item of [
                 { key: 'transport', label: 'Transport' },
@@ -327,14 +380,14 @@
                 { key: 'activities', label: 'Activities' },
                 { key: 'miscellaneous', label: 'Misc' }
               ]" class="rounded-xl bg-white/[0.035] p-3 text-center">
-                <p class="text-lg font-bold text-white">{{ getBudgetField(item.key) }}</p>
+                <p class="text-lg font-bold text-white">{{ currencyService.convert(getBudgetField(item.key)).symbol }}{{ currencyService.convert(getBudgetField(item.key)).amount | number }}</p>
                 <p class="text-[10px] uppercase text-[#8ea5b0]">{{ item.label }}</p>
               </div>
             </div>
-            <div *ngIf="budgetEstimate?.tips?.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
+            <div *ngIf="budgetEstimate && budgetEstimate.tips && budgetEstimate.tips.length" class="rounded-xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4">
               <p class="mb-2 text-xs font-bold uppercase text-[#ffd996]">Money tips</p>
               <ul class="space-y-1">
-                <li *ngFor="let tip of budgetEstimate?.tips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
+                <li *ngFor="let tip of budgetEstimate.tips" class="flex items-start gap-2 text-sm text-[#b0c3cf]">
                   <span class="material-symbols-outlined mt-0.5 text-sm text-[#ffc96b]">lightbulb</span>{{ tip }}
                 </li>
               </ul>
@@ -344,8 +397,6 @@
         </div>
       </div>
     </section>
-    </ng-container>
-
     <!-- ── Phase 4: Flight Info ───────────────────────────────────────────────── -->
     <ng-container *ngIf="false">
     <section class="mb-14">
@@ -514,9 +565,9 @@
             </div>
             
             <div class="px-6 pb-6 pt-4 bg-black/10">
-              <div *ngIf="day.activities?.length; else noEditActivities" class="ml-5 space-y-6 border-l-2 border-white/12 pl-7">
-                <div *ngFor="let activity of day.activities; let j = index" class="relative bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-3">
-                  <span class="absolute -left-[39px] top-4 h-3 w-3 rounded-full bg-[#7ae0c3] ring-4 ring-[#7ae0c3]/15"></span>
+              <div *ngIf="day.activities?.length; else noEditActivities" cdkDropList (cdkDropListDropped)="drop($event)" [cdkDropListData]="day.activities" class="ml-5 space-y-6 border-l-2 border-white/12 pl-7">
+                <div *ngFor="let activity of day.activities; let j = index" cdkDrag class="relative bg-white/[0.02] border border-white/5 rounded-xl p-4 space-y-3 cursor-move">
+                  <div class="absolute -left-[39px] top-4 h-3 w-3 rounded-full bg-[#7ae0c3] ring-4 ring-[#7ae0c3]/15 cdkDragHandle cursor-grab active:cursor-grabbing"></div>
                   
                   <div class="flex flex-wrap items-center justify-between gap-4">
                     <div class="flex items-center gap-2">

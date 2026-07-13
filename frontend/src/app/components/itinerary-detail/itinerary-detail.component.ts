@@ -8,13 +8,27 @@ import { ApiService, TripAnalysis } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { fetchItineraryImage, getItineraryImage } from '../../utils/itinerary-image';
 
+import { DragDropModule, CdkDragDrop, moveItemInArray, transferArrayItem } from '@angular/cdk/drag-drop';
+
+import { MapCanvasComponent } from '../map-canvas/map-canvas.component';
+
+import { CurrencyService } from '../../services/currency.service';
+
 @Component({
   selector: 'app-itinerary-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, DragDropModule, MapCanvasComponent],
   templateUrl: './itinerary-detail.component.html',
 })
 export class ItineraryDetailComponent implements OnInit {
+  auth = inject(AuthService);
+  api = inject(ApiService);
+  ai = inject(AiService);
+  currencyService = inject(CurrencyService);
+  private route = inject(ActivatedRoute);
+  private router = inject(Router);
+  private location = inject(Location);
+
   itinerary: any = null;
   analysis: TripAnalysis | null = null;
   loading = true;
@@ -31,6 +45,12 @@ export class ItineraryDetailComponent implements OnInit {
   private platformId = inject(PLATFORM_ID);
   private cdr = inject(ChangeDetectorRef);
   private itineraryId = '';
+
+  // ── Map State ─────────────────────────────────────────────────────────────
+  mapLat: number | null = null;
+  mapLng: number | null = null;
+  mapPins: any[] = [];
+  mapRouteSegments: any[] = [];
 
   // ── AI-enhanced feature state ─────────────────────────────────────────────
   // Route Planning
@@ -68,14 +88,7 @@ export class ItineraryDetailComponent implements OnInit {
   editMode = false;
   editItinerary: any = null;
 
-  constructor(
-    private route: ActivatedRoute,
-    private router: Router,
-    private api: ApiService,
-    public auth: AuthService,
-    private ai: AiService,
-    private location: Location,
-  ) {}
+  constructor() {}
 
   goBack(): void {
     if (history.length > 1) {
@@ -103,6 +116,10 @@ export class ItineraryDetailComponent implements OnInit {
 
   startEditing() {
     this.editItinerary = JSON.parse(JSON.stringify(this.itinerary));
+    // Show budget in user's selected currency for editing
+    if (this.editItinerary.budget) {
+      this.editItinerary.budget = this.currencyService.convert(this.editItinerary.budget).amount;
+    }
     this.editMode = true;
   }
 
@@ -137,28 +154,22 @@ export class ItineraryDetailComponent implements OnInit {
     if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
     if (confirm(`Are you sure you want to remove Day ${this.editItinerary.dailyPlan[index].day || (index + 1)}?`)) {
       this.editItinerary.dailyPlan.splice(index, 1);
-      this.editItinerary.dailyPlan.forEach((d: any, i: number) => {
-        d.day = i + 1;
-      });
-      const nextDayNum = this.editItinerary.dailyPlan.length;
-      this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
+      // Re-number days
+      this.editItinerary.dailyPlan.forEach((d: any, i: number) => d.day = i + 1);
+      const daysCount = this.editItinerary.dailyPlan.length;
+      this.editItinerary.duration = `${daysCount} day` + (daysCount !== 1 ? 's' : '');
     }
   }
 
   addActivity(dayIndex: number) {
     if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
     const day = this.editItinerary.dailyPlan[dayIndex];
-    if (!day.activities) {
-      day.activities = [];
-    }
+    if (!day.activities) day.activities = [];
     day.activities.push({
-      time: '09:00 AM',
+      time: '09:00',
       activity: 'New Activity',
       description: '',
-      location: '',
-      category: 'leisure',
-      suggestedDuration: '1h',
-      whyThisStop: ''
+      location: ''
     });
   }
 
@@ -166,8 +177,26 @@ export class ItineraryDetailComponent implements OnInit {
     if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
     const day = this.editItinerary.dailyPlan[dayIndex];
     if (!day.activities) return;
-    if (confirm('Are you sure you want to remove this activity?')) {
-      day.activities.splice(actIndex, 1);
+    day.activities.splice(actIndex, 1);
+  }
+
+  dropActivity(event: CdkDragDrop<any[]>, dayIndex: number) {
+    if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
+    const day = this.editItinerary.dailyPlan[dayIndex];
+    if (!day.activities) return;
+    moveItemInArray(day.activities, event.previousIndex, event.currentIndex);
+  }
+
+  drop(event: CdkDragDrop<any[]>) {
+    if (event.previousContainer === event.container) {
+      moveItemInArray(event.container.data, event.previousIndex, event.currentIndex);
+    } else {
+      transferArrayItem(
+        event.previousContainer.data,
+        event.container.data,
+        event.previousIndex,
+        event.currentIndex,
+      );
     }
   }
 
@@ -181,6 +210,15 @@ export class ItineraryDetailComponent implements OnInit {
     const temp = day.activities[actIndex];
     day.activities[actIndex] = day.activities[targetIndex];
     day.activities[targetIndex] = temp;
+  }
+
+  shareProposal() {
+    const url = window.location.origin + '/proposal/' + this.itineraryId;
+    navigator.clipboard.writeText(url).then(() => {
+      this.actionMessage = 'Proposal link copied to clipboard!';
+      this.cdr.detectChanges();
+      setTimeout(() => { this.actionMessage = ''; this.cdr.detectChanges(); }, 3000);
+    });
   }
 
   saveChanges() {
@@ -225,6 +263,7 @@ export class ItineraryDetailComponent implements OnInit {
     
     const payload = {
       ...this.editItinerary,
+      budget: this.editItinerary.budget != null ? this.currencyService.convertToUsd(Number(this.editItinerary.budget)) : this.editItinerary.budget,
       updatedAt: this.itinerary.updatedAt,
       __v: this.itinerary.__v
     };
@@ -239,6 +278,7 @@ export class ItineraryDetailComponent implements OnInit {
           this.editItinerary = null;
           this.actionMessage = 'Itinerary updated successfully.';
           this.loadAnalysis();
+          this.loadMapData();
         },
         error: (err) => {
           this.errorMessage = err?.error?.message || err?.message || 'Failed to save changes.';
@@ -272,6 +312,7 @@ export class ItineraryDetailComponent implements OnInit {
     this.api.getItinerary(this.itineraryId).subscribe({
       next: (res) => {
         this.itinerary = res;
+        this.loadMapData();
         const ownReview = (res.reviews || []).find((review: any) => (
           (review.userId?._id || review.userId) === this.auth.currentUser()?.id
         ));
@@ -352,6 +393,7 @@ export class ItineraryDetailComponent implements OnInit {
       duration: parseInt(this.itinerary.duration) || 3,
       travelerCount: this.itinerary.travelerCount || 1,
       travelStyle: this.itinerary.travelStyle || 'balanced',
+      userBudget: this.itinerary.budget
     }).pipe(finalize(() => { this.budgetLoading = false; }))
       .subscribe({
         next: (est) => { this.budgetEstimate = est; },
@@ -566,5 +608,79 @@ export class ItineraryDetailComponent implements OnInit {
     if (!this.budgetEstimate?.breakdown) return 0;
     const record = this.budgetEstimate.breakdown as Record<string, number>;
     return record[key] ?? 0;
+  }
+
+  loadMapData() {
+    if (!this.itinerary || !this.itinerary.destination) return;
+    
+    // First, get the main destination
+    this.ai.geocode(this.itinerary.destination).subscribe({
+      next: (geo) => {
+        this.mapLat = geo.lat;
+        this.mapLng = geo.lng;
+        
+        let pins = [{
+          name: this.itinerary.destination,
+          description: this.itinerary.title,
+          lat: geo.lat,
+          lng: geo.lng
+        }];
+
+        // Extract locations from daily plan, appending the destination to prevent geocoding hallucinations
+        const locationsToGeocode = new Map<string, { query: string; desc: string }>(); 
+        if (this.itinerary.dailyPlan) {
+          this.itinerary.dailyPlan.forEach((day: any) => {
+            if (day.activities) {
+              day.activities.forEach((act: any) => {
+                if (act.location && act.location.trim() !== '') {
+                  const loc = act.location.trim();
+                  // Append destination if it's not already in the location string
+                  const query = loc.toLowerCase().includes(this.itinerary.destination.toLowerCase()) 
+                    ? loc 
+                    : `${loc}, ${this.itinerary.destination}`;
+                  locationsToGeocode.set(loc, { query, desc: act.activity || 'Activity' });
+                }
+              });
+            }
+          });
+        }
+
+        if (locationsToGeocode.size === 0) {
+          this.mapPins = pins;
+          this.cdr.detectChanges();
+          return;
+        }
+
+        // Minimalist batch geocode
+        let pending = locationsToGeocode.size;
+        locationsToGeocode.forEach((data, loc) => {
+          this.ai.geocode(data.query).subscribe({
+            next: (locGeo) => {
+              pins.push({
+                name: loc,
+                description: data.desc,
+                lat: locGeo.lat,
+                lng: locGeo.lng
+              });
+              pending--;
+              if (pending === 0) {
+                this.mapPins = [...pins];
+                this.cdr.detectChanges();
+              }
+            },
+            error: () => {
+              pending--;
+              if (pending === 0) {
+                this.mapPins = [...pins];
+                this.cdr.detectChanges();
+              }
+            }
+          });
+        });
+      },
+      error: () => {
+        console.warn('Map geocoding failed for', this.itinerary.destination);
+      }
+    });
   }
 }

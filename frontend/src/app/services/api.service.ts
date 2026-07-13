@@ -11,7 +11,11 @@ export interface User {
 }
 
 export interface Itinerary {
-  _id: string;
+  id?: string;
+  _id?: string;
+  userId?: string;
+  organization?: string;
+  clientProfile?: any;
   title: string;
   destination: string;
   startDate: string;
@@ -94,6 +98,10 @@ export class ApiService {
   private baseUrl = `${environment.apiUrl}/api/v1`;
 
   constructor(private http: HttpClient) { }
+
+  getAgencyAnalytics(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/itineraries/analytics/agency`);
+  }
 
   // Auth endpoints
   login(credentials: LoginRequest): Observable<any> {

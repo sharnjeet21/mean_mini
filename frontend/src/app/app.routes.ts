@@ -9,6 +9,9 @@ import { AdminDashboardComponent } from './components/admin-dashboard/admin-dash
 import { ProfileComponent } from './components/profile/profile.component';
 import { adminGuard, authGuard, guestGuard } from './guards/auth.guard';
 
+import { AgencyWorkspaceComponent } from './components/agency-workspace/agency-workspace.component';
+import { PublicItineraryComponent } from './components/public-itinerary/public-itinerary.component';
+
 export const routes: Routes = [
   { path: '',          component: HomeComponent },
   { path: 'home',      component: HomeComponent },
@@ -17,7 +20,9 @@ export const routes: Routes = [
   { path: 'register',  component: RegisterComponent, canActivate: [guestGuard] },
   { path: 'dashboard', component: DashboardComponent, canActivate: [authGuard] },
   { path: 'profile',   component: ProfileComponent,  canActivate: [authGuard] },
+  { path: 'agency',    component: AgencyWorkspaceComponent, canActivate: [authGuard] },
   { path: 'itinerary/:id', component: ItineraryDetailComponent, canActivate: [authGuard] },
+  { path: 'proposal/:id', component: PublicItineraryComponent }, // Public read-only
   { path: 'admin',     component: AdminDashboardComponent, canActivate: [adminGuard] },
   { path: '**', redirectTo: '/home', pathMatch: 'full' },
 ];

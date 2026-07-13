@@ -19,7 +19,7 @@ services:
     ports:
       - "5000:5000"
     environment:
-      MONGODB_URI: mongodb://admin:password@mongodb:27017/travel?authSource=admin
+      MONGO_URI: mongodb://admin:password@mongodb:27017/travel?authSource=admin
       PORT: 5000
       JWT_SECRET: ${JWT_SECRET}
       GEMINI_API_KEY: ${GEMINI_API_KEY}

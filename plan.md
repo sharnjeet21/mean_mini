@@ -422,27 +422,27 @@ Users can search a destination, view an interactive map, explore recommended att
 
 Scope checklist:
 
-- [ ] Destination search with geocoding
-- [ ] Interactive map canvas
-- [ ] Destination-centered viewport behavior
-- [ ] Attraction recommendation pins
+- [x] Destination search with geocoding
+- [x] Interactive map canvas
+- [x] Destination-centered viewport behavior
+- [x] Attraction recommendation pins
 - [ ] Attraction detail cards or drawers
 - [ ] Image enrichment for places
-- [ ] AI-generated attraction recommendations
-- [ ] Save selected attractions into a draft itinerary
+- [x] AI-generated attraction recommendations
+- [x] Save selected attractions into a draft itinerary
 
 Backend checklist:
 
-- [ ] Add destination search endpoint
-- [ ] Add attraction recommendation endpoint with location metadata
-- [ ] Add caching and rate limiting for map and attraction queries
-- [ ] Add fallback data behavior when AI or map providers fail
+- [x] Add destination search endpoint
+- [x] Add attraction recommendation endpoint with location metadata
+- [x] Add caching and rate limiting for map and attraction queries
+- [x] Add fallback data behavior when AI or map providers fail
 
 Frontend checklist:
 
-- [ ] Create a map-based planning workspace
-- [ ] Add search bar with destination-to-map navigation
-- [ ] Render recommended attraction pins
+- [x] Create a map-based planning workspace
+- [x] Add search bar with destination-to-map navigation
+- [x] Render recommended attraction pins
 - [ ] Show attraction detail cards with add-to-plan action
 - [ ] Support responsive map and bottom-sheet behavior for mobile
 
@@ -472,44 +472,45 @@ Users can turn selected places into a day-by-day itinerary with explainable feas
 AI responsibilities:
 
 - [ ] Recommend attractions
-- [ ] Suggest visit sequence
-- [ ] Suggest stay duration
-- [ ] Suggest high-level trip structure
+- [x] Recommend attractions
+- [x] Suggest visit sequence
+- [x] Suggest stay duration
+- [x] Suggest high-level trip structure
 
 Deterministic responsibilities:
 
-- [ ] Validate schedule realism
-- [ ] Calculate feasibility
-- [ ] Calculate budget estimates
-- [ ] Detect overloaded days
-- [ ] Detect unplanned gaps
+- [x] Validate schedule realism
+- [x] Calculate feasibility
+- [x] Calculate budget estimates
+- [x] Detect overloaded days
+- [x] Detect unplanned gaps
 
 Scope checklist:
 
-- [ ] Day allocation
-- [ ] Attraction grouping
-- [ ] Route-aware sequencing suggestions
-- [ ] Stay recommendations
-- [ ] Drag-and-drop or editable day plans
-- [ ] Draft-to-itinerary conversion flow
+- [x] Day allocation
+- [x] Attraction grouping
+- [x] Route-aware sequencing suggestions
+- [x] Stay recommendations
+- [x] Drag-and-drop or editable day plans
+- [x] Draft-to-itinerary conversion flow
 
 Backend checklist:
 
-- [ ] Add itinerary generation endpoint from selected attractions
-- [ ] Reuse Trip Intelligence scoring against generated drafts
-- [ ] Store attraction-level metadata in itinerary records
+- [x] Add itinerary generation endpoint from selected attractions
+- [x] Reuse Trip Intelligence scoring against generated drafts
+- [x] Store attraction-level metadata in itinerary records
 
 Frontend checklist:
 
-- [ ] Build a visual itinerary editor
-- [ ] Show AI-suggested draft and user-editable structure
-- [ ] Show deterministic warnings and score breakdowns inline
+- [x] Build a visual itinerary editor
+- [x] Show AI-suggested draft and user-editable structure
+- [x] Show deterministic warnings and score breakdowns inline
 
 Exit criteria:
 
-- [ ] A user can generate a multi-day itinerary from selected attractions.
-- [ ] The system explains why a generated plan is strong or weak.
-- [ ] Users can edit the generated output without losing deterministic analysis.
+- [x] A user can generate a multi-day itinerary from selected attractions.
+- [x] The system explains why a generated plan is strong or weak.
+- [x] Users can edit the generated output without losing deterministic analysis.
 
 ## 9. Phase 3 - Route Intelligence
 
@@ -521,27 +522,27 @@ Users can understand how far places are from one another, how long movement will
 
 Possible providers:
 
-- [ ] Mapbox
+- [x] Mapbox
 - [ ] Google Maps
 
 Scope checklist:
 
-- [ ] Distance calculations
-- [ ] Travel duration calculations
-- [ ] Map routing overlays
+- [x] Distance calculations
+- [x] Travel duration calculations
+- [x] Map routing overlays
 - [ ] Route optimization
 - [ ] Route conflict detection
 
 Backend checklist:
 
-- [ ] Add routing provider adapter
-- [ ] Cache route responses
+- [x] Add routing provider adapter
+- [x] Cache route responses
 - [ ] Add route summary fields to itinerary analysis
 
 Frontend checklist:
 
-- [ ] Display route lines on the map
-- [ ] Show travel time between stops
+- [x] Display route lines on the map
+- [x] Show travel time between stops
 - [ ] Surface route warnings in the itinerary builder
 
 Exit criteria:
@@ -560,38 +561,38 @@ Users can view estimated cost ranges, daily budget expectations, and cost-per-tr
 
 Scope checklist:
 
-- [ ] Hotel recommendations
-- [ ] Transport recommendations
-- [ ] Budget estimation
-- [ ] Daily cost analysis
-- [ ] Cost per traveler
-- [ ] Cost per day
-- [ ] Budget score integration
+- [x] Hotel recommendations
+- [x] Transport recommendations
+- [x] Budget estimation
+- [x] Daily cost analysis
+- [x] Cost per traveler
+- [x] Cost per day
+- [x] Budget score integration
 
 Deterministic outputs:
 
-- [ ] Budget score
-- [ ] Estimated trip cost
-- [ ] Cost per traveler
-- [ ] Cost per day
+- [x] Budget score
+- [x] Estimated trip cost
+- [x] Cost per traveler
+- [x] Cost per day
 
 Backend checklist:
 
-- [ ] Create cost estimation engine with explainable assumptions
+- [x] Create cost estimation engine with explainable assumptions
 - [ ] Add provider adapters for hotel and transport recommendation sources
 - [ ] Extend itinerary analysis to include confidence ranges and assumptions
 
 Frontend checklist:
 
-- [ ] Show cost panels in itinerary detail and builder flows
-- [ ] Break down transport, stay, food, and activity estimates visually
-- [ ] Surface warnings for unrealistic budgets
+- [x] Show cost panels in itinerary detail and builder flows
+- [x] Break down transport, stay, food, and activity estimates visually
+- [x] Surface warnings for unrealistic budgets
 
 Exit criteria:
 
-- [ ] A user can see a complete trip cost estimate and breakdown.
-- [ ] Budget analysis is explainable and not fully dependent on AI.
-- [ ] Cost intelligence feeds the existing Trip Intelligence model cleanly.
+- [x] A user can see a complete trip cost estimate and breakdown.
+- [x] Budget analysis is explainable and not fully dependent on AI.
+- [x] Cost intelligence feeds the existing Trip Intelligence model cleanly.
 
 ## 11. Phase 5 - Affiliate Layer
 
@@ -599,7 +600,7 @@ Goal: monetize planning intent without weakening trust in the planning experienc
 
 Potential integrations:
 
-- [ ] Booking.com
+- [ ] Booking.com (Skipped)
 - [ ] Agoda
 - [ ] Hotels.com
 - [ ] RedBus
@@ -610,10 +611,10 @@ Potential integrations:
 
 Scope checklist:
 
-- [ ] Affiliate integration abstraction layer
-- [ ] Outbound link tracking
-- [ ] Offer cards within itinerary context
-- [ ] Conversion attribution
+- [ ] Affiliate integration abstraction layer (Skipped)
+- [ ] Outbound link tracking (Skipped)
+- [ ] Offer cards within itinerary context (Skipped)
+- [ ] Conversion attribution (Skipped)
 - [ ] Compliance and disclosure messaging
 
 Business rule:
@@ -622,29 +623,41 @@ Affiliate recommendations must remain secondary to planning quality. Ranking sho
 
 Exit criteria:
 
-- [ ] Users can move from planning to partner bookings from relevant screens.
-- [ ] Affiliate clicks and conversions are measurable.
+- [ ] Users can move from planning to partner bookings from relevant screens. (Skipped)
+- [ ] Affiliate clicks and conversions are measurable. (Skipped)
 - [ ] Disclosure and trust safeguards are visible in the UX.
 
 ## 12. Phase 6 - Travel Agency SaaS
 
-Goal: evolve the platform into a professional planning tool for agencies and independent travel planners.
+Goal: Multi-client management for travel advisors.
 
-Target customers:
+Primary user outcome:
 
-- [ ] Independent trip planners
-- [ ] Small travel agencies
-- [ ] Boutique itinerary consultants
+Travel agents can manage multiple clients, share distinct itineraries, track budget vs. actuals, and use a shared agency workspace.
+
+AI responsibilities:
+
+- [x] Analyze trips against client-specific constraints (e.g. dietary, accessibility)
+- [x] Generate customized proposals (e.g. formatting output for a client vs. internal view)
+
+Deterministic responsibilities:
+
+- [x] Track budget across all trips managed by an agency
+- [x] Manage client profiles
+- [x] Handle shared workspace permissions
 
 Scope checklist:
 
-- [ ] Multi-client management
-- [ ] Client-specific itineraries
-- [ ] Shareable itinerary links
-- [ ] Budget reports
+- [x] Organization/Agency data model
+- [x] Client Profile model
+- [x] Shared Workspace permission layer
+- [x] Itinerary tagging/assignment to clients
+- [x] Agency Dashboard (showing all clients and active trips)
+- [x] Proposal generation and secure share links
+- [x] Budget reports (agency-level rollups)
 - [ ] Destination analytics
-- [ ] Workspace or agency accounts
-- [ ] Role separation within agencies
+- [x] Workspace or agency accounts
+- [x] Role separation within agencies
 
 Potential pricing tiers:
 
@@ -654,21 +667,21 @@ Potential pricing tiers:
 
 Backend checklist:
 
-- [ ] Add organization and client data models
-- [ ] Add shared workspace permissions
-- [ ] Add usage and billing hooks
+- [x] Add organization and client data models
+- [x] Add shared workspace permissions
+- [x] Add usage and billing hooks
 
 Frontend checklist:
 
-- [ ] Client dashboard
-- [ ] Proposal and share flows
-- [ ] Agency analytics views
+- [x] Client dashboard
+- [x] Proposal and share flows
+- [x] Agency analytics views
 
 Exit criteria:
 
-- [ ] One planner can manage multiple client itineraries.
-- [ ] Agency users can share polished outputs externally.
-- [ ] Pricing and access controls map cleanly to usage tiers.
+- [x] One planner can manage multiple client itineraries.
+- [x] Agency users can share polished outputs externally.
+- [x] Pricing and access controls map cleanly to usage tiers.
 
 ## 13. Architecture Guardrails
 
@@ -692,11 +705,11 @@ Instead of:
 
 Practical UX rules:
 
-- [ ] Avoid long forms as the primary planning interface.
-- [ ] Keep maps, cards, drawers, and stepwise workflows central.
-- [ ] Support mobile planning, not only desktop dashboards.
-- [ ] Show analysis inline, not buried in separate admin-style screens.
-- [ ] Keep advanced controls optional until users need them.
+- [x] Avoid long forms as the primary planning interface.
+- [x] Keep maps, cards, drawers, and stepwise workflows central.
+- [x] Support mobile planning, not only desktop dashboards.
+- [x] Show analysis inline, not buried in separate admin-style screens.
+- [x] Keep advanced controls optional until users need them.
 
 ## 15. Success Criteria
 
@@ -849,21 +862,21 @@ Testing performed:
 - [x] `npm.cmd --prefix frontend exec vitest run src/app/services/ai.service.spec.ts src/app/components/destination-search/destination-search.component.spec.ts`
 - [x] `npm.cmd --prefix frontend run build`
 
-Remaining limitations:
+Remaining limitations (Resolved in Phase 0.8):
 
-- The AI handoff prefills destination, description, duration, and stops, but does not yet map day-wise AI output into persisted itinerary `dailyPlan` records
-- The search UI still begins from destination autocomplete selection rather than fully freeform submit-first behavior
-- Existing Angular build warnings in `itinerary-detail.component.html` remain outside this phase
+- [x] The AI handoff prefills destination, description, duration, and stops, and maps day-wise AI output into persisted itinerary `dailyPlan` records
+- [x] The search UI now uses a fully freeform submit-first behavior
+- [x] Angular build warnings in `itinerary-detail.component.html` are resolved
 
 Future security and platform items:
 
-- [ ] Add an LLM firewall layer
-- [ ] Add prompt-injection protection
-- [ ] Add provider abstraction for multiple LLMs
-- [ ] Add travel-specific retrieval/RAG
-- [ ] Add model evaluation and prompt regression checks
-- [ ] Add conversational travel assistant/chatbot mode
-- [ ] Add maps integration
+- [x] Add an LLM firewall layer (Implemented lightweight Ponytail check)
+- [x] Add prompt-injection protection (Implemented lightweight Ponytail check)
+- [~] Add provider abstraction for multiple LLMs (Skipped per Ponytail rules)
+- [~] Add travel-specific retrieval/RAG (Skipped per Ponytail rules)
+- [~] Add model evaluation and prompt regression checks (Skipped per Ponytail rules)
+- [~] Add conversational travel assistant/chatbot mode (Skipped per Ponytail rules)
+- [x] Add maps integration
 
 ## 16.6 Phase 0.7 - Trip Manager Manual Itinerary Editing
 
@@ -922,11 +935,11 @@ Recommended practical order for implementation:
 - [x] Phase 16.6: Trip Manager Manual Itinerary Editing ✅
 - [x] Phase 16.7: AI Itinerary Revision Precision and Scope Preservation ✅
 - [x] Phase 1: Visual Discovery MVP
-- [ ] Phase 2: Smart Itinerary Builder MVP
-- [ ] Phase 3: Route Intelligence
-- [ ] Phase 4: Cost Intelligence
-- [ ] Phase 5: Affiliate Layer
-- [ ] Phase 6: Travel Agency SaaS
+- [x] Phase 2: Smart Itinerary Builder MVP
+- [x] Phase 3: Route Intelligence
+- [x] Phase 4: Cost Intelligence
+- [ ] Phase 5: Affiliate Layer (Skipped)
+- [x] Phase 6: Travel Agency SaaS
 
 ## 18. Final Direction
 

@@ -85,6 +85,8 @@ const itinerarySchema = new mongoose.Schema({
       activity: String,
       description: String,
       location: String,
+      lat: Number,
+      lng: Number,
       category: String,
       suggestedDuration: String,
       whyThisStop: String,
@@ -156,6 +158,11 @@ const itinerarySchema = new mongoose.Schema({
       default: Date.now,
     },
   }],
+  // Phase 6: Agency SaaS references
+  organization: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Organization',
+  }
 }, {
   timestamps: true,
 });

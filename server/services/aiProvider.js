@@ -8,8 +8,8 @@
 class GeminiProvider {
   constructor(config = {}) {
     this.apiKey = config.apiKey || process.env.GEMINI_API_KEY;
-    this.model = config.model || 'gemini-2.5-flash';
-    this.timeout = config.timeout || 60000; // 60 seconds default timeout for cloud API
+    this.model = config.model || process.env.GEMINI_MODEL || 'gemini-2.5-flash';
+    this.timeout = config.timeout || Number(process.env.GEMINI_TIMEOUT) || 60000; // default 60 seconds
   }
 
   async _callGemini(prompt) {
@@ -240,7 +240,13 @@ User query: ${query}
   }
 
   async generateItinerarySuggestions(destination) {
-    const prompt = `Suggest top 5 attractions in ${destination} for a travel itinerary. Return ONLY a JSON array of objects with fields name (string) and description (string, max 150 chars), no markdown.`;
+    const prompt = `Suggest top 5 attractions in ${destination} for a travel itinerary. Return ONLY a JSON array of objects with the following fields:
+- name: string (name of the attraction)
+- description: string (max 150 chars)
+- lat: number (actual latitude coordinate of the attraction, e.g. 48.8584 for Eiffel Tower)
+- lng: number (actual longitude coordinate of the attraction, e.g. 2.2945 for Eiffel Tower)
+
+Ensure the coordinates are accurate. Return raw JSON without markdown formatting.`;
     const text = await this._callGemini(prompt);
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
@@ -352,6 +358,100 @@ ${editableInput}
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
+
+  async estimateBudget({ destination, duration, travelerCount = 1, travelStyle = 'balanced', userBudget }) {
+    const prompt = `
+You are a highly capable travel planning assistant. Your task is to estimate realistic trip costs/budgets for the specified parameters.
+You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Output JSON Schema:
+{
+  "totalEstimated": "number (total estimated cost in USD for the entire trip for all travelers)",
+  "costLevel": "string (one of: 'budget', 'moderate', 'expensive')",
+  "breakdown": {
+    "transport": "number (total transport cost in USD)",
+    "accommodation": "number (total accommodation cost in USD)",
+    "food": "number (total food/meals cost in USD)",
+    "activities": "number (total activities/sightseeing cost in USD)",
+    "miscellaneous": "number (total miscellaneous/other cost in USD)"
+  },
+  "tips": ["string (2-3 helpful, highly specific tips to save money or spend wisely at this destination)"]
 }
 
-module.exports = GeminiProvider;
+Input Parameters:
+- Destination: ${destination}
+- Duration: ${duration} days
+- Travelers: ${travelerCount}
+- Travel Style: ${travelStyle}
+${userBudget ? `- User Budget: $${userBudget}` : ''}
+
+Generation Rules:
+- Calculate real-world, realistic average costs for the given destination, travel style, and duration.
+- The sum of transport, accommodation, food, activities, and miscellaneous in breakdown MUST exactly equal totalEstimated.
+- Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
+`;
+
+    const text = await this._callGemini(prompt);
+    const cleaned = this._cleanJson(text);
+    const parsed = JSON.parse(cleaned);
+
+    const totalEstimated = Number(parsed.totalEstimated) || 0;
+    const breakdown = parsed.breakdown || {};
+    const transport = Number(breakdown.transport) || 0;
+    const accommodation = Number(breakdown.accommodation) || 0;
+    const food = Number(breakdown.food) || 0;
+    const activities = Number(breakdown.activities) || 0;
+    const miscellaneous = Number(breakdown.miscellaneous) || 0;
+
+    // Ensure they sum up perfectly
+    const calculatedTotal = transport + accommodation + food + activities + miscellaneous;
+    const finalTotal = calculatedTotal > 0 ? calculatedTotal : totalEstimated;
+
+    return {
+      totalEstimated: finalTotal,
+      costLevel: parsed.costLevel || 'moderate',
+      breakdown: {
+        transport,
+        accommodation,
+        food,
+        activities,
+        miscellaneous
+      },
+      tips: Array.isArray(parsed.tips) ? parsed.tips : []
+    };
+  }
+
+  async geocodeLocation(place) {
+    const prompt = `
+You are a geography assistant. Extract the coordinates (latitude, longitude) and full bounding box (bbox as [minLng, minLat, maxLng, maxLat]) for the location: "${place}".
+You MUST output ONLY valid JSON using the exact schema below. Do not include markdown code blocks, just raw JSON.
+
+Output JSON Schema:
+{
+  "name": "string (the standardized name of the location)",
+  "lat": "number (latitude, e.g. 26.62)",
+  "lng": "number (longitude, e.g. 37.92)",
+  "bbox": ["number", "number", "number", "number"] (array of 4 numbers, or null if unknown)
+}
+
+Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
+`;
+
+    const text = await this._callGemini(prompt);
+    const cleaned = this._cleanJson(text);
+    const parsed = JSON.parse(cleaned);
+
+    if (typeof parsed.lat !== 'number' || typeof parsed.lng !== 'number') {
+      throw new Error('Invalid coordinates returned by AI geocoding');
+    }
+
+    return {
+      name: parsed.name || place,
+      lat: parsed.lat,
+      lng: parsed.lng,
+      bbox: Array.isArray(parsed.bbox) ? parsed.bbox : null
+    };
+  }
+}
+
+module.exports = new GeminiProvider();

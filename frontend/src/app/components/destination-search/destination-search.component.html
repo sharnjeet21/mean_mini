@@ -1,31 +1,23 @@
 <div class="relative w-full">
-  <mat-form-field appearance="outline" class="destination-field w-full">
-    <span matPrefix class="material-symbols-outlined ml-3 mr-2 text-[#7ae0c3]">travel_explore</span>
-    <mat-label>Search a city, island or region</mat-label>
-    <input matInput type="text" [(ngModel)]="query" (ngModelChange)="onInput()" [maxlength]="200"
-           placeholder="Try Kyoto, Santorini or the Swiss Alps" autocomplete="off">
-    <span matSuffix *ngIf="imageLoading" class="mr-4"><mat-spinner diameter="18"></mat-spinner></span>
-  </mat-form-field>
+  <div class="flex items-center gap-2">
+    <mat-form-field appearance="outline" class="destination-field w-full">
+      <span matPrefix class="material-symbols-outlined ml-3 mr-2 text-[#7ae0c3]">travel_explore</span>
+      <mat-label>Describe your ideal trip</mat-label>
+      <input matInput type="text" [(ngModel)]="query" (keydown.enter)="onSearch()" [maxlength]="200"
+             placeholder="e.g. I want to spend a week in Tokyo with my family" autocomplete="off">
+    </mat-form-field>
+    
+    <button mat-flat-button class="primary-action !h-[56px] !rounded-2xl !px-6" 
+            [disabled]="!query.trim() || imageLoading" 
+            (click)="onSearch()">
+      <span *ngIf="!imageLoading">Search</span>
+      <mat-spinner *ngIf="imageLoading" diameter="20"></mat-spinner>
+    </button>
+  </div>
 
   <div *ngIf="rateLimitError"
        class="mt-2 flex items-center gap-2 rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 px-4 py-3 text-sm text-[#ffd996]">
     <span class="material-symbols-outlined text-base">warning</span>{{ rateLimitError }}
-  </div>
-
-  <div *ngIf="showSuggestions && suggestions.length > 0"
-       class="glass-panel relative mt-2 w-full overflow-hidden rounded-[20px] p-1">
-    <button type="button" *ngFor="let suggestion of suggestions; let i = index"
-            (click)="selectSuggestion(suggestion, $event)"
-            class="flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm transition"
-            [class]="i === activeIndex ? 'bg-[#7ae0c3]/15 text-white' : 'text-[#b2c2ca] hover:bg-white/5'">
-      <span class="material-symbols-outlined text-base text-[#7ae0c3]">location_on</span>
-      <span>
-        <ng-container *ngFor="let part of getHighlightedParts(suggestion, query)">
-          <strong *ngIf="part.highlight" class="font-extrabold text-[#a5ecd7]">{{ part.text }}</strong>
-          <span *ngIf="!part.highlight">{{ part.text }}</span>
-        </ng-container>
-      </span>
-    </button>
   </div>
 
   <div *ngIf="imageLoading || imageUrl || imageError" class="mt-4 overflow-hidden rounded-[22px]">
@@ -71,7 +63,7 @@
     <div *ngIf="aiError && !aiLoading" class="rounded-2xl border border-[#ff8d70]/20 bg-[#ff8d70]/10 p-4 text-sm text-[#ffb4a1]">
       <div class="flex items-center justify-between gap-3">
         <span>{{ aiError }}</span>
-        <button type="button" (click)="selectSuggestion(query)" class="rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-white">Retry</button>
+        <button type="button" (click)="onSearch()" class="rounded-full border border-white/10 px-3 py-1 text-xs font-bold text-white">Retry</button>
       </div>
     </div>
 
@@ -115,7 +107,7 @@
         <button *ngIf="aiResult.type === 'itinerary'" type="button" (click)="createItineraryFromAi()" class="rounded-full bg-[#7ae0c3] px-4 py-2 text-sm font-bold text-[#05201f]">
           Create Itinerary
         </button>
-        <button type="button" (click)="selectSuggestion(query)" class="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-white">
+        <button type="button" (click)="onSearch()" class="rounded-full border border-white/10 px-4 py-2 text-sm font-bold text-white">
           Refine Plan
         </button>
       </div>

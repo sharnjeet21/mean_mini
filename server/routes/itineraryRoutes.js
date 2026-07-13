@@ -560,4 +560,26 @@ router.delete('/:id', authenticate, ensureValidId, async (req, res) => {
   }
 });
 
+// Agency Analytics
+router.get('/analytics/agency', authenticate, async (req, res) => {
+  try {
+    const query = req.user.organization ? { organization: req.user.organization } : { createdBy: req.user._id };
+    
+    const itineraries = await Itinerary.find(query);
+    const totalClients = await Itinerary.distinct('clientProfile', query);
+    
+    const totalBudget = itineraries.reduce((sum, trip) => sum + (Number(trip.budget) || 0), 0);
+    const activeProposals = itineraries.filter(i => i.status === 'draft').length;
+    
+    res.json({
+      totalTrips: itineraries.length,
+      totalClients: totalClients.length,
+      totalBudget,
+      activeProposals
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching agency analytics' });
+  }
+});
+
 module.exports = router;

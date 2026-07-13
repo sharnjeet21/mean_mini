@@ -100,53 +100,16 @@ export class DestinationSearchComponent implements OnInit, OnDestroy {
     this.subscriptions.unsubscribe();
   }
 
-  onInput(): void {
-    const value = this.query.trim();
+  onSearch(): void {
+    const place = this.query.trim();
+    if (!place || !this.isValid(place)) return;
 
-    if (!value) {
-      this.clearAll();
-      return;
-    }
-
-    if (!this.isValid(this.query)) {
-      return;
-    }
-
-    this.inputSubject.next(value);
-  }
-
-  @HostListener('keydown', ['$event'])
-  onKeydown(event: KeyboardEvent): void {
-    if (!this.showSuggestions) return;
-
-    switch (event.key) {
-      case 'ArrowDown':
-        event.preventDefault();
-        this.activeIndex = Math.min(this.activeIndex + 1, this.suggestions.length - 1);
-        break;
-      case 'ArrowUp':
-        event.preventDefault();
-        this.activeIndex = Math.max(this.activeIndex - 1, -1);
-        break;
-      case 'Enter':
-        event.preventDefault();
-        if (this.activeIndex >= 0 && this.activeIndex < this.suggestions.length) {
-          this.selectSuggestion(this.suggestions[this.activeIndex]);
-        }
-        break;
-      case 'Escape':
-        this.showSuggestions = false;
-        this.activeIndex = -1;
-        break;
-    }
-  }
-
-  selectSuggestion(place: string, event?: MouseEvent): void {
-    event?.stopPropagation();
-    this.query = place;
     this.showSuggestions = false;
-    this.activeIndex = -1;
-    this.aiResult = null;
+    this.suggestions = [];
+    
+    // Clear and start loading
+    this.clearAll();
+    this.query = place; // restore query text
     this.aiError = '';
     this.aiLoading = true;
     this.attractionsError = '';

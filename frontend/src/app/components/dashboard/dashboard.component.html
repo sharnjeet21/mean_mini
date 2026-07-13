@@ -13,10 +13,32 @@
             {{ auth.isAdmin ? 'Shape a new route, publish custom plans, or manage traveler bookings.' : 'Plan your next trip with AI, explore signature routes, or save your favorite plans.' }}
           </p>
         </div>
-        <button *ngIf="auth.isLoggedIn" mat-flat-button class="primary-action !self-start lg:!self-auto" (click)="openModal()">
-          <span class="material-symbols-outlined mr-2 text-lg">add</span>
-          {{ auth.isAdmin ? 'New itinerary' : 'Plan with AI' }}
-        </button>
+        <div class="flex items-center gap-3 self-start lg:self-auto">
+          <select [ngModel]="(currencyService.currentCurrency$ | async)" (ngModelChange)="currencyService.setCurrency($event)"
+                  class="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-bold text-white outline-none backdrop-blur-md appearance-none cursor-pointer">
+            <option *ngFor="let cur of currencyService.supportedCurrencies" [value]="cur" class="bg-[#071721] text-white">
+              {{ cur }} {{ currencyService.getSymbol(cur) }}
+            </option>
+          </select>
+          <button *ngIf="auth.isLoggedIn" mat-flat-button class="primary-action" (click)="openModal()">
+            <span class="material-symbols-outlined mr-2 text-lg">add</span>
+            {{ auth.isAdmin ? 'New itinerary' : 'Plan with AI' }}
+          </button>
+        </div>
+      </div>
+      <!-- Conversion Info Banner -->
+      <div *ngIf="currencyService.currentCurrency !== 'USD'" class="flex flex-wrap items-center gap-3 text-[10px] text-[#8ea5b0] mt-1">
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-[12px] text-[#7ae0c3]">currency_exchange</span>
+          1 USD = {{ currencyService.getSymbol(currencyService.currentCurrency) }}{{ currencyService.getConversionInfo().rate | number:'1.2-2' }}
+        </span>
+        <span class="opacity-40">·</span>
+        <span>Includes {{ currencyService.getConversionInfo().feePercent }}% conversion markup</span>
+        <span class="opacity-40">·</span>
+        <span class="flex items-center gap-1">
+          <span class="inline-block h-1.5 w-1.5 rounded-full" [class]="currencyService.getConversionInfo().isLive ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+          {{ currencyService.getConversionInfo().lastUpdated }}
+        </span>
       </div>
     </section>
 
@@ -38,7 +60,7 @@
     <section class="glass-panel mb-10 overflow-hidden rounded-[30px]">
       <div class="grid lg:grid-cols-[minmax(0,.78fr)_minmax(0,1.22fr)]">
         <div class="relative min-h-[350px] min-w-0 overflow-hidden">
-          <app-map-canvas [lat]="mapLat" [lng]="mapLng" [pins]="mapPins"></app-map-canvas>
+          <app-map-canvas [lat]="mapLat" [lng]="mapLng" [pins]="mapPins" [routeSegments]="routeSegments"></app-map-canvas>
         </div>
         <div class="min-w-0 bg-[#071721]/45 p-6 sm:p-9">
           <div *ngIf="rateLimitMessage"
@@ -52,14 +74,36 @@
           <app-destination-search (destinationSelected)="onDestinationSelected($event)"></app-destination-search>
           
           <!-- Handoff from map to itinerary wizard -->
-          <div *ngIf="mapPins.length > 0" class="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-[#7ae0c3]/10 border border-[#7ae0c3]/20 rounded-2xl p-4 transition-all duration-300 hover:border-[#7ae0c3]/40">
+          <div *ngIf="mapPins.length > 0" class="mt-4 flex flex-col gap-4 bg-[#7ae0c3]/10 border border-[#7ae0c3]/20 rounded-2xl p-4 transition-all duration-300">
             <div>
               <p class="text-xs font-bold text-white uppercase tracking-wider">Visual Planning Active</p>
-              <p class="text-[10px] text-[#8ea5b0] mt-1">{{ mapPins.length }} recommended places loaded on the map workspace.</p>
+              <p class="text-[10px] text-[#8ea5b0] mt-1">{{ mapPins.length }} recommended places loaded. Select the attractions you want to visit to generate a smart itinerary.</p>
             </div>
-            <button mat-flat-button class="primary-action !min-h-9 !px-4 !text-xs !font-bold" (click)="openModalFromMap()">
-              Generate Itinerary
-            </button>
+            
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div *ngFor="let pin of mapPins" 
+                   class="cursor-pointer rounded-xl border p-3 transition"
+                   [ngClass]="pin.selected ? 'border-[#7ae0c3] bg-[#7ae0c3]/20' : 'border-white/10 bg-white/5 hover:bg-white/10'"
+                   (click)="togglePinSelection(pin)">
+                <div class="flex items-center justify-between mb-1">
+                  <p class="font-bold text-white text-sm truncate pr-2">{{ pin.name }}</p>
+                  <span class="material-symbols-outlined text-base" [class]="pin.selected ? 'text-[#7ae0c3]' : 'text-white/20'">
+                    {{ pin.selected ? 'check_circle' : 'radio_button_unchecked' }}
+                  </span>
+                </div>
+                <p class="text-[10px] text-[#8ea5b0] line-clamp-2">{{ pin.description }}</p>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between mt-2 pt-4 border-t border-white/10">
+              <p class="text-xs text-[#a6ebd7] font-semibold">{{ selectedMapPins.length }} attractions selected</p>
+              <button mat-flat-button class="primary-action !min-h-9 !px-4 !text-xs !font-bold" 
+                      [disabled]="selectedMapPins.length === 0 || aiLoading" 
+                      (click)="generateSmartItineraryFromSelection()">
+                <span *ngIf="!aiLoading">Generate Smart Itinerary</span>
+                <span *ngIf="aiLoading">{{ aiLoadingText }}</span>
+              </button>
+            </div>
           </div>
           <div class="mt-8 border-t border-white/10 pt-6">
             <app-trending-cards (destinationSelected)="onDestinationSelected($event)"></app-trending-cards>
@@ -128,14 +172,18 @@
     <section *ngIf="!loading && !loadError && itineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
       <article *ngFor="let item of sortedItineraries"
                class="group glass-panel overflow-hidden rounded-[28px] transition duration-500 hover:-translate-y-2">
-        <div class="relative h-52 overflow-hidden">
-          <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
-          <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
+        <div class="relative h-52 overflow-hidden flex snap-x snap-mandatory overflow-x-auto hide-scrollbar group/slider">
+          <img *ngFor="let img of (item.sliderImages?.length ? item.sliderImages : [getCardImage(item)])" [src]="img" [alt]="item.destination" class="h-full min-w-full flex-none object-cover snap-center transition duration-700 group-hover:scale-105">
+          
+          <div *ngIf="item.sliderImages?.length > 1" class="absolute bottom-20 right-4 rounded-full bg-black/50 px-2 py-1 text-[10px] text-white backdrop-blur-md opacity-0 transition-opacity group-hover/slider:opacity-100 pointer-events-none z-10">
+            Swipe &rarr;
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent pointer-events-none"></div>
           <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
             <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">
               {{ activeView === 'bookings' ? (item.userBooking?.status || 'booked') : (item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused')) }}
             </span>
-            <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
+            <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">{{ currencyService.convert(item.budget).symbol }}{{ currencyService.convert(item.budget).amount | number }}</span>
           </div>
           <div class="absolute bottom-4 left-5 right-5">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#a3eed9]">{{ item.destination }}</p>

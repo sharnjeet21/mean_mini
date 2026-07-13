@@ -21,10 +21,12 @@ export class MapCanvasComponent implements OnInit, OnChanges {
   @Input() lat: number | null = null;
   @Input() lng: number | null = null;
   @Input() pins: { name: string; description: string; lat: number; lng: number }[] = [];
+  @Input() routeSegments: any[] = [];
 
   private platformId = inject(PLATFORM_ID);
   private map: any = null;
   private markers: any[] = [];
+  private routeLayers: any[] = [];
   private L: any = null;
 
   async ngOnInit() {
@@ -43,6 +45,9 @@ export class MapCanvasComponent implements OnInit, OnChanges {
     if (changes['pins']) {
       this.updatePins();
     }
+    if (changes['routeSegments']) {
+      this.updateRoutes();
+    }
   }
 
   private initMap(): void {
@@ -58,10 +63,31 @@ export class MapCanvasComponent implements OnInit, OnChanges {
 
     this.L.control.zoom({ position: 'bottomright' }).addTo(this.map);
 
-    // Use OpenStreetMap / Mapbox tiles
-    this.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    // Define Basemaps
+    const darkMap = this.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
       attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
-    }).addTo(this.map);
+    });
+
+    const satelliteTiles = this.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
+    });
+
+    const satelliteLabels = this.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap'
+    });
+
+    const satelliteMap = this.L.layerGroup([satelliteTiles, satelliteLabels]);
+
+    // Default to darkMap
+    darkMap.addTo(this.map);
+
+    const baseMaps = {
+      "Dark View": darkMap,
+      "Satellite": satelliteMap
+    };
+    
+    // Add Layer Control
+    this.L.control.layers(baseMaps, null, { position: 'topright' }).addTo(this.map);
 
     this.updatePins();
   }
@@ -78,8 +104,17 @@ export class MapCanvasComponent implements OnInit, OnChanges {
     // Clear existing markers
     this.markers.forEach(m => m.remove());
     this.markers = [];
+    
+    // Clear implicit route lines if they exist
+    if ((this as any)._implicitRouteLine) {
+      (this as any)._implicitRouteLine.remove();
+      (this as any)._implicitRouteLine = null;
+    }
+
+    const latlngs: any[] = [];
 
     this.pins.forEach(pin => {
+      latlngs.push([pin.lat, pin.lng]);
       // Use clean circular canvas markers for a premium dark layout
       const marker = this.L.circleMarker([pin.lat, pin.lng], {
         radius: 8,
@@ -100,10 +135,51 @@ export class MapCanvasComponent implements OnInit, OnChanges {
       this.markers.push(marker);
     });
 
+    // Draw route path connecting pins if there are multiple pins
+    if (this.pins.length > 1) {
+      (this as any)._implicitRouteLine = this.L.polyline(latlngs, {
+        color: '#ffc96b',
+        weight: 3,
+        opacity: 0.8,
+        dashArray: '6, 8',
+        lineCap: 'round'
+      }).addTo(this.map);
+    }
+
     // Auto-fit bounds if we have multiple pins
     if (this.pins.length > 0) {
       const group = this.L.featureGroup(this.markers);
       this.map.fitBounds(group.getBounds().pad(0.1));
     }
+  }
+
+  private updateRoutes(): void {
+    if (!this.map || !this.L) return;
+
+    // Clear existing route layers
+    this.routeLayers.forEach(layer => layer.remove());
+    this.routeLayers = [];
+
+    if (!this.routeSegments || this.routeSegments.length === 0) return;
+
+    this.routeSegments.forEach(segment => {
+      if (segment && segment.geometry) {
+        const layer = this.L.geoJSON(segment.geometry, {
+          style: {
+            color: '#ffc96b',
+            weight: 4,
+            opacity: 0.9,
+            dashArray: '6, 8',
+            lineCap: 'round'
+          }
+        }).bindPopup(`
+          <div style="color: #0c1c24; font-family: sans-serif; padding: 2px;">
+            <strong style="display:block;font-size:12px;">${segment.originName} &rarr; ${segment.destinationName}</strong>
+            <span style="font-size:11px;color:#4f6b7a;">${segment.mode}: ${segment.durationMin} mins (${segment.distanceKm} km)</span>
+          </div>
+        `).addTo(this.map);
+        this.routeLayers.push(layer);
+      }
+    });
   }
 }
