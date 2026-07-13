@@ -36,6 +36,7 @@ export interface Itinerary {
   tripSummary: any;
   createdBy: User;
   isActive: boolean;
+  status?: string;
   bookings?: any[];
   favorites?: string[];
   reviews?: any[];
@@ -192,5 +193,23 @@ export class ApiService {
 
   generateItineraryDraft(input: any): Observable<any> {
     return this.http.post(`${this.baseUrl}/ai/itinerary-draft`, input);
+  }
+
+  // Admin user directory and deletion endpoints
+  getAdminUsers(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/admin/users`);
+  }
+
+  deleteAdminUser(userId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/admin/users/${userId}`);
+  }
+
+  // Superadmin user deletion and status endpoints
+  deleteUser(userId: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/users/${userId}`);
+  }
+
+  toggleUserActiveStatus(userId: string, isActive: boolean): Observable<any> {
+    return this.http.put(`${this.baseUrl}/users/${userId}/status`, { isActive });
   }
 }

@@ -13,12 +13,21 @@
     <div class="hidden items-center gap-1 rounded-full border border-white/10 bg-black/10 p-1 md:flex">
       <a mat-button routerLink="/home" routerLinkActive="!bg-white/10 !text-white"
          [routerLinkActiveOptions]="{exact:true}" class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Home</a>
-      <a mat-button routerLink="/dashboard" routerLinkActive="!bg-white/10 !text-white"
+      
+      <!-- User Workspace link -->
+      <a *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'user'" mat-button routerLink="/dashboard" routerLinkActive="!bg-white/10 !text-white"
          class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Trips</a>
+         
+      <!-- Trip Manager Workspace link -->
+      <a *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'trip-manager'" mat-button routerLink="/dashboard" routerLinkActive="!bg-white/10 !text-white"
+         class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Workspace</a>
+         
+      <!-- Admin Workspace link -->
+      <a *ngIf="auth.isLoggedIn && (auth.currentUser()?.role === 'admin' || auth.currentUser()?.role === 'superadmin')" mat-button routerLink="/admin" routerLinkActive="!bg-white/10 !text-white"
+         class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Workspace</a>
+
       <a mat-button routerLink="/about" routerLinkActive="!bg-white/10 !text-white"
          class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Platform</a>
-      <a *ngIf="auth.isAdmin" mat-button routerLink="/admin" routerLinkActive="!bg-white/10 !text-white"
-        class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Trip Manager</a>
     </div>
 
     <div class="flex items-center gap-2">
@@ -32,7 +41,7 @@
         <div class="hidden text-right lg:block">
           <p class="text-xs font-bold text-white">{{ auth.currentUser()?.name }}</p>
           <p class="text-[9px] uppercase tracking-[0.18em] text-[#7f98a6]">
-            {{ auth.currentUser()?.role === 'admin' ? 'trip manager' : auth.currentUser()?.role }}
+            {{ auth.currentUser()?.role === 'trip-manager' ? 'trip manager' : (auth.currentUser()?.role === 'user' ? 'traveler' : auth.currentUser()?.role) }}
           </p>
         </div>
 
@@ -60,22 +69,38 @@
                     (click)="navigateTo('/profile')" aria-label="Go to My Profile">
               <span class="material-symbols-outlined">person</span>My Profile
             </button>
-            <button class="profile-dropdown-item" role="menuitem"
-                    (click)="navigateTo('/dashboard')" aria-label="Go to Dashboard">
-              <span class="material-symbols-outlined">dashboard</span>Dashboard
-            </button>
-            <button class="profile-dropdown-item" role="menuitem"
-                    (click)="navigateTo('/dashboard', { view: 'bookings' })" aria-label="View my bookings">
-              <span class="material-symbols-outlined">confirmation_number</span>My Bookings
-            </button>
-            <button class="profile-dropdown-item" role="menuitem"
-                    (click)="navigateTo('/dashboard', { view: 'saved' })" aria-label="View wishlist">
-              <span class="material-symbols-outlined">bookmark</span>Wishlist
-            </button>
-            <button *ngIf="auth.isAdmin" class="profile-dropdown-item" role="menuitem"
-                    (click)="navigateTo('/admin')" aria-label="Go to Trip Manager">
-              <span class="material-symbols-outlined">admin_panel_settings</span>Trip Manager
-            </button>
+            
+            <!-- User items -->
+            <ng-container *ngIf="auth.currentUser()?.role === 'user'">
+              <button class="profile-dropdown-item" role="menuitem"
+                      (click)="navigateTo('/dashboard')" aria-label="Go to Dashboard">
+                <span class="material-symbols-outlined">dashboard</span>Dashboard
+              </button>
+              <button class="profile-dropdown-item" role="menuitem"
+                      (click)="navigateTo('/dashboard', { view: 'bookings' })" aria-label="View my bookings">
+                <span class="material-symbols-outlined">confirmation_number</span>My Bookings
+              </button>
+              <button class="profile-dropdown-item" role="menuitem"
+                      (click)="navigateTo('/dashboard', { view: 'saved' })" aria-label="View wishlist">
+                <span class="material-symbols-outlined">bookmark</span>Wishlist
+              </button>
+            </ng-container>
+
+            <!-- Trip Manager items -->
+            <ng-container *ngIf="auth.currentUser()?.role === 'trip-manager'">
+              <button class="profile-dropdown-item" role="menuitem"
+                      (click)="navigateTo('/dashboard')" aria-label="Go to Workspace">
+                <span class="material-symbols-outlined">dashboard</span>Workspace
+              </button>
+            </ng-container>
+
+            <!-- Admin/Superadmin items -->
+            <ng-container *ngIf="auth.currentUser()?.role === 'admin' || auth.currentUser()?.role === 'superadmin'">
+              <button class="profile-dropdown-item" role="menuitem"
+                      (click)="navigateTo('/admin')" aria-label="Go to Workspace">
+                <span class="material-symbols-outlined">admin_panel_settings</span>Workspace
+              </button>
+            </ng-container>
 
             <button class="profile-dropdown-item profile-dropdown-item--danger profile-dropdown-item--divider"
                     role="menuitem" (click)="logout()" aria-label="Sign out">
@@ -95,17 +120,31 @@
   <!-- Mobile menu -->
   <div *ngIf="mobileOpen" class="glass-panel mx-auto mt-2 max-w-7xl rounded-[22px] p-3 md:hidden">
     <a mat-button routerLink="/home" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Home</a>
-    <a mat-button routerLink="/dashboard" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Trips</a>
+    
+    <!-- User Mobile Workspace link -->
+    <a *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'user'" mat-button routerLink="/dashboard" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Trips</a>
+    
+    <!-- Trip Manager Mobile Workspace link -->
+    <a *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'trip-manager'" mat-button routerLink="/dashboard" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Workspace</a>
+    
+    <!-- Admin Mobile Workspace link -->
+    <a *ngIf="auth.isLoggedIn && (auth.currentUser()?.role === 'admin' || auth.currentUser()?.role === 'superadmin')" mat-button routerLink="/admin" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Workspace</a>
+    
     <a mat-button routerLink="/about" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Platform</a>
-    <a *ngIf="auth.isAdmin" mat-button routerLink="/admin" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Trip Manager</a>
+    
     <ng-container *ngIf="auth.isLoggedIn">
       <div class="my-2 border-t border-white/10"></div>
       <a mat-button routerLink="/profile" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">
         <span class="material-symbols-outlined mr-2 text-base">person</span>My Profile
       </a>
-      <button mat-button (click)="navigateTo('/dashboard', { view: 'bookings' })" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">
-        <span class="material-symbols-outlined mr-2 text-base">confirmation_number</span>My Bookings
-      </button>
+      
+      <!-- User Mobile Profile Dropdown item -->
+      <ng-container *ngIf="auth.currentUser()?.role === 'user'">
+        <button mat-button (click)="navigateTo('/dashboard', { view: 'bookings' })" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">
+          <span class="material-symbols-outlined mr-2 text-base">confirmation_number</span>My Bookings
+        </button>
+      </ng-container>
+      
       <button mat-button (click)="logout()" class="!w-full !justify-start !rounded-xl !text-[#ffb0a0]">
         <span class="material-symbols-outlined mr-2 text-base">logout</span>Sign Out
       </button>

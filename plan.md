@@ -412,6 +412,38 @@ Goal: Route all generative AI runtime features through the provider abstraction 
 
 ---
 
+## 6.9 Phase 0.9 — Role-Based Workspaces (SaaS Foundation)
+
+Status: `Completed`
+
+Goal: Transform the Travel Intelligence platform into a professional multi-role SaaS dashboard by providing role-adaptive workspaces while reusing existing components and backend APIs.
+
+### Key Objectives
+- Give every role (`user`, `trip-manager`, `admin`, `superadmin`) its own dedicated workspace layout.
+- Adapt navbar and mobile menus automatically to match user role.
+- Simplify traveler UI by hiding agency analytics, administration directories, and curation tools.
+- Provide a professional curation dashboard for trip managers to oversee owned drafts and published itineraries.
+- Provide a multi-tab admin panel for managing platform itineraries, user directory deactivations/role promotions, and upgrade requests.
+
+### Implementation Details
+- **User Workspace (Traveler)**: Rendered dynamically in `DashboardComponent`. Presents travel explore searches, bookings, saves, and public portfolios, removing management overhead.
+- **Trip Manager Workspace (Curator)**: Rendered dynamically in `DashboardComponent`. Incorporates bento counters for Drafts, Published, and Total itineraries, custom text search filters, and quick publish/archive/edit actions.
+- **Admin & Superadmin Workspace (Administrator)**: Managed under `AdminDashboardComponent` at `/admin` (with router redirects from `/dashboard`). Implements sidebar-navigated views:
+  - *Itineraries*: platform analytics and global portfolio table.
+  - *User Directory*: listing, deactivating, role promoting, and deleting users.
+  - *Access Requests*: superadmin forms to approve or reject pending trip manager upgrade requests with review notes.
+- **Client Extensions**: Added endpoints for admin user listing, user deletion, status toggling, and role updates in `ApiService`.
+- **Navigation Safety**: Restructured navigation guards and custom dropdowns to restrict user access to unauthorized routes.
+
+### Verified Behavior
+- **User View**: Traveler lands on `/dashboard` with explore features. Stats widgets are hidden.
+- **Trip Manager View**: Curator lands on `/dashboard` and sees drafts/published summary metrics and curator search table.
+- **Admin View**: Administrator lands on `/admin` showing itineraries and user directory lists.
+- **Superadmin View**: Superadministrator lands on `/admin` showing user directories and access request reviews.
+- **Builds & Compilation**: Both production builds (`npm run build:all`) and unit tests pass successfully.
+
+---
+
 ## 7. Phase 1 - Visual Discovery
 
 Goal: transform itinerary creation into map-driven planning.

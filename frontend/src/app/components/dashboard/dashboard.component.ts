@@ -1,6 +1,6 @@
 import { ChangeDetectorRef, Component, OnInit, PLATFORM_ID, inject } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ActivatedRoute, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { Subject, of } from 'rxjs';
 import { finalize, timeout, debounceTime, distinctUntilChanged, switchMap, catchError } from 'rxjs/operators';
@@ -80,11 +80,17 @@ export class DashboardComponent implements OnInit {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private ai: AiService,
+    private router: Router,
   ) {}
 
   ngOnInit(): void {
     if (!isPlatformBrowser(this.platformId)) {
       this.loading = false;
+      return;
+    }
+
+    if (this.auth.isAdmin) {
+      this.router.navigate(['/admin']);
       return;
     }
 
@@ -113,6 +119,62 @@ export class DashboardComponent implements OnInit {
     } else if (destination) {
       this.destinationToast = `${destination} is ready to explore below. Save a route or ask a trip manager to publish a custom plan.`;
     }
+  }
+
+  // Trip Manager workspace properties and filters
+  managerSearchTerm = '';
+  managerActiveTab: 'all' | 'draft' | 'published' = 'all';
+
+  get ownedItineraries(): any[] {
+    const userId = this.auth.currentUser()?.id;
+    if (!userId) return [];
+    return this.itineraries.filter((item) => {
+      const creatorId = item.createdBy?._id || item.createdBy?.id || item.createdBy;
+      return creatorId && creatorId.toString() === userId.toString();
+    });
+  }
+
+  get filteredOwnedItineraries(): any[] {
+    const query = this.managerSearchTerm.trim().toLowerCase();
+    return this.ownedItineraries.filter((item) => {
+      const statusMatches = this.managerActiveTab === 'all'
+        || (this.managerActiveTab === 'draft' && item.status === 'draft')
+        || (this.managerActiveTab === 'published' && item.status === 'published');
+      const searchMatches = !query
+        || item.title?.toLowerCase().includes(query)
+        || item.destination?.toLowerCase().includes(query)
+        || item.description?.toLowerCase().includes(query);
+      return statusMatches && searchMatches;
+    });
+  }
+
+  get managerStats() {
+    const owned = this.ownedItineraries;
+    const drafts = owned.filter((item) => item.status === 'draft').length;
+    const published = owned.filter((item) => item.status === 'published').length;
+    const total = owned.length;
+
+    return [
+      { icon: 'draft', label: 'Drafts', value: drafts, badge: 'Draft' },
+      { icon: 'publish', label: 'Published', value: published, badge: 'Live' },
+      { icon: 'folder', label: 'Total itineraries', value: total, badge: 'All' }
+    ];
+  }
+
+  updateItineraryStatus(item: any, newStatus: string): void {
+    this.api.updateItinerary(item._id, { status: newStatus }).subscribe({
+      next: (updated) => {
+        const index = this.itineraries.findIndex((current) => current._id === item._id);
+        if (index >= 0) {
+          this.itineraries[index] = updated;
+          this.cdr.detectChanges();
+        }
+      },
+      error: (err) => {
+        this.formError = err?.error?.message || 'Failed to update itinerary status.';
+        this.cdr.detectChanges();
+      }
+    });
   }
 
   private emptyForm(destination = '') {

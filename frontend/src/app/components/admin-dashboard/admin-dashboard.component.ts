@@ -21,6 +21,20 @@ export class AdminDashboardComponent implements OnInit {
   loading = true;
   errorMessage = '';
 
+  // Tab section views
+  activeSection: 'itineraries' | 'users' | 'requests' = 'itineraries';
+
+  // User directory state
+  users: any[] = [];
+  userSearchTerm = '';
+  userLoading = false;
+  userErrorMessage = '';
+
+  // Access requests state
+  roleRequests: any[] = [];
+  requestsLoading = false;
+  requestsErrorMessage = '';
+
   constructor(
     public auth: AuthService,
     private api: ApiService,
@@ -38,6 +52,8 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit() {
     this.loadDashboard();
+    this.loadUsers();
+    this.loadRoleRequests();
   }
 
   loadDashboard() {
@@ -55,6 +71,105 @@ export class AdminDashboardComponent implements OnInit {
         this.errorMessage = err?.error?.message || 'Administrative data could not be loaded.';
         this.loading = false;
       },
+    });
+  }
+
+  loadUsers(): void {
+    this.userLoading = true;
+    this.userErrorMessage = '';
+    const isSuperadmin = this.auth.currentUser()?.role === 'superadmin';
+    const request = isSuperadmin ? this.api.getUsers() : this.api.getAdminUsers();
+
+    request.subscribe({
+      next: (res) => {
+        this.users = Array.isArray(res) ? res : (res.users || []);
+        this.userLoading = false;
+      },
+      error: (err) => {
+        this.userErrorMessage = err?.error?.message || 'Failed to load user directory.';
+        this.userLoading = false;
+      }
+    });
+  }
+
+  loadRoleRequests(): void {
+    if (this.auth.currentUser()?.role !== 'superadmin') return;
+    this.requestsLoading = true;
+    this.requestsErrorMessage = '';
+    this.api.getRoleRequests().subscribe({
+      next: (requests) => {
+        this.roleRequests = requests;
+        this.requestsLoading = false;
+      },
+      error: (err) => {
+        this.requestsErrorMessage = err?.error?.message || 'Failed to load access requests.';
+        this.requestsLoading = false;
+      }
+    });
+  }
+
+  changeUserRole(user: any, newRole: string): void {
+    if (this.auth.currentUser()?.role !== 'superadmin') return;
+    this.api.updateUserRole(user._id, newRole).subscribe({
+      next: () => {
+        user.role = newRole;
+      },
+      error: (err) => {
+        this.userErrorMessage = err?.error?.message || 'Failed to update user role.';
+      }
+    });
+  }
+
+  toggleUserStatus(user: any): void {
+    if (this.auth.currentUser()?.role !== 'superadmin') return;
+    const newStatus = !user.isActive;
+    this.api.toggleUserActiveStatus(user._id, newStatus).subscribe({
+      next: () => {
+        user.isActive = newStatus;
+      },
+      error: (err) => {
+        this.userErrorMessage = err?.error?.message || 'Failed to toggle user status.';
+      }
+    });
+  }
+
+  deleteUserAccount(userId: string): void {
+    if (!confirm('Permanently delete this user account?')) return;
+    const isSuperadmin = this.auth.currentUser()?.role === 'superadmin';
+    const request = isSuperadmin ? this.api.deleteUser(userId) : this.api.deleteAdminUser(userId);
+
+    request.subscribe({
+      next: () => {
+        this.users = this.users.filter((u) => u._id !== userId);
+      },
+      error: (err) => {
+        this.userErrorMessage = err?.error?.message || 'Failed to delete user account.';
+      }
+    });
+  }
+
+  reviewRequest(reqObj: any, status: 'approved' | 'rejected', notes: string): void {
+    if (this.auth.currentUser()?.role !== 'superadmin') return;
+    this.api.reviewRoleRequest(reqObj._id, status, notes).subscribe({
+      next: () => {
+        reqObj.status = status;
+        reqObj.reviewNotes = notes;
+        this.loadRoleRequests();
+        this.loadUsers();
+      },
+      error: (err) => {
+        this.requestsErrorMessage = err?.error?.message || 'Failed to review request.';
+      }
+    });
+  }
+
+  get filteredUsers() {
+    const query = this.userSearchTerm.trim().toLowerCase();
+    return this.users.filter((u) => {
+      return !query
+        || u.name?.toLowerCase().includes(query)
+        || u.email?.toLowerCase().includes(query)
+        || u.role?.toLowerCase().includes(query);
     });
   }
 
