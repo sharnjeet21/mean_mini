@@ -32,9 +32,6 @@ export class MapCanvasComponent implements OnInit, OnChanges {
   async ngOnInit() {
     if (isPlatformBrowser(this.platformId)) {
       this.L = await import('leaflet');
-      const maplibregl = await import('maplibre-gl');
-      (window as any).maplibregl = maplibregl.default || maplibregl;
-      await import('@maplibre/maplibre-gl-leaflet');
       this.initMap();
     }
   }
@@ -66,29 +63,27 @@ export class MapCanvasComponent implements OnInit, OnChanges {
 
     this.L.control.zoom({ position: 'bottomright' }).addTo(this.map);
 
-    // Define OpenFreeMap Basemaps using MapLibre vector tiles
-    const darkMap = this.L.maplibreGL({
-      style: 'https://tiles.openfreemap.org/styles/dark',
-      attribution: '&copy; <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+    // Define Basemaps
+    const darkMap = this.L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO'
     });
 
-    const libertyMap = this.L.maplibreGL({
-      style: 'https://tiles.openfreemap.org/styles/liberty',
-      attribution: '&copy; <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+    const satelliteTiles = this.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri'
     });
 
-    const positronMap = this.L.maplibreGL({
-      style: 'https://tiles.openfreemap.org/styles/positron',
-      attribution: '&copy; <a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> &copy; <a href="https://www.openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>'
+    const satelliteLabels = this.L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Esri, HERE, Garmin, &copy; OpenStreetMap'
     });
+
+    const satelliteMap = this.L.layerGroup([satelliteTiles, satelliteLabels]);
 
     // Default to darkMap
     darkMap.addTo(this.map);
 
     const baseMaps = {
       "Dark View": darkMap,
-      "Detailed View": libertyMap,
-      "Light View": positronMap
+      "Satellite": satelliteMap
     };
     
     // Add Layer Control
