@@ -1,265 +1,140 @@
-# Travel Intelligence & Itinerary Management Platform
+# 🌍 Travel Intelligence & Itinerary Management Platform
 
-A full-stack MEAN application for discovering, designing, evaluating, publishing, saving, booking, and reviewing travel itineraries. It combines Angular Material glassmorphism, role-based workflows, AI-assisted discovery, deterministic trip analysis, community engagement, and live MongoDB analytics.
+[![Node.js Version](https://img.shields.io/badge/Node.js-%3E%3D24.0.0-green.svg?style=flat-squared&logo=node.js)](https://nodejs.org/)
+[![Angular](https://img.shields.io/badge/Angular-21.0.0-red.svg?style=flat-squared&logo=angular)](https://angular.dev/)
+[![Docker](https://img.shields.io/badge/Docker-Workable-blue.svg?style=flat-squared&logo=docker)](https://www.docker.com/)
+[![License](https://img.shields.io/badge/License-ISC-orange.svg?style=flat-squared)](LICENSE)
 
-## Highlights
+A high-performance, full-stack MEAN application for discovering, planning, analyzing, publishing, booking, and reviewing travel itineraries. It features a responsive Angular Material glassmorphism layout, role-based workflows, dynamic AI-assisted suggestions, and deterministic feasibility analysis.
 
-- Four-step itinerary wizard with automatic duration, budget allocation, and multi-stop planning.
-- Dashboard, detail, saved, and booking views backed by live MongoDB data.
-- Shared deterministic destination imagery so dashboard cards and detail heroes always match.
-- Destination autocomplete, trending places, attraction suggestions, and destination previews.
-- Graceful local fallbacks when Gemini, Unsplash, DNS, or an external MongoDB deployment is unavailable.
-- Trip Intelligence scores for feasibility, completeness, pace, budget quality, and sustainability.
-- Risk register and explainable recommendations derived from itinerary data.
-- Wishlist, booking, cancellation, ratings, reviews, and administrator analytics.
-- JWT authentication, automatic expired-session cleanup, role authorization, rate limiting, and input validation.
-- Responsive Angular Material interface with glass surfaces, ambient shapes, and local optimized travel images.
+---
 
-## Architecture
+## ✨ Features at a Glance
+
+*   **⚡ Four-Step Itinerary Wizard**: Dynamic planning with automatic duration tracking, budget allocation, and multi-stop management.
+*   **🤖 AI-Powered Budget & Tips**: Dynamic Gemini AI cost breakdown (`transport`, `accommodation`, `food`, `activities`, `miscellaneous`) and destination-specific tips with fallback systems.
+*   **📍 Accurate Geocoding Fallback**: OpenStreetMap Nominatim integration resolves precise global coordinates (e.g., Dubai, Bhutan, AlUla) without requiring any API keys.
+*   **📊 Trip Intelligence Scores**: Real-time feasibility assessment including completeness, pace, budget accuracy, and sustainability metrics.
+*   **🛡️ Multi-Role Governance**: Tailored access control workflows for standard users, administrators, and super-administrators.
+*   **🐳 Production-Ready Docker & Jenkins**: Fully integrated multi-container setup via `docker-compose` and clean frontend pipelines.
+
+---
+
+## 🏗️ Architecture
 
 ```mermaid
-flowchart LR
-    U[Angular 21 SPA] -->|JWT + REST| E[Express API]
-    E --> A[Authentication and RBAC]
-    E --> I[Itinerary and engagement domain]
-    E --> T[Trip Intelligence engine]
-    E --> X[AI integration layer]
-    I --> M[(MongoDB)]
+flowchart TD
+    U["🖥️ Angular Client (Port 4200)"] -->|JWT + REST Requests| E["⚙️ Express API Gateway (Port 5000)"]
+    E --> A["🔒 Auth & Role RBAC"]
+    E --> I["🗺️ Itinerary Management"]
+    E --> T["🧠 Trip Intelligence Engine"]
+    E --> X["🤖 AI & External Services Integration"]
+    
+    I --> M[("🗄️ MongoDB Database")]
     A --> M
     T --> I
-    X --> G[Google Gemini]
-    X --> P[Unsplash]
-    E --> C[TTL caches and deterministic fallbacks]
+    
+    X --> G["🧠 Google Gemini AI"]
+    X --> P["🖼️ Unsplash Imagery"]
+    X --> O["📍 OpenStreetMap Nominatim"]
+    E --> C["💾 In-Memory TTL Cache"]
 ```
 
-## Technology
+---
 
-- MongoDB and Mongoose
-- Express.js and Node.js 24
-- Angular 21, Angular Material, TypeScript, RxJS, Tailwind CSS
-- JWT and bcryptjs
-- Google Gemini and Unsplash APIs
-- Node test runner, fast-check, Vitest, Playwright, and Puppeteer
+## 🛠️ Technology Stack
 
-## Prerequisites
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **Frontend** | Angular 21, TypeScript, RxJS, Angular Material, Tailwind CSS | High-performance SPA with modern glassmorphism styling |
+| **Backend** | Node.js 24, Express.js | Stateless REST API service |
+| **Database** | MongoDB, Mongoose ORM | Document storage for users, itineraries, and bookings |
+| **AI/GIS** | Google Gemini, Unsplash, OpenStreetMap Nominatim | Smart suggestions, image matching, and geocoding |
+| **Testing** | Vitest, Puppeteer, Node Test Runner, fast-check | Unit, property-based, and UI validation suites |
 
-- Node.js `24.17.0`
+---
+
+## 🚀 Setup & Execution
+
+### Prerequisites
+- Node.js `>=24.17.0`
 - npm `11.x`
-- MongoDB Atlas or a local MongoDB instance if you do not want to rely on the development fallback
-- Docker Desktop or Docker Engine if you want to validate the container workflow
+- MongoDB (Atlas instance or local process)
 
-Version files included in the repo:
-
-- `.node-version`
-- `.nvmrc`
-
-On Windows PowerShell, if `npm` is blocked by execution policy, use `npm.cmd` instead.
-
-## Development workflow
-
-- `main` is the stable branch.
-- Use `yuvraj-dev` for active development work.
-- Do not commit Phase 0 or feature work directly on `main`.
-
-## Local setup
-
-Install root and frontend dependencies from a clean environment:
-
+### 1. Installation
+Install workspace dependencies from the root directory:
 ```bash
-npm ci
-cd frontend
-npm ci
-cd ..
-copy .env.example .env
+npm run install:all
 ```
+*(Or manually install in root and `./frontend` with `npm ci`)*
 
-If you already have stale `node_modules` content, remove it first and rerun the clean install steps above.
-
-## Environment setup
-
-Copy `.env.example` to `.env` and fill in the values you need:
-
+### 2. Configuration
+Create a `.env` file in the root directory:
 ```env
 NODE_ENV=development
 PORT=5000
-MONGO_URI=
-JWT_SECRET=replace_with_a_long_random_secret
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=your_jwt_signing_secret
 CLIENT_ORIGINS=http://localhost:4200
-UNSPLASH_ACCESS_KEY=
-GEMINI_API_KEY=
-MAPBOX_TOKEN=
+UNSPLASH_ACCESS_KEY=your_unsplash_api_key
+GEMINI_API_KEY=your_gemini_api_key
+MAPBOX_TOKEN=mock_token
 ```
 
-Notes:
-
-- Leave `MONGO_URI` blank only if you intentionally want to test the development fallback path.
-- `MAPBOX_TOKEN` is included as a forward-looking placeholder for the map-driven roadmap work.
-- `RENDER_EXTERNAL_URL` is supplied by Render in production and does not need to be set locally.
-
-## Run the app
-
-Seed demo data when you have a working database connection:
-
+### 3. Running Locally
+Seed the database with sample travel data:
 ```bash
 npm run seed:demo
 ```
-
-Run backend and frontend together:
-
+Start both the Angular dev server and backend Express application concurrently:
 ```bash
 npm run dev:full
 ```
+- **Web App**: `http://localhost:4200`
+- **Express Backend**: `http://localhost:5000`
+- **Health Check**: `http://localhost:5000/api/health`
 
-Useful local URLs:
+---
 
-- Angular development server: `http://localhost:4200`
-- Express API: `http://localhost:5000`
-- Health endpoint: `http://localhost:5000/api/health`
+## 🐳 Docker Deployment
 
-## Commands
-
-```bash
-npm run dev
-npm run frontend
-npm run dev:full
-npm run test
-npm run test:frontend
-npm run test:all
-npm run test:ui
-npm run frontend:build
-npm run init-db
-npm run seed:demo
-```
-
-## Testing
-
-Backend test suite:
+The project is fully containerized. To spin up the database, backend, and frontend together:
 
 ```bash
-npm run test:backend
+docker-compose up --build -d
 ```
 
-Frontend unit tests:
+### Port Mappings
+- **Frontend SPA**: `http://localhost:80`
+- **API Services**: `http://localhost:5000`
+- **MongoDB**: `localhost:27017`
 
-```bash
-npm run test:frontend
-```
+---
 
-Full test run:
+## 🧑‍💻 Scripts & Commands
 
-```bash
-npm run test:all
-```
+| Command | Action |
+| :--- | :--- |
+| `npm run dev` | Start backend Express API server |
+| `npm run frontend` | Start Angular frontend client |
+| `npm run dev:full` | Run backend and frontend concurrently |
+| `npm run test` | Run backend test suites |
+| `npm run test:frontend` | Run frontend unit tests |
+| `npm run test:all` | Run all test cases in the workspace |
+| `npm run init-db` | Reset and initialize clean database schema |
+| `npm run seed:demo` | Seed mock itineraries, bookings, and reviews |
 
-UI audit script:
+---
 
-```bash
-npm run test:ui
-```
+## 🔒 Roles & Access Control
 
-## Build
+*   **👤 Standard User**: Can explore published itineraries, save to favorites, manage bookings, write reviews, and submit Manager requests.
+*   **🛡️ Admin (Trip Manager)**: Full capability to draft, publish, and manage itineraries and review user booking flows.
+*   **👑 Superadmin**: Complete capability including role modifications, status adjustments, and platform analytics.
 
-Frontend-only build:
+---
 
-```bash
-npm run frontend:build
-```
+## 📬 Authors & License
 
-Root production-style build:
-
-```bash
-npm run build
-```
-
-The root build script installs frontend dependencies and then runs the Angular production build from the correct working directory.
-
-## Docker
-
-The repo includes a frontend container build in `frontend/Dockerfile`.
-
-Build it with:
-
-```bash
-docker build -t mean-mini-frontend ./frontend
-```
-
-Requirements:
-
-- Docker daemon must be running
-- Local Docker config must be accessible
-- Node 24 is used inside the Docker build stage
-
-## Backend startup notes
-
-- The backend uses `MONGO_URI` when provided.
-- In development, it attempts to fall back to an in-memory MongoDB only when the required dev dependency set is installed.
-- In production, startup aborts if MongoDB is unavailable.
-
-## Roles
-
-- User: browse, search, save, book, cancel, and review published itineraries.
-- Admin: publish and manage itineraries and booking workflows.
-- Superadmin: administrator capabilities plus user and role governance.
-
-## API overview
-
-### Authentication
-
-- `POST /api/auth/register`
-- `POST /api/auth/login`
-- `GET /api/auth/profile`
-
-### Itineraries and intelligence
-
-- `GET /api/itinerary`
-- `POST /api/itinerary`
-- `GET /api/itinerary/:id`
-- `PUT /api/itinerary/:id`
-- `DELETE /api/itinerary/:id`
-- `GET /api/itinerary/:id/analysis`
-
-### Engagement
-
-- `POST /api/itinerary/:id/favorite`
-- `GET /api/itinerary/user/favorites`
-- `POST /api/itinerary/:id/book`
-- `DELETE /api/itinerary/:id/book`
-- `GET /api/itinerary/user/bookings`
-- `POST /api/itinerary/:id/reviews`
-
-### Administration
-
-- `GET /api/itinerary/analytics/overview`
-- `PATCH /api/itinerary/:id/bookings/:bookingId/status`
-- `GET /api/users`
-- `PUT /api/users/:id/role`
-- `PUT /api/users/:id/status`
-- `GET /api/role-requests`
-- `PUT /api/role-requests/:id/review`
-
-### AI assistance
-
-- `GET /api/image?place=...`
-- `GET /api/suggestions?q=...`
-- `GET /api/trending`
-- `GET /api/itinerary-suggestions?place=...`
-
-## Deployment
-
-The repository includes Docker, Jenkins, and Render configuration. For Render, use:
-
-```text
-Runtime: Node
-Build Command: npm ci --omit=dev && npm run build
-Start Command: npm start
-Health Check Path: /api/health
-Node Version: 24.17.0
-```
-
-See [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md) for the data model, scoring method, security design, testing strategy, limitations, and viva-oriented notes.
-
-## Authors
-
-Contact: sharn.ss123@gmail.com, yuvsingh716@gmail.com
-
-License: ISC
+- **Authors**: sharn.ss123@gmail.com, yuvsingh716@gmail.com
+- **License**: [ISC License](LICENSE)
