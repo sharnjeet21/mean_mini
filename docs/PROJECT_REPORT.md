@@ -201,7 +201,7 @@ Property-based tests use generated inputs to verify invariants rather than only 
 At the current checkpoint:
 
 - 31 backend tests pass.
-- 34 frontend tests pass.
+- 37 frontend tests pass.
 - The Angular application builds successfully.
 - JavaScript syntax validation passes.
 - Production dependency audits report zero known vulnerabilities.
