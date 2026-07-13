@@ -62,63 +62,102 @@ export class PublicItineraryComponent implements OnInit {
         this.mapLat = geo.lat;
         this.mapLng = geo.lng;
         
-        let pins = [{
+        const mainPin = {
           name: this.itinerary.destination,
           description: this.itinerary.title,
           lat: geo.lat,
           lng: geo.lng
-        }];
+        };
 
-        // Extract locations from daily plan, appending the destination to prevent geocoding hallucinations
-        const locationsToGeocode = new Map<string, { query: string; desc: string }>(); 
+        // Extract unique locations in chronological order of appearance in the daily plan
+        const orderedLocations: { name: string; query: string; desc: string }[] = [];
+        const seenLocations = new Set<string>();
+
         if (this.itinerary.dailyPlan) {
           this.itinerary.dailyPlan.forEach((day: any) => {
             if (day.activities) {
               day.activities.forEach((act: any) => {
                 if (act.location && act.location.trim() !== '') {
                   const loc = act.location.trim();
-                  // Append destination if it's not already in the location string
-                  const query = loc.toLowerCase().includes(this.itinerary.destination.toLowerCase()) 
-                    ? loc 
-                    : `${loc}, ${this.itinerary.destination}`;
-                  locationsToGeocode.set(loc, { query, desc: act.activity || 'Activity' });
+                  if (!seenLocations.has(loc)) {
+                    seenLocations.add(loc);
+                    const query = loc.toLowerCase().includes(this.itinerary.destination.toLowerCase()) 
+                      ? loc 
+                      : `${loc}, ${this.itinerary.destination}`;
+                    orderedLocations.push({
+                      name: loc,
+                      query,
+                      desc: act.activity || 'Activity'
+                    });
+                  }
                 }
               });
             }
           });
         }
 
-        if (locationsToGeocode.size === 0) {
-          this.mapPins = pins;
+        if (orderedLocations.length === 0) {
+          this.mapPins = [mainPin];
           this.cdr.detectChanges();
           return;
         }
 
-        let pending = locationsToGeocode.size;
-        locationsToGeocode.forEach((data, loc) => {
-          this.ai.geocode(data.query).subscribe({
-            next: (locGeo) => {
-              pins.push({
-                name: loc,
-                description: data.desc,
-                lat: locGeo.lat,
-                lng: locGeo.lng
+        // Fetch geocodes for all ordered locations in parallel
+        const geocodeObservables = orderedLocations.map(loc => 
+          this.ai.geocode(loc.query)
+        );
+
+        import('rxjs').then(({ forkJoin }) => {
+          forkJoin(geocodeObservables).subscribe({
+            next: (results) => {
+              const pins = [mainPin];
+              results.forEach((locGeo, idx) => {
+                pins.push({
+                  name: orderedLocations[idx].name,
+                  description: orderedLocations[idx].desc,
+                  lat: locGeo.lat,
+                  lng: locGeo.lng
+                });
               });
-              pending--;
-              if (pending === 0) {
-                this.mapPins = [...pins];
-                this.cdr.detectChanges();
+
+              this.mapPins = pins;
+              this.cdr.detectChanges();
+
+              // Fetch route directions sequentially between adjacent pins (excluding the mainPin center)
+              const stops = pins.slice(1);
+              if (stops.length > 1) {
+                const routeRequests: any[] = [];
+                for (let i = 0; i < stops.length - 1; i++) {
+                  routeRequests.push(
+                    this.ai.getRouteDirections(
+                      { lat: stops[i].lat, lng: stops[i].lng },
+                      { lat: stops[i + 1].lat, lng: stops[i + 1].lng },
+                      this.itinerary.transportMode || 'driving'
+                    )
+                  );
+                }
+
+                forkJoin(routeRequests).subscribe({
+                  next: (routes) => {
+                    this.mapRouteSegments = routes;
+                    this.cdr.detectChanges();
+                  },
+                  error: (err) => {
+                    console.warn('Failed to load route directions:', err);
+                  }
+                });
               }
             },
-            error: () => {
-              pending--;
-              if (pending === 0) {
-                this.mapPins = [...pins];
-                this.cdr.detectChanges();
-              }
+            error: (err) => {
+              console.warn('Geocoding of daily plan stops failed:', err);
+              this.mapPins = [mainPin];
+              this.cdr.detectChanges();
             }
           });
         });
+      },
+      error: () => {
+        console.warn('Map geocoding failed for', this.itinerary.destination);
       }
     });
   }
