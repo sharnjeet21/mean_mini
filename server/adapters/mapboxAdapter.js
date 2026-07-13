@@ -4,7 +4,7 @@
 const MAPBOX_TOKEN = process.env.MAPBOX_TOKEN || 'mock_token';
 const aiProvider = require('../services/aiProvider');
 
-async function geocode(place) {
+async function fetchGeocodeAPI(place) {
   if (MAPBOX_TOKEN && MAPBOX_TOKEN !== 'mock_token') {
     try {
       const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(place)}.json?access_token=${MAPBOX_TOKEN}`;
@@ -25,7 +25,7 @@ async function geocode(place) {
         }
       }
     } catch (err) {
-      console.warn('[mapboxAdapter] Mapbox geocoding failed, trying AI/Nominatim fallback:', err.message);
+      console.warn('[mapboxAdapter] Mapbox geocoding failed:', err.message);
     }
   }
 
@@ -57,15 +57,49 @@ async function geocode(place) {
       }
     }
   } catch (err) {
-    console.warn('[mapboxAdapter] Nominatim geocoding failed, trying AI:', err.message);
+    console.warn('[mapboxAdapter] Nominatim geocoding failed:', err.message);
   }
 
-  // Fallback to AI geocoding
+  return null;
+}
+
+async function geocode(place) {
+  if (!place || !place.trim()) {
+    return { name: place, lat: 25.0, lng: 45.0, bbox: null };
+  }
+
+  // 1. Try full place string
+  let result = await fetchGeocodeAPI(place);
+  if (result) return result;
+
+  // 2. Split place string by common delimiters: " to ", " - ", " -> ", ",", " and ", " & "
+  const parts = place.split(/(?:\s+to\s+|\s+-\s+|\s+->\s+|,|\s+and\s+|\s+&\s+)/i)
+                     .map(p => p.trim())
+                     .filter(Boolean);
+
+  if (parts.length > 1) {
+    // Try first segment + last segment (e.g. "Top Station, India")
+    const combo = `${parts[0]}, ${parts[parts.length - 1]}`;
+    result = await fetchGeocodeAPI(combo);
+    if (result) return result;
+
+    // Try just the first segment (e.g. "Kochi")
+    result = await fetchGeocodeAPI(parts[0]);
+    if (result) return result;
+
+    // Try other segments sequentially
+    for (let i = 1; i < parts.length - 1; i++) {
+      result = await fetchGeocodeAPI(parts[i]);
+      if (result) return result;
+    }
+  }
+
+  // 3. Fallback to AI geocoding
   if (process.env.GEMINI_API_KEY) {
     try {
-      const result = await aiProvider.geocodeLocation(place);
-      if (result && typeof result.lat === 'number' && typeof result.lng === 'number') {
-        return result;
+      const aiResult = await aiProvider.geocodeLocation(place);
+      if (aiResult && typeof aiResult.lat === 'number' && typeof aiResult.lng === 'number') {
+        return aiResult;
       }
     } catch (err) {
       console.error('[mapboxAdapter] AI geocoding fallback failed:', err.message);
