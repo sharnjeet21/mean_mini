@@ -37,6 +37,7 @@ export interface Itinerary {
   createdBy: User;
   isActive: boolean;
   status?: string;
+  imageUrl?: string;
   bookings?: any[];
   favorites?: string[];
   reviews?: any[];
@@ -173,6 +174,10 @@ export class ApiService {
       requestedRole: 'admin', 
       reason 
     });
+  }
+
+  getMyRoleRequest(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/role-requests/my-request`);
   }
 
   getRoleRequests(): Observable<any[]> {

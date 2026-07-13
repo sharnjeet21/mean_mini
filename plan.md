@@ -940,6 +940,26 @@ Checklist:
 - [x] Enforce backend constraints validation.
 - [x] Incorporate user context and version/updatedAt in revision fingerprints.
 
+## 16.8 Phase 0.9 - UX Polish and Refinement
+
+Status: `Completed`
+
+Problem statement:
+The travel platform felt like an early MVP with standard alert dialogs, lack of notification context, raw loading overlays, missing empty states, and unlinked role management workflows.
+
+Goal:
+Transition the application into a professional travel planning SaaS by adding dynamic toast notifications, custom Promise-based confirmation dialogs, contextual loading states, custom empty states with Call-to-Actions (CTAs), a side-by-side bento grid dashboard in details view, Unsplash dynamic banner fetching, Traveler curator request forms, and a Developer Privilege toggle switch.
+
+Checklist:
+- [x] Create custom global `ToastService` and `ConfirmService`.
+- [x] Display sliding entrance toasts and confirmation modal overlays in the root layout.
+- [x] Replace native browser confirms and alerts across dashboard and detail views.
+- [x] Design distinct empty states with descriptive icons, text, and redirect CTAs.
+- [x] Group itinerary overview, feasibility statistics, and details in a unified side-by-side bento grid dashboard.
+- [x] Fetch destination banners dynamically from the Unsplash API proxy on load.
+- [x] Build traveler curator application forms with pending/declined review states.
+- [x] Add developer role switches in dev mode to instantly toggle user privileges.
+
 ## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:

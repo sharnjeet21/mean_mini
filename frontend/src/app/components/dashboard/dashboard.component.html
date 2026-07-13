@@ -97,19 +97,28 @@
       </div>
 
       <div *ngIf="!loading && !loadError && itineraries.length === 0"
-           class="glass-panel flex min-h-80 flex-col items-center justify-center rounded-[30px] px-6 text-center">
-        <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3]">
-          <span class="material-symbols-outlined text-3xl">explore</span>
+           class="glass-panel flex min-h-80 flex-col items-center justify-center rounded-[30px] px-6 py-10 text-center">
+        <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
+          <span class="material-symbols-outlined text-3xl">
+            {{ activeView === 'saved' ? 'bookmark' : (activeView === 'bookings' ? 'confirmation_number' : 'explore') }}
+          </span>
         </span>
-        <h3 class="mt-5 text-xl font-bold text-white">
-          {{ activeView === 'saved' ? 'Nothing saved just yet' : activeView === 'bookings' ? 'No bookings on the horizon' : 'No published routes yet' }}
+        <h3 class="text-xl font-bold text-white mb-2">
+          {{ activeView === 'saved' ? 'Nothing saved just yet' : (activeView === 'bookings' ? 'No bookings on the horizon' : 'No published routes yet') }}
         </h3>
-        <p class="mt-2 max-w-md text-sm text-[#8199a5]">
-          {{ activeView === 'explore' ? 'A trip manager can publish routes for travelers to save and book.' : 'Explore live routes and keep the ones that feel right.' }}
+        <p class="mt-1 max-w-sm text-xs leading-relaxed text-[#8199a5] mb-6">
+          {{ activeView === 'saved' ? 'Explore our curated routes and save your favorites to plan your next getaway.' : (activeView === 'bookings' ? 'Find a featured itinerary and book your travel logistics to get started.' : 'A trip manager can publish routes for travelers to save and book.') }}
         </p>
-        <button *ngIf="activeView === 'explore' && auth.isLoggedIn" mat-flat-button class="primary-action !mt-6" (click)="openModal()">
-          Plan your first trip
-        </button>
+        <div class="flex gap-3 justify-center">
+          <button *ngIf="activeView !== 'explore'" (click)="setView('explore')"
+                  class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
+            Explore live routes
+          </button>
+          <button *ngIf="activeView === 'explore' && auth.isLoggedIn" (click)="openModal()"
+                  class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
+            Plan custom trip with AI
+          </button>
+        </div>
       </div>
 
       <section *ngIf="!loading && !loadError && itineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
@@ -214,9 +223,26 @@
 
         <!-- Owned itineraries list -->
         <div class="p-6">
-          <div *ngIf="filteredOwnedItineraries.length === 0" class="text-center py-10">
-            <span class="material-symbols-outlined text-4xl text-[#7f98a6] mb-2">folder_open</span>
-            <p class="text-sm text-[#8ea5b0]">No itineraries matched your selection.</p>
+          <div *ngIf="filteredOwnedItineraries.length === 0" class="flex flex-col items-center justify-center py-12 px-6 text-center">
+            <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
+              <span class="material-symbols-outlined text-3xl">{{ managerActiveTab === 'draft' ? 'drafts' : (managerActiveTab === 'published' ? 'publish' : 'folder_open') }}</span>
+            </span>
+            <h3 class="text-lg font-bold text-white mb-2">
+              {{ managerActiveTab === 'draft' ? 'No draft itineraries' : (managerActiveTab === 'published' ? 'No published routes' : 'Your board is empty') }}
+            </h3>
+            <p class="text-xs text-[#8ea5b0] max-w-sm mb-6 leading-relaxed">
+              {{ managerActiveTab === 'draft' ? 'Describe your dream trip to our AI planning assistant, or shape one manually.' : (managerActiveTab === 'published' ? 'Draft itineraries can be published instantly to travelers.' : 'Get started by creating a manual route or planning with AI.') }}
+            </p>
+            <div class="flex gap-3 justify-center">
+              <button *ngIf="managerActiveTab === 'published' && ownedItineraries.length > 0" (click)="managerActiveTab = 'draft'"
+                      class="px-5 py-2.5 rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-[#b2c2ca] hover:bg-white/10 transition-all cursor-pointer">
+                View Drafts
+              </button>
+              <button (click)="openModal()"
+                      class="px-5 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
+                Plan with AI
+              </button>
+            </div>
           </div>
           
           <div *ngIf="filteredOwnedItineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">

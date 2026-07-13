@@ -449,26 +449,6 @@ async function seedDemoData({ connect = true, log = console.log } = {}) {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
   const users = [];
 
-  // Upsert the specific user requested by the user as superadmin
-  const requestedUser = await User.findOneAndUpdate(
-    { email: 'yuvismail2802@gmail.com' },
-    {
-      $set: {
-        name: 'yuvraj',
-        role: 'superadmin',
-        isActive: true,
-      },
-      $setOnInsert: {
-        _id: '6a42040097022ace5f2d2881',
-        email: 'yuvismail2802@gmail.com',
-        password: '$2b$10$8.cmPq6Nd3U6kTpO1qWF4e2vvaboBM8vCxuskpt23kE.eplslhJLm',
-        createdAt: new Date('2026-06-29T05:34:56.754Z'),
-      },
-    },
-    { upsert: true, new: true, setDefaultsOnInsert: true }
-  );
-  users.push(requestedUser);
-
   for (const demoUser of demoUsers) {
     const user = await User.findOneAndUpdate(
       { email: demoUser.email },

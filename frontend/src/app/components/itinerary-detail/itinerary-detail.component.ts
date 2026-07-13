@@ -7,6 +7,8 @@ import { AiService, BudgetEstimate, Flight, Hotel, RoutePlan, SmartPlan } from '
 import { ApiService, TripAnalysis } from '../../services/api.service';
 import { AuthService } from '../../services/auth.service';
 import { fetchItineraryImage, getItineraryImage } from '../../utils/itinerary-image';
+import { ToastService } from '../../services/toast.service';
+import { ConfirmService } from '../../services/confirm.service';
 
 @Component({
   selector: 'app-itinerary-detail',
@@ -74,6 +76,8 @@ export class ItineraryDetailComponent implements OnInit {
     public auth: AuthService,
     private ai: AiService,
     private location: Location,
+    private toastService: ToastService,
+    private confirmService: ConfirmService,
   ) {}
 
   goBack(): void {
@@ -105,14 +109,18 @@ export class ItineraryDetailComponent implements OnInit {
     this.editMode = true;
   }
 
-  cancelEditing() {
+  async cancelEditing() {
     const currentJson = JSON.stringify(this.itinerary);
     const editJson = JSON.stringify(this.editItinerary);
-    // Compare only content fields to see if dirty
     if (currentJson !== editJson) {
-      if (!confirm('You have unsaved changes. Are you sure you want to discard them?')) {
-        return;
-      }
+      const confirmed = await this.confirmService.confirm({
+        title: 'Discard Changes',
+        message: 'You have unsaved edits. Are you sure you want to discard them?',
+        confirmText: 'Discard',
+        cancelText: 'Keep Editing',
+        type: 'danger'
+      });
+      if (!confirmed) return;
     }
     this.editMode = false;
     this.editItinerary = null;
@@ -132,16 +140,22 @@ export class ItineraryDetailComponent implements OnInit {
     this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
   }
 
-  removeDay(index: number) {
+  async removeDay(index: number) {
     if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
-    if (confirm(`Are you sure you want to remove Day ${this.editItinerary.dailyPlan[index].day || (index + 1)}?`)) {
-      this.editItinerary.dailyPlan.splice(index, 1);
-      this.editItinerary.dailyPlan.forEach((d: any, i: number) => {
-        d.day = i + 1;
-      });
-      const nextDayNum = this.editItinerary.dailyPlan.length;
-      this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
-    }
+    const confirmed = await this.confirmService.confirm({
+      title: 'Remove Day',
+      message: `Are you sure you want to remove Day ${this.editItinerary.dailyPlan[index].day || (index + 1)}?`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    if (!confirmed) return;
+    this.editItinerary.dailyPlan.splice(index, 1);
+    this.editItinerary.dailyPlan.forEach((d: any, i: number) => {
+      d.day = i + 1;
+    });
+    const nextDayNum = this.editItinerary.dailyPlan.length;
+    this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
   }
 
   addActivity(dayIndex: number) {
@@ -161,13 +175,19 @@ export class ItineraryDetailComponent implements OnInit {
     });
   }
 
-  removeActivity(dayIndex: number, actIndex: number) {
+  async removeActivity(dayIndex: number, actIndex: number) {
     if (!this.editItinerary || !this.editItinerary.dailyPlan) return;
     const day = this.editItinerary.dailyPlan[dayIndex];
     if (!day.activities) return;
-    if (confirm('Are you sure you want to remove this activity?')) {
-      day.activities.splice(actIndex, 1);
-    }
+    const confirmed = await this.confirmService.confirm({
+      title: 'Remove Activity',
+      message: `Are you sure you want to remove the activity "${day.activities[actIndex].activity}"?`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    if (!confirmed) return;
+    day.activities.splice(actIndex, 1);
   }
 
   moveActivity(dayIndex: number, actIndex: number, direction: 'up' | 'down') {
@@ -186,32 +206,32 @@ export class ItineraryDetailComponent implements OnInit {
     if (!this.editItinerary) return;
     
     if (!this.editItinerary.title || !this.editItinerary.title.trim()) {
-      alert('Title cannot be empty.');
+      this.toastService.warning('Title cannot be empty.');
       return;
     }
     if (!this.editItinerary.destination || !this.editItinerary.destination.trim()) {
-      alert('Destination cannot be empty.');
+      this.toastService.warning('Destination cannot be empty.');
       return;
     }
     if (this.editItinerary.budget !== undefined && this.editItinerary.budget !== null && this.editItinerary.budget < 0) {
-      alert('Budget cannot be negative.');
+      this.toastService.warning('Budget cannot be negative.');
       return;
     }
     if (this.editItinerary.travelerCount !== undefined && this.editItinerary.travelerCount !== null && this.editItinerary.travelerCount < 1) {
-      alert('Traveler count must be at least 1.');
+      this.toastService.warning('Traveler count must be at least 1.');
       return;
     }
     if (this.editItinerary.dailyPlan) {
       for (const day of this.editItinerary.dailyPlan) {
         if (!day.title || !day.title.trim()) {
-          alert(`Day ${day.day} must have a title.`);
+          this.toastService.warning(`Day ${day.day} must have a title.`);
           return;
         }
         if (day.activities) {
           for (let j = 0; j < day.activities.length; j++) {
             const act = day.activities[j];
             if (!act.activity || !act.activity.trim()) {
-              alert(`Activity ${j + 1} on Day ${day.day} must have a name.`);
+              this.toastService.warning(`Activity ${j + 1} on Day ${day.day} must have a name.`);
               return;
             }
           }
@@ -236,14 +256,12 @@ export class ItineraryDetailComponent implements OnInit {
           this.imageUrl = getItineraryImage(updated);
           this.editMode = false;
           this.editItinerary = null;
-          this.actionMessage = 'Itinerary updated successfully.';
+          this.toastService.success('Draft changes saved successfully.');
           this.loadAnalysis();
         },
         error: (err) => {
-          this.errorMessage = err?.error?.message || err?.message || 'Failed to save changes.';
-          if (err?.status === 409) {
-            alert('Conflict error: ' + this.errorMessage);
-          }
+          const errMsg = err?.error?.message || err?.message || 'Failed to save changes.';
+          this.toastService.error(errMsg);
         }
       });
   }
@@ -277,6 +295,14 @@ export class ItineraryDetailComponent implements OnInit {
           this.reviewComment = ownReview.comment || '';
         }
         this.imageUrl = getItineraryImage(res);
+        if (!res.imageUrl && res.destination) {
+          fetchItineraryImage(res.destination).then((url) => {
+            if (url) {
+              this.imageUrl = url;
+              this.cdr.detectChanges();
+            }
+          });
+        }
 
         // Auto-populate AI feature fields from itinerary data
         this.routeDest = res.destination || '';
@@ -427,9 +453,12 @@ export class ItineraryDetailComponent implements OnInit {
           this.revisionInstruction = '';
           this.changeSummary = [];
           this.imageUrl = getItineraryImage(updated);
+          this.toastService.success('AI Revision applied successfully.');
         },
         error: (err) => {
-          this.revisionError = err?.error?.message || err?.message || 'Failed to apply revision.';
+          const msg = err?.error?.message || err?.message || 'Failed to apply revision.';
+          this.revisionError = msg;
+          this.toastService.error(msg);
         }
       });
   }
@@ -494,9 +523,11 @@ export class ItineraryDetailComponent implements OnInit {
         next: (res) => {
           this.itinerary.engagement.isFavorite = res.isFavorite;
           this.itinerary.engagement.favoriteCount = res.favoriteCount;
-          this.actionMessage = res.message;
+          this.toastService.success(res.message);
         },
-        error: (err) => { this.errorMessage = err?.error?.message || 'Could not update your wishlist.'; },
+        error: (err) => {
+          this.toastService.error(err?.error?.message || 'Could not update your wishlist.');
+        },
       });
   }
 
@@ -511,13 +542,19 @@ export class ItineraryDetailComponent implements OnInit {
       next: (res) => {
         this.itinerary.engagement.hasBooked = !this.itinerary.engagement.hasBooked;
         if (res.bookingCount !== undefined) this.itinerary.engagement.bookingCount = res.bookingCount;
-        this.actionMessage = res.message;
+        this.toastService.success(res.message);
       },
-      error: (err) => { this.errorMessage = err?.error?.message || 'Could not update this booking.'; },
+      error: (err) => {
+        this.toastService.error(err?.error?.message || 'Could not update this booking.');
+      },
     });
   }
 
   submitReview() {
+    if (this.reviewRating < 1) {
+      this.toastService.warning('Please select a rating before submitting.');
+      return;
+    }
     this.actionLoading = 'review';
     this.clearFeedback();
     this.api.submitReview(this.itineraryId, this.reviewRating, this.reviewComment)
@@ -526,9 +563,12 @@ export class ItineraryDetailComponent implements OnInit {
         next: (res) => {
           this.itinerary.reviews = res.reviews;
           this.itinerary.engagement = { ...this.itinerary.engagement, ...res.engagement };
-          this.actionMessage = res.message;
+          this.toastService.success(res.message || 'Review submitted successfully!');
+          this.reviewComment = '';
         },
-        error: (err) => { this.errorMessage = err?.error?.message || 'Could not submit your review.'; },
+        error: (err) => {
+          this.toastService.error(err?.error?.message || 'Could not submit your review.');
+        },
       });
   }
 

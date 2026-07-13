@@ -5,6 +5,8 @@ import { RouterModule, Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { AuthService } from '../../services/auth.service';
 import { ApiService } from '../../services/api.service';
+import { ToastService } from '../../services/toast.service';
+import { ConfirmService } from '../../services/confirm.service';
 
 @Component({
   selector: 'app-admin-dashboard',
@@ -40,6 +42,8 @@ export class AdminDashboardComponent implements OnInit {
     private api: ApiService,
     private location: Location,
     private router: Router,
+    private toastService: ToastService,
+    private confirmService: ConfirmService,
   ) {}
 
   goBack(): void {
@@ -93,7 +97,7 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   loadRoleRequests(): void {
-    if (this.auth.currentUser()?.role !== 'superadmin') return;
+    if (!['admin', 'superadmin'].includes(this.auth.currentUser()?.role || '')) return;
     this.requestsLoading = true;
     this.requestsErrorMessage = '';
     this.api.getRoleRequests().subscribe({
@@ -133,32 +137,44 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  deleteUserAccount(userId: string): void {
-    if (!confirm('Permanently delete this user account?')) return;
+  async deleteUserAccount(userId: string): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Delete Account',
+      message: 'Are you sure you want to permanently delete this user account? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    if (!confirmed) return;
+
     const isSuperadmin = this.auth.currentUser()?.role === 'superadmin';
     const request = isSuperadmin ? this.api.deleteUser(userId) : this.api.deleteAdminUser(userId);
 
     request.subscribe({
       next: () => {
         this.users = this.users.filter((u) => u._id !== userId);
+        this.toastService.success('User account deleted successfully.');
       },
       error: (err) => {
         this.userErrorMessage = err?.error?.message || 'Failed to delete user account.';
+        this.toastService.error(this.userErrorMessage);
       }
     });
   }
 
   reviewRequest(reqObj: any, status: 'approved' | 'rejected', notes: string): void {
-    if (this.auth.currentUser()?.role !== 'superadmin') return;
+    if (!['admin', 'superadmin'].includes(this.auth.currentUser()?.role || '')) return;
     this.api.reviewRoleRequest(reqObj._id, status, notes).subscribe({
-      next: () => {
+      next: (res) => {
         reqObj.status = status;
         reqObj.reviewNotes = notes;
+        this.toastService.success(res.message || `Request ${status} successfully.`);
         this.loadRoleRequests();
         this.loadUsers();
       },
       error: (err) => {
         this.requestsErrorMessage = err?.error?.message || 'Failed to review request.';
+        this.toastService.error(this.requestsErrorMessage);
       }
     });
   }
@@ -183,14 +199,26 @@ export class AdminDashboardComponent implements OnInit {
     ];
   }
 
-  delete(id: string) {
-    if (!confirm('Permanently delete this itinerary?')) return;
+  async delete(id: string): Promise<void> {
+    const confirmed = await this.confirmService.confirm({
+      title: 'Delete Itinerary',
+      message: 'Are you sure you want to permanently delete this itinerary? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      type: 'danger'
+    });
+    if (!confirmed) return;
+
     this.api.deleteItinerary(id).subscribe({
       next: () => {
         this.itineraries = this.itineraries.filter((item) => item._id !== id);
+        this.toastService.success('Itinerary deleted successfully.');
         this.loadDashboard();
       },
-      error: (err) => { this.errorMessage = err?.error?.message || 'Delete failed.'; },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'Delete failed.';
+        this.toastService.error(this.errorMessage);
+      },
     });
   }
 

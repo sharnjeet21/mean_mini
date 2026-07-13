@@ -31,9 +31,17 @@ router.get("/:id", authenticate, authorize('superadmin'), async (req, res) => {
   }
 });
 
-// Update user role (Superadmin only)
-router.put("/:id/role", authenticate, authorize('superadmin'), async (req, res) => {
+// Update user role (Superadmin only or self-switch in development)
+router.put("/:id/role", authenticate, async (req, res) => {
   try {
+    const isSelf = req.params.id === req.user._id.toString();
+    const isDev = process.env.NODE_ENV === 'development' || process.env.NODE_ENV !== 'production';
+    const isSuperadmin = req.user.role === 'superadmin';
+
+    if (!isSuperadmin && !(isSelf && isDev)) {
+      return res.status(403).json({ message: "Insufficient permissions." });
+    }
+
     const { role } = req.body;
     
     if (!['user', 'admin', 'superadmin'].includes(role)) {

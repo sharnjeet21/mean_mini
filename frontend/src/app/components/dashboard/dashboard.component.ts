@@ -12,6 +12,8 @@ import { DestinationSearchComponent } from '../destination-search/destination-se
 import { TrendingCardsComponent } from '../trending-cards/trending-cards.component';
 import { getItineraryImage } from '../../utils/itinerary-image';
 import { AiService, AiTravelSearchResult } from '../../services/ai.service';
+import { ToastService } from '../../services/toast.service';
+import { ConfirmService } from '../../services/confirm.service';
 
 export interface Stop {
   name: string;
@@ -81,6 +83,8 @@ export class DashboardComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private ai: AiService,
     private router: Router,
+    private toastService: ToastService,
+    private confirmService: ConfirmService,
   ) {}
 
   ngOnInit(): void {
@@ -161,7 +165,19 @@ export class DashboardComponent implements OnInit {
     ];
   }
 
-  updateItineraryStatus(item: any, newStatus: string): void {
+  async updateItineraryStatus(item: any, newStatus: string): Promise<void> {
+    const action = newStatus === 'published' ? 'Publish' : 'Archive';
+    const confirmed = await this.confirmService.confirm({
+      title: `${action} Itinerary`,
+      message: `Are you sure you want to ${action.toLowerCase()} "${item.title}"?`,
+      confirmText: action,
+      cancelText: 'Cancel',
+      type: 'info'
+    });
+    if (!confirmed) return;
+
+    this.toastService.info(`${action === 'Publish' ? 'Publishing' : 'Archiving'} itinerary...`, 2000);
+
     this.api.updateItinerary(item._id, { status: newStatus }).subscribe({
       next: (updated) => {
         const index = this.itineraries.findIndex((current) => current._id === item._id);
@@ -169,10 +185,10 @@ export class DashboardComponent implements OnInit {
           this.itineraries[index] = updated;
           this.cdr.detectChanges();
         }
+        this.toastService.success(`Itinerary successfully ${newStatus === 'published' ? 'published' : 'archived'}.`);
       },
       error: (err) => {
-        this.formError = err?.error?.message || 'Failed to update itinerary status.';
-        this.cdr.detectChanges();
+        this.toastService.error(err?.error?.message || 'Failed to update itinerary status.');
       }
     });
   }
@@ -298,10 +314,23 @@ export class DashboardComponent implements OnInit {
     this.showModal = true;
   }
 
-  closeModal(): void {
+  async closeModal(): Promise<void> {
+    if (this.generatedDraft || this.form.title.trim() || this.form.destination.trim() || this.aiPromptText.trim()) {
+      const confirmed = await this.confirmService.confirm({
+        title: 'Discard Draft',
+        message: 'Are you sure you want to discard this trip plan? All unsaved data will be lost.',
+        confirmText: 'Discard',
+        cancelText: 'Keep Planning',
+        type: 'danger'
+      });
+      if (!confirmed) return;
+    }
     this.stopLoadingTexts();
     this.showModal = false;
     this.currentStep = 1;
+    this.generatedDraft = null;
+    this.extractedIntent = null;
+    this.cdr.detectChanges();
   }
 
   nextStep(): void {
@@ -394,10 +423,13 @@ export class DashboardComponent implements OnInit {
     ).subscribe({
       next: (created) => {
         this.itineraries.unshift(created);
+        this.toastService.success('Draft itinerary successfully created!');
         this.showModal = false;
       },
       error: (error) => {
-        this.formError = error?.error?.message || error?.message || 'Failed to create itinerary.';
+        const errMsg = error?.error?.message || error?.message || 'Failed to create itinerary.';
+        this.formError = errMsg;
+        this.toastService.error(errMsg);
       },
     });
   }
@@ -524,7 +556,9 @@ export class DashboardComponent implements OnInit {
       error: (err) => {
         this.stopLoadingTexts();
         this.aiLoading = false;
-        this.formError = err?.error?.message || err?.message || 'Failed to extract trip intent. Please try again.';
+        const msg = err?.error?.message || err?.message || 'Failed to extract trip intent. Please try again.';
+        this.formError = msg;
+        this.toastService.error(msg);
         this.cdr.detectChanges();
       }
     });
@@ -611,20 +645,26 @@ export class DashboardComponent implements OnInit {
             this.generatedDraft = created; // Store populated database record (with _id)
             this.itineraries.unshift(created);
             this.creationMode = 'preview';
+            this.toastService.success('AI itinerary draft created successfully!');
             this.cdr.detectChanges();
           },
           error: (saveErr) => {
-            this.formError = 'AI generated the trip, but we failed to save the draft: ' + (saveErr?.error?.message || saveErr?.message);
+            const msg = 'AI generated the trip, but we failed to save the draft: ' + (saveErr?.error?.message || saveErr?.message);
+            this.formError = msg;
+            this.toastService.error(msg);
             this.cdr.detectChanges();
           }
         });
       },
       error: (err) => {
+        let msg = '';
         if (err?.status === 408 || err?.name === 'TimeoutError' || String(err?.message || '').toLowerCase().includes('time out') || String(err?.message || '').toLowerCase().includes('timeout')) {
-          this.formError = 'The local AI planner took too long to respond. Your trip description has been preserved. Try again.';
+          msg = 'The local AI planner took too long to respond. Your trip description has been preserved. Try again.';
         } else {
-          this.formError = err?.error?.message || err?.message || 'Failed to generate itinerary draft. Please try again.';
+          msg = err?.error?.message || err?.message || 'Failed to generate itinerary draft. Please try again.';
         }
+        this.formError = msg;
+        this.toastService.error(msg);
         this.cdr.detectChanges();
       }
     });

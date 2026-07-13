@@ -23,7 +23,7 @@
         <span class="material-symbols-outlined">group</span><span>User Directory</span>
       </button>
       
-      <button *ngIf="auth.currentUser()?.role === 'superadmin'" (click)="activeSection = 'requests'"
+      <button *ngIf="['admin', 'superadmin'].includes(auth.currentUser()?.role || '')" (click)="activeSection = 'requests'"
          [class]="activeSection === 'requests' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
         <span class="material-symbols-outlined">admin_panel_settings</span><span>Access Requests</span>
       </button>
@@ -295,7 +295,7 @@
     </ng-container>
 
     <!-- ── ACCESS REQUESTS SECTION ────────────────────────────────────────── -->
-    <ng-container *ngIf="activeSection === 'requests' && auth.currentUser()?.role === 'superadmin'">
+    <ng-container *ngIf="activeSection === 'requests' && ['admin', 'superadmin'].includes(auth.currentUser()?.role || '')">
       <div *ngIf="requestsErrorMessage" class="mb-6 rounded-xl border border-[#ff8d70]/20 bg-[#ff8d70]/10 p-4 text-[#ffb4a1]">{{ requestsErrorMessage }}</div>
       <div *ngIf="requestsLoading" class="mb-6 rounded-xl border border-white/10 bg-white/5 p-10 text-center text-[#8ea5b0]">Loading requests directory…</div>
       

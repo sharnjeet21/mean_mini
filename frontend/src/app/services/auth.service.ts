@@ -105,6 +105,18 @@ export class AuthService {
     this.router.navigate(['/login']);
   }
 
+  updateCurrentUserRole(newRole: string) {
+    const user = this.currentUser();
+    if (user) {
+      user.role = newRole;
+      const storage = this.storage;
+      if (storage) {
+        storage.setItem('user', JSON.stringify(user));
+      }
+      this.currentUser.set({ ...user });
+    }
+  }
+
   clearSession(): void {
     const storage = this.storage;
     if (storage) {

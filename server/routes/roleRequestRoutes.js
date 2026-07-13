@@ -81,8 +81,8 @@ router.get("/my-request", authenticate, async (req, res) => {
   }
 });
 
-// Get all role requests (Superadmin only)
-router.get("/", authenticate, authorize('superadmin'), async (req, res) => {
+// Get all role requests (Admin/Superadmin)
+router.get("/", authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
     const requests = await RoleRequest.find()
       .populate('userId', 'name email')
@@ -99,8 +99,8 @@ router.get("/", authenticate, authorize('superadmin'), async (req, res) => {
   }
 });
 
-// Review role request (Superadmin only)
-router.put("/:id/review", authenticate, authorize('superadmin'), async (req, res) => {
+// Review role request (Admin/Superadmin)
+router.put("/:id/review", authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
     const { status, reviewNotes } = req.body;
 
@@ -158,8 +158,8 @@ router.put("/:id/review", authenticate, authorize('superadmin'), async (req, res
   }
 });
 
-// Delete role request (Superadmin only)
-router.delete("/:id", authenticate, authorize('superadmin'), async (req, res) => {
+// Delete role request (Admin/Superadmin)
+router.delete("/:id", authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
     const request = await RoleRequest.findByIdAndDelete(req.params.id);
 
