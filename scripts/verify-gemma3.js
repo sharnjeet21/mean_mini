@@ -16,7 +16,7 @@ console.log(`OLLAMA_BASE_URL: ${OLLAMA_BASE_URL}`);
 console.log(`OLLAMA_MODEL: ${OLLAMA_MODEL}`);
 
 // Require routes
-const aiRoutes = require('./server/routes/aiRoutes');
+const aiRoutes = require('../server/routes/aiRoutes');
 
 const app = express();
 app.use(express.json());

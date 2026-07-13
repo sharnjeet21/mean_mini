@@ -1,6 +1,6 @@
 'use strict';
 require('dotenv').config();
-const { getAiProvider } = require('./server/services/aiProviderResolver');
+const { getAiProvider } = require('../server/services/aiProviderResolver');
 const provider = getAiProvider();
 
 const scenarios = [
