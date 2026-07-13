@@ -1,4 +1,4 @@
-<main class="min-h-screen px-5 pb-20 pt-28 sm:px-8 lg:px-12">
+<main class="min-h-screen px-5 pb-20 pt-28 sm:px-8 lg:px-12 page-entrance">
   <div class="mx-auto max-w-7xl">
     <!-- ── traveler (user) WORKSPACE ────────────────────────────────────────── -->
     <ng-container *ngIf="auth.currentUser()?.role === 'user'">
@@ -77,10 +77,23 @@
         </button>
       </div>
 
-      <div *ngIf="loading" class="glass-panel grid min-h-72 place-items-center rounded-[30px]">
-        <div class="text-center">
-          <mat-spinner diameter="42" class="mx-auto"></mat-spinner>
-          <p class="mt-4 text-sm text-[#78919d]">Gathering the latest routes…</p>
+      <!-- Shimmer loading grid -->
+      <div *ngIf="loading" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <div *ngFor="let card of [1,2,3]" class="glass-panel overflow-hidden rounded-[28px] border border-white/5 bg-[#081822]/40 shadow-sm shimmer-wrapper">
+          <div class="h-52 bg-white/[0.02]"></div>
+          <div class="p-5 space-y-4">
+            <div class="h-3 w-1/4 rounded bg-white/[0.04]"></div>
+            <div class="h-6 w-3/4 rounded bg-white/[0.04]"></div>
+            <div class="grid grid-cols-3 gap-2 pt-2">
+              <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
+              <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
+              <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
+            </div>
+            <div class="flex justify-between items-center pt-3">
+              <div class="h-6 w-1/3 rounded bg-white/[0.03]"></div>
+              <div class="h-8 w-20 rounded-full bg-white/[0.04]"></div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -123,9 +136,10 @@
 
       <section *ngIf="!loading && !loadError && itineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         <article *ngFor="let item of sortedItineraries"
-                 class="group glass-panel overflow-hidden rounded-[28px] transition duration-500 hover:-translate-y-2">
+                 [routerLink]="['/itinerary', item._id]"
+                 class="group glass-panel overflow-hidden rounded-[28px] card-interactive cursor-pointer">
           <div class="relative h-52 overflow-hidden">
-            <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
+            <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]">
             <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
             <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
               <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">{{ item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused') }}</span>
@@ -157,7 +171,7 @@
                 <p class="text-[9px] font-bold uppercase tracking-[0.16em] text-[#637d8a]">Curated by</p>
                 <p class="mt-1 text-xs font-semibold text-[#a9bac2]">{{ item.createdBy?.name || 'Navigator community' }}</p>
               </div>
-              <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-white/5 !text-[#a8ead7]">
+              <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-white/5 !text-[#a8ead7] btn-interactive">
                 Open <span class="material-symbols-outlined ml-1 text-lg">arrow_outward</span>
               </a>
             </div>
@@ -223,7 +237,26 @@
 
         <!-- Owned itineraries list -->
         <div class="p-6">
-          <div *ngIf="filteredOwnedItineraries.length === 0" class="flex flex-col items-center justify-center py-12 px-6 text-center">
+          <!-- Shimmer loading grid -->
+          <div *ngIf="loading" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div *ngFor="let card of [1,2,3]" class="glass-panel overflow-hidden rounded-[28px] border border-white/5 bg-[#081822]/40 shadow-sm shimmer-wrapper">
+              <div class="h-44 bg-white/[0.02]"></div>
+              <div class="p-5 space-y-4">
+                <div class="h-3 w-1/4 rounded bg-white/[0.04]"></div>
+                <div class="h-6 w-3/4 rounded bg-white/[0.04]"></div>
+                <div class="grid grid-cols-2 gap-2 pt-2">
+                  <div class="h-8 rounded-xl bg-white/[0.03]"></div>
+                  <div class="h-8 rounded-xl bg-white/[0.03]"></div>
+                </div>
+                <div class="flex justify-between items-center pt-3 border-t border-white/5">
+                  <div class="h-8 w-20 rounded bg-white/[0.03]"></div>
+                  <div class="h-8 w-24 rounded-full bg-white/[0.04]"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="!loading && filteredOwnedItineraries.length === 0" class="flex flex-col items-center justify-center py-12 px-6 text-center">
             <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
               <span class="material-symbols-outlined text-3xl">{{ managerActiveTab === 'draft' ? 'drafts' : (managerActiveTab === 'published' ? 'publish' : 'folder_open') }}</span>
             </span>
@@ -245,9 +278,10 @@
             </div>
           </div>
           
-          <div *ngIf="filteredOwnedItineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div *ngIf="!loading && filteredOwnedItineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
             <article *ngFor="let item of filteredOwnedItineraries"
-                     class="group glass-panel flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 transition duration-500 hover:-translate-y-2">
+                     [routerLink]="['/itinerary', item._id]"
+                     class="group glass-panel flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 card-interactive cursor-pointer">
               <div class="relative h-44 overflow-hidden">
                 <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
                 <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
@@ -273,12 +307,12 @@
                 
                 <div class="border-t border-white/5 pt-4 flex items-center justify-between gap-2">
                   <!-- Publish/Archive actions -->
-                  <button mat-stroked-button class="ghost-action !text-xs !px-3"
+                  <button mat-stroked-button class="ghost-action !text-xs !px-3 btn-interactive"
                           (click)="updateItineraryStatus(item, item.status === 'published' ? 'draft' : 'published')">
                     <span class="material-symbols-outlined text-sm mr-1">{{ item.status === 'published' ? 'archive' : 'publish' }}</span>
                     {{ item.status === 'published' ? 'Archive' : 'Publish' }}
                   </button>
-                  <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-[#7ae0c3] !text-[#05201f] !text-xs !px-4 hover:!bg-[#86ebd2]">
+                  <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-[#7ae0c3] !text-[#05201f] !text-xs !px-4 hover:!bg-[#86ebd2] btn-interactive">
                     Edit & Plan <span class="material-symbols-outlined text-sm ml-0.5">edit_note</span>
                   </a>
                 </div>
@@ -292,9 +326,11 @@
 </main>
 
 <div *ngIf="showModal"
+     [@overlayFade]
      class="fixed inset-0 z-[70] flex items-end justify-center bg-[#020a0f]/80 p-0 backdrop-blur-xl md:items-center md:p-6"
      (click)="closeModal()">
-  <section class="glass-panel flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[30px] md:max-w-3xl md:rounded-[30px]"
+  <section [@modalFadeScale]
+           class="glass-panel flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[30px] md:max-w-3xl md:rounded-[30px]"
            (click)="$event.stopPropagation()">
     
     <!-- ── Header ────────────────────────────────────────────────────────────── -->
@@ -354,7 +390,7 @@
       <!-- AI LOADING STATE -->
       <div *ngIf="creationMode === 'ai' && aiLoading" class="flex min-h-64 flex-col items-center justify-center text-center">
         <mat-spinner diameter="42"></mat-spinner>
-        <p class="mt-6 text-sm font-semibold text-white animate-pulse">{{ aiLoadingText }}</p>
+        <p [@fadeText]="aiLoadingText" class="mt-6 text-sm font-semibold text-white">{{ aiLoadingText }}</p>
         <p class="mt-2 text-xs text-[#6fa9c3]">Running Gemma 3 locally... This may take up to 90 seconds.</p>
       </div>
 

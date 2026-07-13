@@ -14,6 +14,7 @@ import { getItineraryImage } from '../../utils/itinerary-image';
 import { AiService, AiTravelSearchResult } from '../../services/ai.service';
 import { ToastService } from '../../services/toast.service';
 import { ConfirmService } from '../../services/confirm.service';
+import { modalFadeScale, overlayFade, fadeText } from '../../utils/animations';
 
 export interface Stop {
   name: string;
@@ -33,6 +34,7 @@ export interface Stop {
     TrendingCardsComponent,
   ],
   templateUrl: './dashboard.component.html',
+  animations: [modalFadeScale, overlayFade, fadeText],
 })
 export class DashboardComponent implements OnInit {
   itineraries: any[] = [];

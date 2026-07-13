@@ -960,6 +960,27 @@ Checklist:
 - [x] Build traveler curator application forms with pending/declined review states.
 - [x] Add developer role switches in dev mode to instantly toggle user privileges.
 
+## 16.9 Phase 1.0 - UI & Micro-Interaction Polish
+
+Status: `Completed`
+
+Problem statement:
+The application lacked consistent interactive states, transition visuals, skeleton loaders, and hardware-accelerated animations, giving it an early MVP feel rather than a premium, modern SaaS workspace.
+
+Goal:
+Introduce a highly performant, subtle, and accessible animation system across pages, transitions, buttons, lists, modals, skeletons, and accordions that respects user preferences and improves overall usability.
+
+Checklist:
+- [x] Create reusable CSS transitions, variables, and entrance keyframe animations in `styles.scss`.
+- [x] Add global OS-level accessibility override rule (`prefers-reduced-motion: reduce`).
+- [x] Create reusable Angular animations for `expandCollapse`, `fadeText`, `modalFadeScale`, `overlayFade`, and `toastAnimation`.
+- [x] Implement smooth hardware-accelerated page entrance transitions (`.page-entrance`).
+- [x] Add card hover elevation, scale, and clickable feedback (`.card-interactive`).
+- [x] Apply button press scale transforms (`.btn-interactive`).
+- [x] Replace global loading spinners with beautiful, keyframe-based shimmer skeleton loaders.
+- [x] Hook progressive loading text fade animations in AI wizard cycles.
+- [x] Implement smooth height collapse/expand animations on daily accordion plans.
+
 ## 17. Recommended Near-Term Delivery Order
 
 Recommended practical order for implementation:

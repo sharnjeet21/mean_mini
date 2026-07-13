@@ -9,12 +9,14 @@ import { AuthService } from '../../services/auth.service';
 import { fetchItineraryImage, getItineraryImage } from '../../utils/itinerary-image';
 import { ToastService } from '../../services/toast.service';
 import { ConfirmService } from '../../services/confirm.service';
+import { expandCollapse, fadeText } from '../../utils/animations';
 
 @Component({
   selector: 'app-itinerary-detail',
   standalone: true,
   imports: [CommonModule, FormsModule, RouterModule],
   templateUrl: './itinerary-detail.component.html',
+  animations: [expandCollapse, fadeText],
 })
 export class ItineraryDetailComponent implements OnInit {
   itinerary: any = null;
