@@ -460,6 +460,89 @@ h6,
   }
 }
 
+/* Reusable Animation Tokens & Helpers */
+:root {
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quad: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Page Entrance */
+@keyframes pageEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-entrance {
+  animation: pageEntrance 280ms var(--ease-out-expo) forwards;
+  will-change: opacity, transform;
+}
+
+/* Shimmer keyframe */
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+.shimmer-wrapper {
+  position: relative;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.035);
+  border-radius: 20px;
+}
+.shimmer-wrapper::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.03) 20%,
+    rgba(255, 255, 255, 0.07) 60%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmer 1.8s infinite;
+  content: '';
+}
+
+/* Card Micro-Interactions */
+.card-interactive {
+  transition: transform 220ms var(--ease-out-expo), 
+              box-shadow 220ms var(--ease-out-expo), 
+              border-color 220ms var(--ease-out-expo),
+              background-color 220ms var(--ease-out-expo) !important;
+}
+.card-interactive:hover {
+  transform: translateY(-4px) scale(1.008);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  border-color: rgba(122, 224, 195, 0.25) !important;
+  background-color: rgba(255, 255, 255, 0.035) !important;
+}
+.card-interactive:active {
+  transform: translateY(-1px) scale(0.992);
+  transition: transform 100ms var(--ease-out-expo) !important;
+}
+
+/* Button Micro-Interactions */
+.btn-interactive {
+  transition: transform 150ms var(--ease-out-expo), 
+              background-color 150ms var(--ease-out-expo), 
+              box-shadow 150ms var(--ease-out-expo) !important;
+}
+.btn-interactive:hover {
+  transform: translateY(-1px);
+}
+.btn-interactive:active {
+  transform: translateY(1px) scale(0.98);
+}
+
 @keyframes slideIn {
   from {
     transform: translateY(1rem);
@@ -483,5 +566,7 @@ h6,
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    animation-name: none !important;
+    transition-property: none !important;
   }
 }
