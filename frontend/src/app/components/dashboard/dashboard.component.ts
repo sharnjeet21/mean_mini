@@ -307,6 +307,11 @@ export class DashboardComponent implements OnInit {
       this.rateLimitMessage = 'Please log in to plan trips.';
       return;
     }
+    // Travelers cannot create itineraries
+    if (this.auth.currentUser()?.role === 'user') {
+      this.toastService.error('Only Trip Managers can create itineraries. Request an upgrade from your profile.');
+      return;
+    }
     this.form = this.emptyForm(prefilledDestination);
     this.formError = '';
     this.currentStep = 1;
@@ -449,7 +454,7 @@ export class DashboardComponent implements OnInit {
   }
 
   onDestinationSelected(place: string): void {
-    if (this.auth.isLoggedIn) {
+    if (this.auth.isLoggedIn && this.auth.currentUser()?.role !== 'user') {
       this.openModal(place);
     } else {
       this.destinationToast = `${place} selected. Browse the live routes below, then save or book the one that fits.`;
@@ -467,6 +472,10 @@ export class DashboardComponent implements OnInit {
 
     if (!this.auth.isLoggedIn) {
       this.destinationToast = 'Please log in to plan trips.';
+      return;
+    }
+    if (this.auth.currentUser()?.role === 'user') {
+      this.toastService.error('Only Trip Managers can create itineraries.');
       return;
     }
 
