@@ -66,12 +66,32 @@ function requireRole(role) {
   };
 }
 
+// ── Optional auth (for public pages that benefit from user context) ───────────
+function optionalAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return next(); // Guest — continue without req.user
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      ...verified,
+      id: verified.id || verified._id,
+      _id: verified.id || verified._id,
+    };
+  } catch {
+    // Invalid token — treat as guest
+  }
+  next();
+}
+
 // ── Exports ───────────────────────────────────────────────────────────────────
 module.exports = {
   registerUser,
   loginUser,
   authMiddleware,
   requireRole,
+  optionalAuth,
   // Aliases used by existing routes
   authenticate: authMiddleware,
   authorize: (...roles) => (req, res, next) => {
