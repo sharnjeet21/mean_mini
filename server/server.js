@@ -8,9 +8,9 @@ const cors    = require("cors");
 const mongoose = require("mongoose");
 
 const connectDB          = require("./config/db");
-const apiRoutes          = require("./routes");
 const { notFound, globalErrorHandler } = require("./middleware/errorHandler");
 const { createSocketServer } = require("./utils/socket");
+const { initAi } = require("./services/aiProviderResolver");
 
 const app = express();
 
@@ -61,7 +61,10 @@ app.get("/api/health", apiCors, (req, res) => {
   });
 });
 
-app.use("/api/v1", apiCors, requireDatabase, apiRoutes);
+app.use("/api/v1", apiCors, requireDatabase, (req, res, next) => {
+  // Lazily load routes so they get the initialized provider
+  require("./routes")(req, res, next);
+});
 
 // ── Serve Angular build ───────────────────────────────────────────────────────
 const angularDist = path.join(__dirname, "..", "frontend", "dist", "frontend", "browser");
@@ -94,6 +97,16 @@ async function startServer() {
     console.error("Production startup aborted because MongoDB is unavailable.");
     process.exitCode = 1;
     return;
+  }
+
+  try {
+    await initAi();
+  } catch (error) {
+    console.error("Failed to initialize AI provider:", error.message);
+    if (process.env.NODE_ENV === "production") {
+      process.exitCode = 1;
+      return;
+    }
   }
 
   server = app.listen(PORT, "0.0.0.0", () => {

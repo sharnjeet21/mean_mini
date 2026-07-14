@@ -132,6 +132,18 @@ class OllamaProvider {
     this.timeout = config.timeout || Number(process.env.AI_GENERATION_TIMEOUT_MS) || 120000; // 2 minutes local timeout
   }
 
+  async isAvailable() {
+    try {
+      const response = await fetch(`${this.baseUrl}/api/tags`, { method: 'GET', signal: AbortSignal.timeout(3000) });
+      if (!response.ok) return false;
+      const data = await response.json();
+      const models = data.models || [];
+      return models.some(m => m.name === this.model || m.name.startsWith(this.model + ':'));
+    } catch (err) {
+      return false;
+    }
+  }
+
   async _callOllama(payload) {
     try {
       const controller = new AbortController();

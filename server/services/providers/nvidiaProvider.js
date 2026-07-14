@@ -5,20 +5,30 @@
  *
  * Implements the AI Provider interface using Google's Gemini REST API.
  */
-class GeminiProvider {
+class NvidiaProvider {
   constructor(config = {}) {
-    this.apiKey = config.apiKey || process.env.GEMINI_API_KEY;
-    this.model = config.model || 'gemini-2.5-flash';
+    this.apiKey = config.apiKey || process.env.NVIDIA_API_KEY;
+    this.model = config.model || process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
     this.timeout = config.timeout || 60000; // 60 seconds default timeout for cloud API
   }
 
   async isAvailable() {
-    return !!this.apiKey;
+    if (!this.apiKey) return false;
+    try {
+      const response = await fetch(`https://integrate.api.nvidia.com/v1/models`, {
+        method: 'GET',
+        headers: { 'Authorization': `Bearer ${this.apiKey}` },
+        signal: AbortSignal.timeout(3000)
+      });
+      return response.ok;
+    } catch (err) {
+      return false;
+    }
   }
 
-  async _callGemini(prompt) {
+  async _callNvidia(prompt) {
     if (!this.apiKey) {
-      throw new Error('GEMINI_API_KEY is not configured');
+      throw new Error('NVIDIA_API_KEY is not configured');
     }
 
     try {
@@ -26,11 +36,17 @@ class GeminiProvider {
       const timeoutId = setTimeout(() => controller.abort(), this.timeout);
 
       const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
+        `https://integrate.api.nvidia.com/v1/chat/completions`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${this.apiKey}`
+          },
+          body: JSON.stringify({ 
+            model: this.model,
+            messages: [{ role: 'user', content: prompt }]
+          }),
           signal: controller.signal
         }
       );
@@ -39,18 +55,18 @@ class GeminiProvider {
 
       const data = await response.json();
       if (!response.ok) {
-        throw new Error(data?.error?.message || `Gemini request failed with status ${response.status}`);
+        throw new Error(data?.error?.message || `NVIDIA request failed with status ${response.status}`);
       }
 
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      const text = data?.choices?.[0]?.message?.content;
       if (!text) {
-        throw new Error('Gemini returned an empty response');
+        throw new Error('NVIDIA returned an empty response');
       }
 
       return text;
     } catch (error) {
       if (error.name === 'AbortError') {
-        throw new Error(`Gemini request timed out after ${this.timeout / 1000} seconds.`);
+        throw new Error(`NVIDIA request timed out after ${this.timeout / 1000} seconds.`);
       }
       throw error;
     }
@@ -120,7 +136,7 @@ Generation Rules:
 - Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
 `;
 
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     const parsed = JSON.parse(cleaned);
 
@@ -172,7 +188,7 @@ Extraction Rules:
 - Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
 `;
 
-    const resText = await this._callGemini(prompt);
+    const resText = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(resText);
     const parsed = JSON.parse(cleaned);
 
@@ -231,28 +247,28 @@ Rules:
 User query: ${query}
 `;
 
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 
   async generateTrendingDestinations() {
     const prompt = `Suggest 5 trending travel destinations in ${new Date().getFullYear()} with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.`;
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 
   async generateItinerarySuggestions(destination) {
     const prompt = `Suggest top 5 attractions in ${destination} for a travel itinerary. Return ONLY a JSON array of objects with fields name (string) and description (string, max 150 chars), no markdown.`;
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 
   async generateAutocompleteSuggestions(query) {
     const prompt = `Suggest up to 8 real place names matching '${query}'. Return ONLY a JSON array of strings, no markdown.`;
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     const parsed = JSON.parse(cleaned);
     return Array.isArray(parsed)
@@ -289,7 +305,7 @@ Rules:
 User Edit Instruction: "${instruction}"
 `;
 
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     const parsed = JSON.parse(cleaned);
 
@@ -352,10 +368,10 @@ ${compactContext}
 ${editableInput}
 `;
 
-    const text = await this._callGemini(prompt);
+    const text = await this._callNvidia(prompt);
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 }
 
-module.exports = GeminiProvider;
+module.exports = NvidiaProvider;
