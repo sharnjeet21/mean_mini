@@ -21,6 +21,20 @@ if (!GEMINI_API_KEY) {
   console.warn('[aiRoutes] WARNING: GEMINI_API_KEY is not set. Gemini-powered routes will not work.');
 }
 
+// ── AI Status ─────────────────────────────────────────────────────────────────
+router.get('/status', (req, res) => {
+  try {
+    const provider = getAiProvider();
+    const metadata = provider.getMetadata();
+    res.json(metadata);
+  } catch (error) {
+    res.status(503).json({
+      message: error.message,
+      code: error.code || 'AI_PROVIDER_UNAVAILABLE'
+    });
+  }
+});
+
 // ── Cache instances ───────────────────────────────────────────────────────────
 const ONE_HOUR_MS         = 3_600_000;
 const TWENTY_FOUR_HOURS_MS = 86_400_000;

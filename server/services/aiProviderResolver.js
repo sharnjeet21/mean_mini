@@ -5,126 +5,163 @@ const NvidiaProvider = require('./providers/nvidiaProvider');
 const GeminiProvider = require('./providers/geminiProvider');
 
 let activeProvider = null;
+let lastInitializationResult = 'Not initialized';
+let providerHealth = {};
 
 class MultiProviderRuntime {
   constructor(providers) {
     this.providers = providers;
     
-    // Use a proxy to intercept all method calls to the provider
     return new Proxy(this, {
       get: (target, propKey) => {
-        // If the prop exists on this class itself (like providers), return it
         if (propKey in target) {
           return target[propKey];
         }
 
-        // Otherwise, intercept the function call
-        return async (...args) => {
-          let lastError = null;
-          let attemptCount = 0;
+        if (propKey === 'then' || typeof propKey === 'symbol') {
+          return undefined;
+        }
 
-          for (const provider of target.providers) {
-            // Check if the provider actually implements this method
+        return async (...args) => {
+          if (target.providers.length === 0) {
+            const err = new Error('AI_PROVIDER_UNAVAILABLE: No providers available to handle the request.');
+            err.status = 503;
+            err.code = 'AI_PROVIDER_UNAVAILABLE';
+            throw err;
+          }
+
+          let lastError = null;
+
+          for (let i = 0; i < target.providers.length; i++) {
+            const provider = target.providers[i];
+            const providerName = provider.constructor.name.replace('Provider', '');
+
+            // Check if unhealthy
+            if (providerHealth[providerName] === 'unhealthy') {
+              continue;
+            }
+
             if (typeof provider[propKey] !== 'function') {
               throw new Error(`Method ${propKey.toString()} is not implemented by provider ${provider.constructor.name}`);
             }
 
-            if (attemptCount > 0) {
-              console.warn(`[AI] Fallback triggered. Retrying ${propKey.toString()} with ${provider.constructor.name.replace('Provider', '')}...`);
+            let attempt = 1;
+            while (attempt <= 2) { // 1 attempt + 1 retry
+              try {
+                if (attempt > 1) {
+                  console.warn(`[AI] Retrying ${propKey.toString()} on current provider ${providerName}...`);
+                }
+                const result = await provider[propKey](...args);
+                return result; // Success
+              } catch (error) {
+                lastError = error;
+                console.error(`[AI] Attempt ${attempt} failed on ${providerName}:`, error.message);
+                attempt++;
+              }
             }
 
-            try {
-              return await provider[propKey](...args);
-            } catch (error) {
-              lastError = error;
-              attemptCount++;
-              // Continue to the next provider in the fallback chain
+            // Both attempts failed on this provider. Mark unhealthy.
+            console.warn(`[AI] Marking provider ${providerName} as temporarily unhealthy.`);
+            providerHealth[providerName] = 'unhealthy';
+            
+            // Allow health to reset after 60 seconds
+            const t = setTimeout(() => {
+              if (providerHealth[providerName] === 'unhealthy') {
+                providerHealth[providerName] = 'healthy';
+                console.log(`[AI] Provider ${providerName} marked healthy again.`);
+              }
+            }, 60000);
+            if (t.unref) t.unref();
+
+            if (i < target.providers.length - 1) {
+              console.warn(`[AI] Fallback triggered. Switching to next available provider...`);
             }
           }
 
-          // If all providers failed, throw the last error
-          throw lastError;
+          const err = new Error(`AI_PROVIDER_UNAVAILABLE: All providers failed. Last error: ${lastError?.message}`);
+          err.status = 503;
+          err.code = 'AI_PROVIDER_UNAVAILABLE';
+          throw err;
         };
       }
     });
   }
+
+  getMetadata() {
+    return {
+      currentProvider: this.providers.find(p => providerHealth[p.constructor.name.replace('Provider', '')] !== 'unhealthy')?.constructor.name.replace('Provider', '') || 'None',
+      availableProviders: this.providers.map(p => p.constructor.name.replace('Provider', '')),
+      providerHealth,
+      lastInitializationResult
+    };
+  }
 }
 
-async function resolveAutoProvider() {
-  console.log('[AI] Provider mode: auto');
+async function initAi() {
+  const preferred = (process.env.AI_PROVIDER || 'auto').toLowerCase();
+  console.log(`[AI] Provider mode: ${preferred}`);
   
   const ollama = new OllamaProvider();
   const nvidia = new NvidiaProvider();
   const gemini = new GeminiProvider();
 
+  let instances = [
+    { name: 'NVIDIA', instance: nvidia, key: 'nvidia' },
+    { name: 'Ollama', instance: ollama, key: 'ollama' },
+    { name: 'Gemini', instance: gemini, key: 'gemini' }
+  ];
+
+  if (preferred !== 'auto') {
+    const preferredIndex = instances.findIndex(p => p.key === preferred);
+    if (preferredIndex > -1) {
+      const preferredProvider = instances.splice(preferredIndex, 1)[0];
+      instances.unshift(preferredProvider);
+    }
+  }
+
   const active = [];
+  providerHealth = {};
 
-  console.log('[AI] Checking Ollama...');
-  if (await ollama.isAvailable()) {
-    console.log('[AI] Ollama available ✓');
-    active.push(ollama);
-  } else {
-    console.log('[AI] Ollama unavailable');
-  }
-
-  console.log('[AI] Checking NVIDIA...');
-  if (await nvidia.isAvailable()) {
-    console.log('[AI] NVIDIA available ✓');
-    active.push(nvidia);
-  } else {
-    console.log('[AI] NVIDIA unavailable');
-  }
-
-  console.log('[AI] Checking Gemini...');
-  if (await gemini.isAvailable()) {
-    console.log('[AI] Gemini available ✓');
-    active.push(gemini);
-  } else {
-    console.log('[AI] Gemini unavailable');
+  for (const { name, instance } of instances) {
+    console.log(`[AI] Checking ${name}...`);
+    try {
+      if (await instance.isAvailable()) {
+        console.log(`[AI] ${name} available ✓`);
+        active.push(instance);
+        providerHealth[name] = 'healthy';
+      } else {
+        console.log(`[AI] ${name} unavailable`);
+        providerHealth[name] = 'unavailable';
+      }
+    } catch (e) {
+      console.log(`[AI] ${name} check failed: ${e.message}`);
+      providerHealth[name] = 'unavailable';
+    }
   }
 
   if (active.length === 0) {
-    throw new Error('[AI] Configuration error: No AI provider is available.');
-  }
-
-  console.log(`[AI] Using provider: ${active[0].constructor.name.replace('Provider', '')}`);
-  return new MultiProviderRuntime(active);
-}
-
-async function initAi() {
-  const providerMode = (process.env.AI_PROVIDER || 'auto').toLowerCase();
-
-  if (providerMode === 'auto') {
-    activeProvider = await resolveAutoProvider();
-  } else if (providerMode === 'ollama') {
-    console.log('[AI] Provider mode: ollama');
-    const p = new OllamaProvider();
-    if (!await p.isAvailable()) throw new Error('Ollama provider selected but unavailable');
-    activeProvider = p;
-  } else if (providerMode === 'nvidia') {
-    console.log('[AI] Provider mode: nvidia');
-    const p = new NvidiaProvider();
-    if (!await p.isAvailable()) throw new Error('NVIDIA provider selected but unavailable');
-    activeProvider = p;
-  } else if (providerMode === 'gemini') {
-    console.log('[AI] Provider mode: gemini');
-    const p = new GeminiProvider();
-    if (!await p.isAvailable()) throw new Error('Gemini provider selected but unavailable');
-    activeProvider = p;
+    console.warn('[AI] WARNING: No AI provider is available. AI features will fail gracefully.');
+    lastInitializationResult = 'Failed: No providers available';
   } else {
-    throw new Error(`Unsupported AI_PROVIDER configured: ${providerMode}`);
+    console.log(`[AI] Selected provider: ${active[0].constructor.name.replace('Provider', '')}`);
+    lastInitializationResult = `Success: Selected ${active[0].constructor.name.replace('Provider', '')}`;
   }
+
+  activeProvider = new MultiProviderRuntime(active);
 }
 
 function getAiProvider() {
   if (!activeProvider) {
-    throw new Error("AI provider is not initialized yet. Ensure initAi() is called during startup.");
+    // Should theoretically not happen unless accessed before initAi finishes, but return a safe fallback runtime just in case.
+    return new MultiProviderRuntime([]);
   }
   return activeProvider;
 }
 
 function _resetAiProviderForTesting() {
   activeProvider = null;
+  lastInitializationResult = 'Not initialized';
+  providerHealth = {};
 }
 
 module.exports = {
