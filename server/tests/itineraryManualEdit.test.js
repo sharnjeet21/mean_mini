@@ -106,7 +106,7 @@ describe('PUT /api/v1/itineraries/:id (Manual Editing & Concurrency)', () => {
 
     const { status, body } = await httpPut(port, mockItinerary._id, { title: 'New Title' }, travelerToken);
     assert.equal(status, 403);
-    assert.match(body.message, /Travelers cannot edit published itineraries/);
+    assert.match(body.message, /Travelers cannot edit/);
   });
 
   it('should allow trip-managers to edit their own published itineraries', async () => {

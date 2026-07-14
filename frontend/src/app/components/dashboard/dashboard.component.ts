@@ -42,6 +42,7 @@ export class DashboardComponent implements OnInit {
   activeFilter = 'Date';
   filters = ['Date', 'Budget', 'Duration'];
   activeView: 'explore' | 'saved' | 'bookings' = 'explore';
+  isWorkspaceMode = false;
   rateLimitMessage = '';
   loadError = '';
   destinationToast = '';
@@ -95,10 +96,15 @@ export class DashboardComponent implements OnInit {
       return;
     }
 
-    if (this.auth.isAdmin) {
-      this.router.navigate(['/admin']);
-      return;
-    }
+    this.route.queryParams.subscribe((params) => {
+      this.isWorkspaceMode = this.router.url.split('?')[0].endsWith('/workspace');
+      if (params['view'] === 'saved' || params['view'] === 'bookings' || params['view'] === 'explore') {
+        this.activeView = params['view'];
+      } else if (!params['view']) {
+        this.activeView = 'explore';
+      }
+      this.loadItineraries();
+    });
 
     this.destinationSearchSubject.pipe(
       debounceTime(300),
@@ -117,10 +123,9 @@ export class DashboardComponent implements OnInit {
       this.cdr.detectChanges();
     });
 
-    this.loadItineraries();
     const destination = this.route.snapshot.queryParamMap.get('destination') || '';
     const create = this.route.snapshot.queryParamMap.get('create') === '1';
-    if ((destination || create) && this.auth.isAdmin) {
+    if ((destination || create) && (this.auth.isAdmin || this.auth.currentUser()?.role === 'trip-manager')) {
       setTimeout(() => this.openModal(destination), 200);
     } else if (destination) {
       this.destinationToast = `${destination} is ready to explore below. Save a route or ask a trip manager to publish a custom plan.`;
@@ -260,11 +265,14 @@ export class DashboardComponent implements OnInit {
   loadItineraries(): void {
     this.loading = true;
     this.loadError = '';
-    const request = this.activeView === 'saved'
-      ? this.api.getFavorites()
-      : this.activeView === 'bookings'
-        ? this.api.getUserBookings()
-        : this.api.getItineraries();
+    
+    const request = this.isWorkspaceMode
+      ? this.api.getMyItineraries()
+      : this.activeView === 'saved'
+        ? this.api.getFavorites()
+        : this.activeView === 'bookings'
+          ? this.api.getUserBookings()
+          : this.api.getItineraries();
 
     request.pipe(
       timeout(12000),

@@ -78,11 +78,13 @@ Our platform has evolved from an itinerary planner into a multi-role workspace:
 * [x] User Directory Table
 * [x] Account deactivation toggles
 * [x] Role Upgrade review panels
+* [x] Complete Four-Role SaaS RBAC Architecture (Traveler, Trip Manager, Admin, Superadmin)
 * [ ] **SaaS Analytics Dashboard**: Visual charts for revenue, active planners, API latency, and bookings.
 
 ### 6.6 AI & Intelligence Roadmap
 * [x] Dynamic Gemini/Ollama Provider Resolver
 * [x] Scope Extraction and Precision Merging
+* [x] Stabilized Multi-Provider AI Runtime (health checks, retry proxy, quarantine, and failover)
 * [ ] **Route Optimization**: Calculating optimal routes between daily stops to avoid backtracking.
 * [ ] **Cost Intelligence**: Auto-estimating local expenses using real destination indexes.
 

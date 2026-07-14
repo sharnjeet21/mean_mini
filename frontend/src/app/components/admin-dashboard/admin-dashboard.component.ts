@@ -24,7 +24,8 @@ export class AdminDashboardComponent implements OnInit {
   errorMessage = '';
 
   // Tab section views
-  activeSection: 'itineraries' | 'users' | 'requests' = 'itineraries';
+  activeSection: 'itineraries' | 'users' | 'requests' | 'ai-runtime' | 'health' | 'affiliates' = 'itineraries';
+  isPlatformMode = false;
 
   // User directory state
   users: any[] = [];
@@ -50,11 +51,17 @@ export class AdminDashboardComponent implements OnInit {
     if (history.length > 1) {
       this.location.back();
     } else {
-      this.router.navigate(['/dashboard']);
+      this.router.navigate(['/workspace']);
     }
   }
 
   ngOnInit() {
+    this.isPlatformMode = this.router.url.split('?')[0].endsWith('/platform');
+    if (this.isPlatformMode) {
+      this.activeSection = 'users';
+    } else {
+      this.activeSection = 'itineraries';
+    }
     this.loadDashboard();
     this.loadUsers();
     this.loadRoleRequests();

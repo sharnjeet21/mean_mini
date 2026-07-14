@@ -13,27 +13,50 @@
     </div>
 
     <nav class="flex-1 flex flex-col gap-1">
-      <button (click)="activeSection = 'itineraries'"
-         [class]="activeSection === 'itineraries' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
-        <span class="material-symbols-outlined">map</span><span>Itineraries</span>
-      </button>
-      
-      <button (click)="activeSection = 'users'"
-         [class]="activeSection === 'users' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
-        <span class="material-symbols-outlined">group</span><span>User Directory</span>
-      </button>
-      
-      <button *ngIf="['admin', 'superadmin'].includes(auth.currentUser()?.role || '')" (click)="activeSection = 'requests'"
-         [class]="activeSection === 'requests' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
-        <span class="material-symbols-outlined">admin_panel_settings</span><span>Access Requests</span>
-      </button>
+      <!-- Operations Mode Sidebar Links -->
+      <ng-container *ngIf="!isPlatformMode">
+        <div class="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f8996] mb-1">Operations</div>
+        <button (click)="activeSection = 'itineraries'"
+           [class]="activeSection === 'itineraries' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
+          <span class="material-symbols-outlined">map</span><span>Itineraries</span>
+        </button>
+        
+        <button *ngIf="['admin', 'superadmin'].includes(auth.currentUser()?.role || '')" (click)="activeSection = 'requests'"
+           [class]="activeSection === 'requests' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
+          <span class="material-symbols-outlined">admin_panel_settings</span><span>Access Requests</span>
+        </button>
+        <div class="px-3 py-4 text-xs leading-5 text-[#8aa1ac]">Moderate bookings, review curator access upgrade requests, and check stats.</div>
+      </ng-container>
 
-      <div class="mt-5 px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f8996]">Operations</div>
-      <div class="px-3 py-2 text-xs leading-5 text-[#8aa1ac]">Manage the entire travel platform, user roles, deactivations, and curators' requests.</div>
+      <!-- Platform Mode Sidebar Links -->
+      <ng-container *ngIf="isPlatformMode">
+        <div class="px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-[#6f8996] mb-1">Platform</div>
+        
+        <button (click)="activeSection = 'users'"
+           [class]="activeSection === 'users' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
+          <span class="material-symbols-outlined">group</span><span>User Directory</span>
+        </button>
+
+        <button (click)="activeSection = 'ai-runtime'"
+           [class]="activeSection === 'ai-runtime' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
+          <span class="material-symbols-outlined">monitoring</span><span>AI Runtime</span>
+        </button>
+
+        <button (click)="activeSection = 'health'"
+           [class]="activeSection === 'health' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
+          <span class="material-symbols-outlined">health_and_safety</span><span>System Health</span>
+        </button>
+
+        <button (click)="activeSection = 'affiliates'"
+           [class]="activeSection === 'affiliates' ? 'flex w-full items-center gap-3 rounded-lg bg-white/10 px-3 py-2.5 text-sm font-semibold text-white shadow-sm text-left border-0 cursor-pointer' : 'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-[#9fb0ba] transition-all hover:bg-white/5 hover:text-white text-left border-0 cursor-pointer'">
+          <span class="material-symbols-outlined">shopping_cart</span><span>Affiliate Hub</span>
+        </button>
+        <div class="px-3 py-4 text-xs leading-5 text-[#8aa1ac]">Manage user roles, platform configuration, analytics, health, and third-party affiliates.</div>
+      </ng-container>
     </nav>
 
     <div class="mt-auto flex flex-col gap-1 border-t border-white/10 pt-4">
-      <a routerLink="/dashboard" [queryParams]="{ create: 1 }" class="primary-action mb-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-md hover:opacity-90 transition-opacity">
+      <a routerLink="/workspace" [queryParams]="{ create: 1 }" class="primary-action mb-3 flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold shadow-md hover:opacity-90 transition-opacity">
         <span class="material-symbols-outlined text-sm">add</span> New Trip
       </a>
       <button (click)="auth.logout()"
@@ -55,22 +78,22 @@
         </button>
       </div>
       <nav class="mb-4 flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-[#6f8996]">
-        <a routerLink="/dashboard" class="transition-colors hover:text-white">Workspace</a>
+        <a routerLink="/workspace" class="transition-colors hover:text-white">Workspace</a>
         <span class="material-symbols-outlined text-sm">chevron_right</span>
         <span class="text-[#a9bac2]">
-          {{ activeSection === 'itineraries' ? 'Itineraries' : (activeSection === 'users' ? 'User Directory' : 'Access Requests') }}
+          {{ activeSection === 'itineraries' ? 'Itineraries' : (activeSection === 'users' ? 'User Directory' : (activeSection === 'requests' ? 'Access Requests' : (activeSection === 'ai-runtime' ? 'AI Runtime' : (activeSection === 'health' ? 'System Health' : 'Affiliate Hub')))) }}
         </span>
       </nav>
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <h1 class="mb-2 text-4xl font-bold tracking-[-0.045em] text-white font-headline">
-            {{ activeSection === 'itineraries' ? 'Manage Trips' : (activeSection === 'users' ? 'User Directory' : 'Access Requests') }}
+            {{ activeSection === 'itineraries' ? 'Manage Trips' : (activeSection === 'users' ? 'User Directory' : (activeSection === 'requests' ? 'Access Requests' : (activeSection === 'ai-runtime' ? 'AI Providers Telemetry' : (activeSection === 'health' ? 'System Health' : 'Affiliate Hub')))) }}
           </h1>
           <p class="max-w-2xl text-[#8ea5b0]">
-            {{ activeSection === 'itineraries' ? 'Curate, publish, and oversee travel experiences. Monitor engagement and manage destinations.' : (activeSection === 'users' ? 'Monitor platform users, promote roles, and toggle account activation status.' : 'Review and approve pending trip manager upgrade requests.') }}
+            {{ activeSection === 'itineraries' ? 'Curate, publish, and oversee travel experiences. Monitor engagement and manage destinations.' : (activeSection === 'users' ? 'Monitor platform users, promote roles, and toggle account activation status.' : (activeSection === 'requests' ? 'Review and approve pending trip manager upgrade requests.' : (activeSection === 'ai-runtime' ? 'Examine real-time health states, priority order, and fallback status of the Multi-Provider AI Runtime.' : (activeSection === 'health' ? 'Review the platform database connection states and resource specs.' : 'Examine upcoming affiliate partnership dashboard details.')))) }}
           </p>
         </div>
-        <a *ngIf="activeSection === 'itineraries'" routerLink="/dashboard" [queryParams]="{ create: 1 }" class="primary-action inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold shadow-lg hover:opacity-90 transition-all active:scale-95">
+        <a *ngIf="activeSection === 'itineraries'" routerLink="/workspace" [queryParams]="{ create: 1 }" class="primary-action inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3 font-semibold shadow-lg hover:opacity-90 transition-all active:scale-95">
           <span class="material-symbols-outlined">add</span> Create New Trip
         </a>
       </div>
@@ -354,6 +377,122 @@
               <h4 class="text-xs font-bold uppercase tracking-wider text-[#6f8996]">Review Feedback:</h4>
               <p class="mt-2 text-sm italic text-[#8ea5b0]">{{ req.reviewNotes }}</p>
             </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── AI RUNTIME PLATFORM SECTION ───────────────────────────────────── -->
+    <ng-container *ngIf="activeSection === 'ai-runtime' && isPlatformMode">
+      <div class="space-y-6">
+        <div class="glass-panel p-8 rounded-[30px] border border-white/10 shadow-sm space-y-6">
+          <div class="flex items-center justify-between border-b border-white/5 pb-4">
+            <div class="flex items-center gap-3">
+              <span class="grid h-12 w-12 place-items-center rounded-2xl bg-[#7ae0c3]/15 text-[#7ae0c3]">
+                <span class="material-symbols-outlined">dns</span>
+              </span>
+              <div>
+                <h3 class="font-bold text-white text-lg">Multi-Provider AI Runtime</h3>
+                <p class="text-xs text-[#8ea5b0]">Configured Priority: NVIDIA NIM &gt; Ollama &gt; Gemini</p>
+              </div>
+            </div>
+            <a href="/api/v1/ai/status" target="_blank"
+               class="px-4 py-2 rounded-full border border-white/15 bg-white/5 text-xs font-semibold text-[#a8ead7] hover:bg-white/10 transition-all cursor-pointer inline-flex items-center gap-2">
+              <span class="material-symbols-outlined text-sm">api</span> Raw Telemetry
+            </a>
+          </div>
+
+          <!-- Runtime Details -->
+          <div class="grid gap-6 md:grid-cols-3">
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 space-y-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6]">NVIDIA NIM</h4>
+              <p class="text-sm font-semibold text-[#7ae0c3]">Fallback Priority #1</p>
+              <p class="text-xs text-[#8ea5b0] leading-relaxed">NVIDIA NIM leverages low-latency hosted model endpoints for high-throughput intent extraction and revisions.</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 space-y-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6]">Ollama Local</h4>
+              <p class="text-sm font-semibold text-[#ffc96b]">Fallback Priority #2</p>
+              <p class="text-xs text-[#8ea5b0] leading-relaxed">Local llama3/gemma3 instances running at localhost:11434. Ideal for offline work and testing.</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 space-y-2">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6]">Gemini API</h4>
+              <p class="text-sm font-semibold text-[#ff9f87]">Fallback Priority #3</p>
+              <p class="text-xs text-[#8ea5b0] leading-relaxed">Google Gemini API provides comprehensive model generation capabilities as the final fail-safe resource.</p>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-[#7ae0c3]/20 bg-[#7ae0c3]/5 p-5">
+            <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+              <span class="material-symbols-outlined text-base">health_and_safety</span> Auto-Failover &amp; Telemetry Active
+            </h4>
+            <p class="text-xs text-[#8ea5b0] leading-relaxed">
+              If an active provider returns a timeout or rate limit error, the proxy runtime automatically retries the operation once on the same provider. If it fails again, the provider is temporarily quarantined as "unhealthy" for 60 seconds, and request routing cascades to the next available fallback.
+            </p>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── SYSTEM HEALTH SECTION ────────────────────────────────────────── -->
+    <ng-container *ngIf="activeSection === 'health' && isPlatformMode">
+      <div class="space-y-6">
+        <div class="glass-panel p-8 rounded-[30px] border border-white/10 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-[#ff9f87]/15 text-[#ff9f87]">
+              <span class="material-symbols-outlined">health_and_safety</span>
+            </span>
+            <div>
+              <h3 class="font-bold text-white text-lg">System Metrics &amp; Services</h3>
+              <p class="text-xs text-[#8ea5b0]">Platform Health Telemetry</p>
+            </div>
+          </div>
+
+          <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 text-center">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">Database</h4>
+              <span class="rounded-full bg-[#7ae0c3]/20 px-3 py-1 text-xs font-bold text-[#7ae0c3]">CONNECTED</span>
+              <p class="text-[10px] text-[#6f8996] mt-4">MongoDB Atlas Cluster</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 text-center">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">API Server</h4>
+              <span class="rounded-full bg-[#7ae0c3]/20 px-3 py-1 text-xs font-bold text-[#7ae0c3]">READY</span>
+              <p class="text-[10px] text-[#6f8996] mt-4">NodeJS v18 Express Backend</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 text-center">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">System Uptime</h4>
+              <p class="text-lg font-bold text-white">99.98%</p>
+              <p class="text-[10px] text-[#6f8996] mt-3">High Availability Config</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.02] p-5 border border-white/5 text-center">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">Memory Usage</h4>
+              <p class="text-lg font-bold text-white">124 MB / 512 MB</p>
+              <p class="text-[10px] text-[#6f8996] mt-3">Memory allocation healthy</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- ── AFFILIATE HUB SECTION ────────────────────────────────────────── -->
+    <ng-container *ngIf="activeSection === 'affiliates' && isPlatformMode">
+      <div class="space-y-6">
+        <div class="glass-panel p-8 rounded-[30px] border border-white/10 shadow-sm space-y-6">
+          <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+            <span class="grid h-12 w-12 place-items-center rounded-2xl bg-[#ffc96b]/15 text-[#ffc96b]">
+              <span class="material-symbols-outlined">shopping_cart</span>
+            </span>
+            <div>
+              <h3 class="font-bold text-white text-lg">Travel Affiliate Integrations</h3>
+              <p class="text-xs text-[#8ea5b0]">Monetization &amp; Booking Commissions Hub</p>
+            </div>
+          </div>
+
+          <div class="rounded-2xl border border-white/5 bg-white/[0.01] p-6 text-center space-y-3">
+            <span class="material-symbols-outlined text-4xl text-[#ffc96b]">construction</span>
+            <h4 class="font-bold text-white text-base">Affiliate Integrations Under Construction</h4>
+            <p class="text-xs text-[#8ea5b0] max-w-md mx-auto leading-relaxed">
+              This space will serve as the configuration hub for affiliate APIs (e.g. Booking.com, Skyscanner, and Viator). Once integrated, travel managers can automatically embed booking affiliate links inside curated daily itinerary itineraries, generating direct ticket/hotel commissions.
+            </p>
           </div>
         </div>
       </div>

@@ -197,9 +197,10 @@ Requirements:
 
 ## Roles
 
-- User: browse, search, save, book, cancel, and review published itineraries.
-- Admin: publish and manage itineraries and booking workflows.
-- Superadmin: administrator capabilities plus user and role governance.
+- Traveler (User): Browse homepage, search destinations, explore/view itineraries, save to wishlist, book journeys, submit reviews, view Saved & Bookings, and request Trip Manager upgrade. Cannot create/edit/delete/publish itineraries.
+- Trip Manager: Create, edit (AI or manual), duplicate, publish, archive, and delete owned itineraries. Manage bookings on owned itineraries.
+- Admin: Moderates bookings & reviews, reviews Trip Manager role requests, views workspace analytics, and manages organization itineraries.
+- Superadmin: Global user directory, role governance, admin management, platform analytics, system health metrics, and raw AI runtime status.
 
 ## API overview
 

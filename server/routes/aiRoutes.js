@@ -622,15 +622,11 @@ router.post("/itinerary-revision", authenticate, rateLimiter, async (req, res, n
     const isTripManager = req.user.role === 'trip-manager';
 
     if (req.user.role === 'user') {
-      if (!isOwner || itinerary.status !== 'draft') {
-        return res.status(403).json({ message: "Insufficient permissions." });
-      }
-    } else if (isTripManager) {
-      if (!isOwner) {
-        return res.status(403).json({ message: "Insufficient permissions." });
-      }
-    } else if (!isAdmin) {
-      return res.status(403).json({ message: "Insufficient permissions." });
+      return res.status(403).json({ message: "Insufficient permissions. Travelers cannot revise itineraries." });
+    }
+
+    if (!isAdmin && !isOwner) {
+      return res.status(403).json({ message: "Insufficient permissions. You can only revise your own itineraries." });
     }
 
     const revised = await itineraryDraftService.reviseItinerary(itinerary, instruction, req.user._id);

@@ -170,6 +170,45 @@ router.get('/user/favorites', authenticate, async (req, res) => {
   }
 });
 
+// Get signed-in creator's own itineraries.
+router.get('/my', authenticate, async (req, res) => {
+  try {
+    const itineraries = await Itinerary.find({ createdBy: req.user._id })
+      .populate('createdBy', 'name email role')
+      .sort({ createdAt: -1 });
+    return res.json(itineraries.map((item) => presentItinerary(item, req.user._id)));
+  } catch (error) {
+    console.error('Fetch my itineraries error:', error.message);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Get itineraries managed by operations (Admins/Superadmins)
+router.get('/managed', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
+  try {
+    const itineraries = await Itinerary.find()
+      .populate('createdBy', 'name email role')
+      .sort({ createdAt: -1 });
+    return res.json(itineraries.map((item) => presentItinerary(item, req.user._id)));
+  } catch (error) {
+    console.error('Fetch managed itineraries error:', error.message);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Get global platform itineraries (Superadmins only)
+router.get('/platform', authenticate, authorize('superadmin'), async (req, res) => {
+  try {
+    const itineraries = await Itinerary.find()
+      .populate('createdBy', 'name email role')
+      .sort({ createdAt: -1 });
+    return res.json(itineraries.map((item) => presentItinerary(item, req.user._id)));
+  } catch (error) {
+    console.error('Fetch platform itineraries error:', error.message);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 // Portfolio-level metrics for the administration dashboard.
 router.get('/analytics/overview', authenticate, authorize('admin', 'superadmin'), async (req, res) => {
   try {
@@ -231,16 +270,14 @@ router.get('/analytics/overview', authenticate, authorize('admin', 'superadmin')
   }
 });
 
-// Trip managers can publish itineraries; any user can create a draft.
+// Trip managers, Admins and Superadmins can create itineraries. Normal travelers cannot.
 router.post('/', authenticate, async (req, res) => {
   try {
-    const payload = pickItineraryFields(req.body);
-    
-    // Normal users must create itineraries as drafts.
-    const canPublish = ['admin', 'superadmin', 'trip-manager'].includes(req.user.role);
-    if (!canPublish) {
-      payload.status = 'draft';
+    if (req.user.role === 'user') {
+      return res.status(403).json({ message: 'Insufficient permissions. Travelers cannot create itineraries.' });
     }
+    const payload = pickItineraryFields(req.body);
+    const canPublish = ['admin', 'superadmin', 'trip-manager'].includes(req.user.role);
 
     const validationError = validateItinerary(payload, true);
     if (validationError) return res.status(400).json({ message: validationError });
@@ -279,19 +316,17 @@ router.post('/', authenticate, async (req, res) => {
   }
 });
 
-// Browse active itineraries; administrators can also see inactive records.
+// Browse public active itineraries (active and published only, or own drafts)
 router.get('/', authenticate, async (req, res) => {
   try {
-    const query = ['admin', 'superadmin'].includes(req.user.role)
-      ? {}
-      : {
-          isActive: true,
-          $or: [
-            { status: 'published' },
-            { status: { $exists: false } },
-            { status: 'draft', createdBy: req.user._id }
-          ]
-        };
+    const query = {
+      isActive: true,
+      $or: [
+        { status: 'published' },
+        { status: { $exists: false } },
+        { status: 'draft', createdBy: req.user._id }
+      ]
+    };
     const itineraries = await Itinerary.find(query)
       .populate('createdBy', 'name email role')
       .sort({ createdAt: -1 });
@@ -475,24 +510,17 @@ router.put('/:id', authenticate, ensureValidId, async (req, res) => {
     const itinerary = await Itinerary.findById(req.params.id);
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
     
-    const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    const isTripManager = req.user.role === 'trip-manager';
-
     // 1. Authorization checks
+    const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
+    const isSuperadmin = req.user.role === 'superadmin';
+    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
+
     if (req.user.role === 'user') {
-      if (!isOwner) {
-        return res.status(403).json({ message: 'Insufficient permissions.' });
-      }
-      if (itinerary.status !== 'draft') {
-        return res.status(403).json({ message: 'Travelers cannot edit published itineraries.' });
-      }
-    } else if (isTripManager) {
-      if (!isOwner) {
-        return res.status(403).json({ message: 'Insufficient permissions.' });
-      }
-    } else if (!isAdmin) {
-      return res.status(403).json({ message: 'Insufficient permissions.' });
+      return res.status(403).json({ message: 'Insufficient permissions. Travelers cannot edit itineraries.' });
+    }
+
+    if (!isSuperadmin && !isOwner) {
+      return res.status(403).json({ message: 'Insufficient permissions. You can only edit your own itineraries.' });
     }
 
     // 2. Concurrency Check
@@ -545,11 +573,14 @@ router.delete('/:id', authenticate, ensureValidId, async (req, res) => {
     if (!itinerary) return res.status(404).json({ message: 'Itinerary not found.' });
     
     const isOwner = itinerary.createdBy && itinerary.createdBy.toString() === req.user._id.toString();
-    const isAdmin = ['admin', 'superadmin'].includes(req.user.role);
-    const isTripManager = req.user.role === 'trip-manager';
+    const isSuperadmin = req.user.role === 'superadmin';
 
-    if (!isAdmin && !(isTripManager && isOwner)) {
-      return res.status(403).json({ message: 'Insufficient permissions.' });
+    if (req.user.role === 'user') {
+      return res.status(403).json({ message: 'Insufficient permissions. Travelers cannot delete itineraries.' });
+    }
+
+    if (!isSuperadmin && !isOwner) {
+      return res.status(403).json({ message: 'Insufficient permissions. You can only delete your own itineraries.' });
     }
 
     await itinerary.deleteOne();

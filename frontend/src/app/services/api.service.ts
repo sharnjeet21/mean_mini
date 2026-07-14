@@ -217,4 +217,17 @@ export class ApiService {
   toggleUserActiveStatus(userId: string, isActive: boolean): Observable<any> {
     return this.http.put(`${this.baseUrl}/users/${userId}/status`, { isActive });
   }
+
+  // RBAC Itinerary endpoints
+  getMyItineraries(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/itinerary/my`);
+  }
+
+  getManagedItineraries(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/itinerary/managed`);
+  }
+
+  getPlatformItineraries(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/itinerary/platform`);
+  }
 }

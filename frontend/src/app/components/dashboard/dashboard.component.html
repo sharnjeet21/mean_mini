@@ -1,7 +1,7 @@
 <main class="min-h-screen px-5 pb-20 pt-28 sm:px-8 lg:px-12 page-entrance">
   <div class="mx-auto max-w-7xl">
-    <!-- ── traveler (user) WORKSPACE ────────────────────────────────────────── -->
-    <ng-container *ngIf="auth.currentUser()?.role === 'user'">
+    <!-- ── EXPLORER DASHBOARD (everyone) ────────────────────────────────────── -->
+    <ng-container *ngIf="!isWorkspaceMode">
       <section class="glass-panel relative mb-8 overflow-hidden rounded-[34px] p-7 sm:p-10">
         <div class="absolute -right-20 -top-28 h-80 w-80 rounded-full border-[58px] border-[#7ae0c3]/5"></div>
         <div class="absolute bottom-0 right-[18%] h-40 w-40 rotate-12 rounded-[35%] bg-[#ff8d70]/5"></div>
@@ -15,7 +15,7 @@
               Plan your next trip with AI, explore signature routes, or save your favorite plans.
             </p>
           </div>
-          <button *ngIf="auth.isLoggedIn" mat-flat-button class="primary-action !self-start lg:!self-auto" (click)="openModal()">
+          <button *ngIf="auth.isLoggedIn && auth.currentUser()?.role !== 'user'" mat-flat-button class="primary-action !self-start lg:!self-auto" (click)="openModal()">
             <span class="material-symbols-outlined mr-2 text-lg">add</span>
             Plan with AI
           </button>
@@ -127,7 +127,7 @@
                   class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
             Explore live routes
           </button>
-          <button *ngIf="activeView === 'explore' && auth.isLoggedIn" (click)="openModal()"
+          <button *ngIf="activeView === 'explore' && auth.isLoggedIn && auth.currentUser()?.role !== 'user'" (click)="openModal()"
                   class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
             Plan custom trip with AI
           </button>
@@ -180,8 +180,8 @@
       </section>
     </ng-container>
 
-    <!-- ── trip-manager WORKSPACE ───────────────────────────────────────────── -->
-    <ng-container *ngIf="auth.currentUser()?.role === 'trip-manager'">
+    <!-- ── trip-manager / CREATOR WORKSPACE ─────────────────────────────────── -->
+    <ng-container *ngIf="isWorkspaceMode && ['trip-manager', 'admin', 'superadmin'].includes(auth.currentUser()?.role || '')">
       <!-- Banner/Header -->
       <section class="glass-panel relative mb-8 overflow-hidden rounded-[34px] p-7 sm:p-10">
         <div class="absolute -right-20 -top-28 h-80 w-80 rounded-full border-[58px] border-[#7ae0c3]/5"></div>

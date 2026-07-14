@@ -40,7 +40,7 @@ router.post("/", authenticate, authorize('user'), async (req, res) => {
 
     const roleRequest = new RoleRequest({
       userId: req.user._id,
-      requestedRole: 'admin',
+      requestedRole: 'trip-manager',
       reason: reason.trim(),
     });
 
@@ -136,7 +136,7 @@ router.put("/:id/review", authenticate, authorize('admin', 'superadmin'), async 
 
     // If approved, update user role
     if (status === 'approved') {
-      await User.findByIdAndUpdate(request.userId._id, { role: 'admin' });
+      await User.findByIdAndUpdate(request.userId._id, { role: request.requestedRole });
     }
 
     return res.json({

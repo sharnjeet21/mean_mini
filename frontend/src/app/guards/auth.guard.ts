@@ -37,3 +37,48 @@ export const adminGuard: CanActivateFn = () => {
   router.navigate(['/dashboard']);
   return false;
 };
+
+export const tripManagerGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (!auth.isLoggedIn) {
+    router.navigate(['/login']);
+    return false;
+  }
+  const role = auth.currentUser()?.role;
+  if (['trip-manager', 'admin', 'superadmin'].includes(role || '')) return true;
+
+  router.navigate(['/dashboard']);
+  return false;
+};
+
+export const operationsGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (!auth.isLoggedIn) {
+    router.navigate(['/login']);
+    return false;
+  }
+  const role = auth.currentUser()?.role;
+  if (['admin', 'superadmin'].includes(role || '')) return true;
+
+  router.navigate(['/dashboard']);
+  return false;
+};
+
+export const platformGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const router = inject(Router);
+
+  if (!auth.isLoggedIn) {
+    router.navigate(['/login']);
+    return false;
+  }
+  const role = auth.currentUser()?.role;
+  if (role === 'superadmin') return true;
+
+  router.navigate(['/dashboard']);
+  return false;
+};

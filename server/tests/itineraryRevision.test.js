@@ -45,7 +45,7 @@ describe('POST /api/v1/ai/itinerary-revision', () => {
   let originalFindById, originalReviseItinerary;
 
   beforeEach((t) => {
-    token = jwt.sign({ id: 'user123', role: 'user', email: 'test@example.com' }, process.env.JWT_SECRET || 'travel_app_secret', { expiresIn: '1h' });
+    token = jwt.sign({ id: 'user123', role: 'trip-manager', email: 'test@example.com' }, process.env.JWT_SECRET || 'travel_app_secret', { expiresIn: '1h' });
     otherToken = jwt.sign({ id: 'user456', role: 'user', email: 'other@example.com' }, process.env.JWT_SECRET || 'travel_app_secret', { expiresIn: '1h' });
     adminToken = jwt.sign({ id: 'admin123', role: 'admin', email: 'admin@example.com' }, process.env.JWT_SECRET || 'travel_app_secret', { expiresIn: '1h' });
 
@@ -101,7 +101,7 @@ describe('POST /api/v1/ai/itinerary-revision', () => {
     }, token);
 
     assert.equal(status, 403);
-    assert.equal(body.message, 'Insufficient permissions.');
+    assert.match(body.message, /Insufficient permissions/);
   });
 
   it('should return revised plan if user is the owner', async () => {
