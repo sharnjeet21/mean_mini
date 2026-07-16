@@ -28,6 +28,7 @@ Thumbs.db
 *.tex
 DEMO.md
 TASKS_IMPLEMENTATION.md
+main_assets/
 
 # ── Screenshots ───────────────────────────────────────────────────────────────
 screenshot*.png
