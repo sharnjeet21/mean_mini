@@ -106,9 +106,9 @@ async function initAi() {
   const gemini = new GeminiProvider();
 
   let instances = [
+    { name: 'Gemini', instance: gemini, key: 'gemini' },
     { name: 'NVIDIA', instance: nvidia, key: 'nvidia' },
-    { name: 'Ollama', instance: ollama, key: 'ollama' },
-    { name: 'Gemini', instance: gemini, key: 'gemini' }
+    { name: 'Ollama', instance: ollama, key: 'ollama' }
   ];
 
   if (preferred !== 'auto') {

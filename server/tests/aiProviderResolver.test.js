@@ -67,17 +67,17 @@ describe('aiProviderResolver', () => {
     expect(meta.lastInitializationResult).toBe('Failed: No providers available');
   });
 
-  it('should select NVIDIA as default priority in auto mode', async () => {
+  it('should select Gemini as default priority in auto mode', async () => {
     process.env.AI_PROVIDER = 'auto';
     await initAi();
     
     const provider = getAiProvider();
     const result = await provider.generateItineraryDraft({});
-    expect(result).toBe('nvidia');
+    expect(result).toBe('gemini');
     
     const meta = provider.getMetadata();
-    expect(meta.currentProvider).toBe('Nvidia');
-    expect(meta.availableProviders).toEqual(['Nvidia', 'Ollama', 'Gemini']);
+    expect(meta.currentProvider).toBe('Gemini');
+    expect(meta.availableProviders).toEqual(['Gemini', 'Nvidia', 'Ollama']);
   });
 
   it('should prioritize the provider set in AI_PROVIDER environment variable', async () => {
@@ -96,26 +96,26 @@ describe('aiProviderResolver', () => {
   it('should retry once on the current provider before falling back', async () => {
     process.env.AI_PROVIDER = 'auto';
     
-    const nvidiaGenerate = jest.fn()
-      .mockRejectedValueOnce(new Error('Nvidia Error 1'))
-      .mockRejectedValueOnce(new Error('Nvidia Error 2'));
+    const geminiGenerate = jest.fn()
+      .mockRejectedValueOnce(new Error('Gemini Error 1'))
+      .mockRejectedValueOnce(new Error('Gemini Error 2'));
       
-    const ollamaGenerate = jest.fn().mockResolvedValue('ollama');
+    const nvidiaGenerate = jest.fn().mockResolvedValue('nvidia');
 
+    jest.spyOn(GeminiProvider.prototype, 'generateItineraryDraft').mockImplementation(geminiGenerate);
     jest.spyOn(NvidiaProvider.prototype, 'generateItineraryDraft').mockImplementation(nvidiaGenerate);
-    jest.spyOn(OllamaProvider.prototype, 'generateItineraryDraft').mockImplementation(ollamaGenerate);
 
     await initAi();
     const provider = getAiProvider();
     
     const result = await provider.generateItineraryDraft({});
-    expect(result).toBe('ollama');
-    expect(nvidiaGenerate).toHaveBeenCalledTimes(2); // 1 initial + 1 retry
-    expect(ollamaGenerate).toHaveBeenCalledTimes(1);
+    expect(result).toBe('nvidia');
+    expect(geminiGenerate).toHaveBeenCalledTimes(2); // 1 initial + 1 retry
+    expect(nvidiaGenerate).toHaveBeenCalledTimes(1);
     
     const meta = provider.getMetadata();
-    expect(meta.currentProvider).toBe('Ollama');
-    expect(meta.providerHealth['Nvidia']).toBe('unhealthy');
+    expect(meta.currentProvider).toBe('Nvidia');
+    expect(meta.providerHealth['Gemini']).toBe('unhealthy');
   });
 
   it('should throw an error if all fallback providers fail', async () => {

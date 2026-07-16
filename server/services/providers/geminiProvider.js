@@ -8,7 +8,7 @@
 class GeminiProvider {
   constructor(config = {}) {
     this.apiKey = config.apiKey || process.env.GEMINI_API_KEY;
-    this.model = config.model || 'gemini-2.5-flash';
+    this.model = config.model || process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite';
     this.timeout = config.timeout || 60000; // 60 seconds default timeout for cloud API
   }
 

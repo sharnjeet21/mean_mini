@@ -9,7 +9,7 @@ class NvidiaProvider {
   constructor(config = {}) {
     this.apiKey = config.apiKey || process.env.NVIDIA_API_KEY;
     this.model = config.model || process.env.NVIDIA_MODEL || 'meta/llama-3.1-70b-instruct';
-    this.timeout = config.timeout || 60000; // 60 seconds default timeout for cloud API
+    this.timeout = config.timeout || 120000; // 120 seconds default timeout for larger cloud models
   }
 
   async isAvailable() {
@@ -26,7 +26,7 @@ class NvidiaProvider {
     }
   }
 
-  async _callNvidia(prompt) {
+  async _callNvidia(prompt, options = {}) {
     if (!this.apiKey) {
       throw new Error('NVIDIA_API_KEY is not configured');
     }
@@ -45,7 +45,10 @@ class NvidiaProvider {
           },
           body: JSON.stringify({ 
             model: this.model,
-            messages: [{ role: 'user', content: prompt }]
+            messages: [{ role: 'user', content: prompt }],
+            temperature: options.temperature ?? 0.2,
+            top_p: options.topP ?? 0.7,
+            max_tokens: options.maxTokens ?? 1024
           }),
           signal: controller.signal
         }
@@ -136,7 +139,7 @@ Generation Rules:
 - Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
 `;
 
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 2048 });
     const cleaned = this._cleanJson(text);
     const parsed = JSON.parse(cleaned);
 
@@ -188,7 +191,7 @@ Extraction Rules:
 - Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
 `;
 
-    const resText = await this._callNvidia(prompt);
+    const resText = await this._callNvidia(prompt, { maxTokens: 512 });
     const cleaned = this._cleanJson(resText);
     const parsed = JSON.parse(cleaned);
 
@@ -247,28 +250,28 @@ Rules:
 User query: ${query}
 `;
 
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 1024 });
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 
   async generateTrendingDestinations() {
     const prompt = `Suggest 5 trending travel destinations in ${new Date().getFullYear()} with short descriptions. Return ONLY a JSON array of objects with fields name (string) and description (string, max 100 chars), no markdown.`;
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 512 });
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 
   async generateItinerarySuggestions(destination) {
     const prompt = `Suggest top 5 attractions in ${destination} for a travel itinerary. Return ONLY a JSON array of objects with fields name (string) and description (string, max 150 chars), no markdown.`;
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 512 });
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
 
   async generateAutocompleteSuggestions(query) {
     const prompt = `Suggest up to 8 real place names matching '${query}'. Return ONLY a JSON array of strings, no markdown.`;
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 128, temperature: 0, topP: 1 });
     const cleaned = this._cleanJson(text);
     const parsed = JSON.parse(cleaned);
     return Array.isArray(parsed)
@@ -305,7 +308,7 @@ Rules:
 User Edit Instruction: "${instruction}"
 `;
 
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 512 });
     const cleaned = this._cleanJson(text);
     const parsed = JSON.parse(cleaned);
 
@@ -368,7 +371,7 @@ ${compactContext}
 ${editableInput}
 `;
 
-    const text = await this._callNvidia(prompt);
+    const text = await this._callNvidia(prompt, { maxTokens: 2048 });
     const cleaned = this._cleanJson(text);
     return JSON.parse(cleaned);
   }
