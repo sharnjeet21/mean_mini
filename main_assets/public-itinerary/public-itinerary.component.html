@@ -1,0 +1,114 @@
+<div class="min-h-screen text-[#f5fbff]" *ngIf="itinerary">
+  <!-- Hero -->
+  <section class="relative min-h-[430px] w-full overflow-hidden bg-gradient-to-br from-[#0f8f8a] via-[#0b1d29] to-[#ff8d70]">
+    <img *ngIf="imageUrl" [src]="imageUrl" [alt]="itinerary.destination"
+         class="absolute inset-0 w-full h-full object-cover">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#06131d]/92 via-[#06131d]/62 to-[#06131d]/18"></div>
+    <div class="relative z-10 flex flex-col justify-end min-h-[430px] max-w-7xl mx-auto px-6 lg:px-12 pb-12">
+      
+      <div class="flex items-center justify-between mb-2">
+        <div class="text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Prepared for you by {{ itinerary.createdBy?.name || 'Travel Intelligence' }}</div>
+        <select [ngModel]="(currencyService.currentCurrency$ | async)" (ngModelChange)="currencyService.setCurrency($event)"
+                class="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-bold text-white outline-none backdrop-blur-md appearance-none cursor-pointer">
+          <option *ngFor="let cur of currencyService.supportedCurrencies" [value]="cur" class="bg-[#071721] text-white">
+            {{ cur }} {{ currencyService.getSymbol(cur) }}
+          </option>
+        </select>
+      </div>
+      <div *ngIf="currencyService.currentCurrency !== 'USD'" class="flex flex-wrap items-center gap-3 text-[10px] text-white/50 mb-3">
+        <span class="flex items-center gap-1">
+          <span class="material-symbols-outlined text-[12px] text-[#7ae0c3]">currency_exchange</span>
+          1 USD = {{ currencyService.getSymbol(currencyService.currentCurrency) }}{{ currencyService.getConversionInfo().rate | number:'1.2-2' }}
+        </span>
+        <span class="opacity-40">·</span>
+        <span>{{ currencyService.getConversionInfo().feePercent }}% markup included</span>
+        <span class="opacity-40">·</span>
+        <span class="flex items-center gap-1">
+          <span class="inline-block h-1.5 w-1.5 rounded-full" [class]="currencyService.getConversionInfo().isLive ? 'bg-emerald-400' : 'bg-amber-400'"></span>
+          {{ currencyService.getConversionInfo().lastUpdated }}
+        </span>
+      </div>
+      
+      <div class="flex flex-wrap items-center gap-3 mb-5">
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">{{ itinerary.duration }}</span>
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">{{ currencyService.convert(itinerary.budget).symbol }}{{ currencyService.convert(itinerary.budget).amount | number }} total</span>
+        <span class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 capitalize">{{ itinerary.travelStyle || 'balanced' }}</span>
+      </div>
+
+      <h1 class="mb-3 text-4xl font-bold tracking-tight text-white lg:text-6xl">{{ itinerary.title }}</h1>
+      <div class="flex flex-wrap items-center gap-5 text-white/80">
+        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined">location_on</span>{{ itinerary.destination }}</span>
+        <span class="flex items-center gap-1.5"><span class="material-symbols-outlined">group</span>{{ itinerary.travelerCount || 1 }} travelers</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+    <!-- Overview -->
+    <section class="mb-14 max-w-3xl">
+      <div>
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Trip brief</p>
+        <h2 class="text-3xl font-bold text-white mb-4">Itinerary overview</h2>
+      </div>
+      <p class="leading-8 text-[#b0c3cf]">{{ itinerary.description || 'No description provided.' }}</p>
+    </section>
+
+    <!-- Map View -->
+    <section class="mb-14 h-[400px] w-full rounded-3xl overflow-hidden glass-panel relative">
+      <app-map-canvas *ngIf="mapLat && mapLng" [lat]="mapLat" [lng]="mapLng" [pins]="mapPins" [routeSegments]="mapRouteSegments"></app-map-canvas>
+      <div *ngIf="!mapLat || !mapLng" class="absolute inset-0 flex flex-col items-center justify-center text-[#8ea5b0] bg-white/5">
+        <span class="material-symbols-outlined text-4xl mb-3 opacity-50 text-[#a6ebd7]">map</span>
+        <p class="text-sm">Loading map view...</p>
+      </div>
+    </section>
+
+    <!-- Daily Plan -->
+    <section class="mb-14">
+      <div class="mb-7">
+        <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Schedule</p>
+        <h2 class="text-3xl font-bold text-white">Daily Plan</h2>
+      </div>
+      
+      <div class="space-y-6">
+        <div *ngFor="let day of itinerary.dailyPlan; let i = index" class="glass-panel rounded-2xl p-6 lg:p-8 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-2 h-full bg-[#7ae0c3]"></div>
+          <h3 class="mb-2 text-2xl font-bold text-white">Day {{ day.day }} <span class="text-[#8ea5b0] text-xl font-normal">· {{ day.title }}</span></h3>
+          <p class="mb-6 text-[#b0c3cf] max-w-2xl">{{ day.theme || 'Explore the city and enjoy local highlights.' }}</p>
+
+          <div class="space-y-6">
+            <div *ngFor="let act of day.activities" class="relative pl-6 before:absolute before:left-2 before:top-2 before:h-full before:w-[1px] before:-translate-x-1/2 before:bg-white/10 last:before:hidden">
+              <div class="absolute left-2 top-2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#7ae0c3]"></div>
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="font-bold text-white">{{ act.time }} · {{ act.activity }}</p>
+                  <p class="mt-1 text-sm text-[#8ea5b0]"><span class="material-symbols-outlined text-xs align-middle">location_on</span> {{ act.location }}</p>
+                </div>
+                <span class="rounded-full bg-white/5 px-2 py-1 text-[10px] uppercase text-[#b0c3cf]">{{ act.category }}</span>
+              </div>
+              <p *ngIf="act.description" class="mt-2 text-sm text-[#b0c3cf]">{{ act.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="text-center py-10 border-t border-white/10">
+      <p class="text-[#8ea5b0] mb-4">Want to book this trip or customize it?</p>
+      <button class="signature-gradient rounded-xl px-7 py-3.5 font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95">
+        Contact Your Travel Planner
+      </button>
+    </div>
+  </main>
+</div>
+
+<!-- Loading & Error -->
+<div *ngIf="loading" class="min-h-screen flex items-center justify-center text-[#8ea5b0]">
+  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+</div>
+<div *ngIf="error" class="min-h-screen flex items-center justify-center">
+  <div class="glass-panel p-8 rounded-2xl max-w-md text-center">
+    <span class="material-symbols-outlined text-4xl text-rose-400 mb-4">error</span>
+    <h2 class="text-2xl font-bold text-white mb-2">Proposal Not Found</h2>
+    <p class="text-[#8ea5b0]">{{ error }}</p>
+  </div>
+</div>

@@ -1,0 +1,49 @@
+<div class="min-h-screen pt-24 px-6 lg:px-12 max-w-7xl mx-auto text-[#f5fbff]">
+  <div class="mb-8">
+    <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Client Portal</p>
+    <h1 class="text-4xl font-bold text-white mb-2">My Proposals</h1>
+    <p class="text-[#8ea5b0]">View the itineraries curated specifically for you.</p>
+  </div>
+
+  <div *ngIf="loading" class="glass-panel grid min-h-72 place-items-center rounded-[30px]">
+    <div class="text-center">
+      <p class="mt-4 text-sm text-[#78919d]">Loading your proposals...</p>
+    </div>
+  </div>
+
+  <div *ngIf="!loading" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div *ngIf="proposals.length === 0" class="col-span-full py-12 text-center text-[#8ea5b0]">
+      <span class="material-symbols-outlined block text-4xl mb-4 opacity-50">flight_takeoff</span>
+      <p>No proposals have been shared with you yet.</p>
+    </div>
+
+    <div *ngFor="let p of proposals" class="glass-panel group relative flex h-full flex-col overflow-hidden rounded-[24px] p-2 transition duration-300 hover:bg-white/[0.04]">
+      <div class="relative h-48 w-full overflow-hidden rounded-[18px]">
+        <img [src]="p.imageUrl || 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800'" class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Destination">
+        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"></div>
+        <div class="absolute bottom-4 left-4 right-4">
+          <p class="text-sm font-semibold text-[#a6ebd7]">{{ p.destination }}</p>
+          <h3 class="mt-1 text-xl font-bold text-white leading-tight">{{ p.title }}</h3>
+        </div>
+      </div>
+      
+      <div class="flex flex-1 flex-col justify-between p-4 pb-2">
+        <div>
+          <div class="mb-4 flex flex-wrap gap-2">
+            <span class="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-[#b0c3cf]">
+              <span class="material-symbols-outlined mr-1 !text-[12px]">schedule</span> {{ p.duration }} Days
+            </span>
+            <span *ngIf="p.budget" class="inline-flex items-center rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold text-[#b0c3cf]">
+              <span class="material-symbols-outlined mr-1 !text-[12px]">payments</span> ${{ p.budget }}
+            </span>
+          </div>
+          <p class="text-xs text-[#8ea5b0] line-clamp-2 mb-4">{{ p.description || 'Explore the best of ' + p.destination + '.' }}</p>
+        </div>
+        
+        <a [routerLink]="['/proposal', p._id]" class="w-full text-center rounded-xl bg-[#7ae0c3] py-2.5 text-xs font-bold text-[#05201f] transition hover:bg-[#8eedce]">
+          View Proposal
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

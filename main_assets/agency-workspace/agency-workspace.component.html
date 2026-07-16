@@ -1,0 +1,118 @@
+<div class="min-h-screen pt-24 px-6 lg:px-12 max-w-7xl mx-auto text-[#f5fbff]">
+  <div class="mb-8">
+    <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Travel Agency SaaS</p>
+    <h1 class="text-4xl font-bold text-white mb-2">Agency Workspace</h1>
+    <p class="text-[#8ea5b0]">Manage your clients, share itinerary proposals, and view analytics.</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Client List -->
+    <div class="glass-panel rounded-2xl p-6 lg:col-span-1">
+      <h3 class="text-xl font-bold text-white mb-4">My Clients</h3>
+      <div class="space-y-3">
+        <div *ngFor="let client of clients" class="bg-white/[0.03] border border-white/10 rounded-xl p-4 hover:bg-white/5 transition cursor-pointer">
+          <p class="font-bold text-white">{{ client.name }}</p>
+          <p class="text-xs text-[#8ea5b0] mb-2">{{ client.email }}</p>
+          <span class="bg-[#7ae0c3]/15 text-[#a6ebd7] text-[10px] px-2 py-0.5 rounded-full">{{ client.trips }} trips planned</span>
+        </div>
+      </div>
+      <button class="mt-6 w-full rounded-xl bg-white/10 border border-white/15 px-4 py-2.5 text-sm font-semibold hover:bg-white/20 transition">
+        + Add New Client
+      </button>
+    </div>
+
+    <!-- Main Content Panel -->
+    <div class="glass-panel rounded-2xl p-6 lg:col-span-2">
+      <div class="flex items-center justify-between mb-6 border-b border-white/10 pb-4">
+        <div class="flex space-x-4">
+          <button class="font-bold pb-2 transition" 
+                  [class]="activeTab === 'proposals' ? 'text-[#7ae0c3] border-b-2 border-[#7ae0c3]' : 'text-[#8ea5b0] hover:text-white'" 
+                  (click)="fetchProposals(); activeTab = 'proposals'">Recent Proposals</button>
+          <button class="font-bold pb-2 transition" 
+                  [class]="activeTab === 'analytics' ? 'text-[#7ae0c3] border-b-2 border-[#7ae0c3]' : 'text-[#8ea5b0] hover:text-white'" 
+                  (click)="loadAnalytics()">Budget & Analytics</button>
+        </div>
+        <button class="rounded-xl bg-[#7ae0c3] px-4 py-2 text-sm font-bold text-[#05201f]">
+          Create Proposal
+        </button>
+      </div>
+      
+      <!-- Proposals Tab -->
+      <div *ngIf="activeTab === 'proposals'" class="overflow-x-auto">
+        <p *ngIf="loading" class="text-sm text-[#8ea5b0]">Loading proposals...</p>
+        <table *ngIf="!loading" class="w-full text-left text-sm text-[#b0c3cf]">
+          <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02]">
+            <tr>
+              <th class="px-4 py-3 rounded-tl-lg">Trip Name</th>
+              <th class="px-4 py-3">Client</th>
+              <th class="px-4 py-3">Status</th>
+              <th class="px-4 py-3">Date</th>
+              <th class="px-4 py-3 rounded-tr-lg text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngIf="recentProposals.length === 0">
+              <td colspan="5" class="px-4 py-8 text-center text-[#8ea5b0]">No proposals found.</td>
+            </tr>
+            <tr *ngFor="let proposal of recentProposals" class="border-b border-white/5 hover:bg-white/[0.02] transition">
+              <td class="px-4 py-4 font-semibold text-white">{{ proposal.title }}</td>
+              <td class="px-4 py-4">
+                <span class="px-2 py-1 rounded text-xs" [class]="proposal.client === 'Assigned' ? 'bg-[#7ae0c3]/20 text-[#a6ebd7]' : 'bg-white/10 text-[#8ea5b0]'">{{ proposal.client }}</span>
+              </td>
+              <td class="px-4 py-4">
+                <span class="px-2 py-1 rounded-full text-[10px] font-bold"
+                      [class]="proposal.status === 'Sent' ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'">
+                  {{ proposal.status }}
+                </span>
+              </td>
+              <td class="px-4 py-4">{{ proposal.date | date:'mediumDate' }}</td>
+              <td class="px-4 py-4 text-right">
+                <a [routerLink]="['/itinerary', proposal.id]" class="text-[#a6ebd7] hover:text-white transition mr-3 text-xs font-semibold inline-block">Edit</a>
+                <a [routerLink]="['/proposal', proposal.id]" class="text-[#a6ebd7] hover:text-white transition text-xs font-semibold inline-block">Share Link</a>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Analytics Tab -->
+      <div *ngIf="activeTab === 'analytics'" class="animate-in fade-in slide-in-from-bottom-2 duration-300">
+        <div class="flex items-center justify-between mb-4">
+          <select [ngModel]="(currencyService.currentCurrency$ | async)" (ngModelChange)="currencyService.setCurrency($event)"
+                  class="rounded-full border border-white/20 bg-white/5 px-4 py-1.5 text-xs font-bold text-white outline-none backdrop-blur-md appearance-none cursor-pointer">
+            <option *ngFor="let cur of currencyService.supportedCurrencies" [value]="cur" class="bg-[#071721] text-white">
+              {{ cur }} {{ currencyService.getSymbol(cur) }}
+            </option>
+          </select>
+          <div *ngIf="currencyService.currentCurrency !== 'USD'" class="flex items-center gap-2 text-[10px] text-[#8ea5b0]">
+            <span class="flex items-center gap-1">
+              <span class="material-symbols-outlined text-[12px] text-[#7ae0c3]">currency_exchange</span>
+              1 USD = {{ currencyService.getSymbol(currencyService.currentCurrency) }}{{ currencyService.getConversionInfo().rate | number:'1.2-2' }}
+            </span>
+            <span class="opacity-40">·</span>
+            <span>{{ currencyService.getConversionInfo().feePercent }}% markup</span>
+          </div>
+        </div>
+        <p *ngIf="loading" class="text-sm text-[#8ea5b0]">Loading analytics...</p>
+        <div *ngIf="!loading && analyticsData" class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div class="bg-white/[0.03] border border-white/10 rounded-xl p-5 text-center">
+            <p class="text-xs text-[#8ea5b0] uppercase tracking-wider mb-2">Total Managed Budget</p>
+            <p class="text-3xl font-extrabold text-[#7ae0c3]">{{ currencyService.convert(analyticsData.totalBudget).symbol }}{{ currencyService.convert(analyticsData.totalBudget).amount | number }}</p>
+          </div>
+          <div class="bg-white/[0.03] border border-white/10 rounded-xl p-5 text-center">
+            <p class="text-xs text-[#8ea5b0] uppercase tracking-wider mb-2">Active Proposals</p>
+            <p class="text-3xl font-extrabold text-[#ffd996]">{{ analyticsData.activeProposals }}</p>
+          </div>
+          <div class="bg-white/[0.03] border border-white/10 rounded-xl p-5 text-center">
+            <p class="text-xs text-[#8ea5b0] uppercase tracking-wider mb-2">Total Trips</p>
+            <p class="text-3xl font-extrabold text-white">{{ analyticsData.totalTrips }}</p>
+          </div>
+          <div class="bg-white/[0.03] border border-white/10 rounded-xl p-5 text-center">
+            <p class="text-xs text-[#8ea5b0] uppercase tracking-wider mb-2">Unique Clients</p>
+            <p class="text-3xl font-extrabold text-white">{{ analyticsData.totalClients }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
