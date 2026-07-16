@@ -426,7 +426,7 @@ export class DashboardComponent implements OnInit {
     const payload = {
       ...this.form,
       status: 'draft', // Converge manual flow into itinerary draft lifecycle
-      budget: this.form.budget ? Number(this.form.budget) : 0,
+      budget: this.form.budget ? Number(this.form.budget) : undefined,
       stops: this.form.stops.filter((stop) => stop.name.trim()),
     };
 
@@ -629,13 +629,15 @@ export class DashboardComponent implements OnInit {
           order: idx
         }));
         
+        const actualDuration = Math.max(1, (draft.days || []).length);
+        
         const payload = {
           title: `Trip to ${draft.destination} (AI Draft)`,
           destination: draft.destination,
-          duration: `${draft.duration} Days`,
+          duration: `${actualDuration} Days`,
           startDate: new Date().toISOString(), // default start today
-          endDate: new Date(Date.now() + (draft.duration - 1) * 86400000).toISOString(),
-          budget: intent.budget || 0,
+          endDate: new Date(Date.now() + (actualDuration - 1) * 86400000).toISOString(),
+          budget: intent.budget || undefined,
           travelerCount: intent.travelers || 1,
           travelStyle: intent.travelStyle || 'balanced',
           status: 'draft',

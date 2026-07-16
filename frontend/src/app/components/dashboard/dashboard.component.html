@@ -585,14 +585,15 @@
       <!-- AI MODE FOOTER -->
       <ng-container *ngIf="creationMode === 'ai'">
         <ng-container *ngIf="!aiLoading">
-          <button mat-stroked-button class="ghost-action" type="button" (click)="creationMode = 'manual'">Create manually</button>
+          <button mat-stroked-button class="ghost-action" type="button" (click)="closeModal()">Cancel</button>
+          <button mat-stroked-button class="ghost-action ml-2" type="button" (click)="creationMode = 'manual'">Create manually</button>
           <div class="flex-grow"></div>
           <button mat-flat-button class="primary-action !px-6" type="button" (click)="generateAiItinerary()">
             Generate my itinerary <span class="material-symbols-outlined ml-2 text-lg">auto_awesome</span>
           </button>
         </ng-container>
         <ng-container *ngIf="aiLoading">
-          <button mat-stroked-button class="ghost-action" type="button" disabled>Cancel</button>
+          <button mat-stroked-button class="ghost-action" type="button" (click)="closeModal()">Cancel</button>
           <div class="flex-grow"></div>
           <button mat-flat-button class="primary-action" type="button" disabled>
             Planning trip...

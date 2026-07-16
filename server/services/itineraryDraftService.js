@@ -36,7 +36,7 @@ function computeFingerprint(input, userId = '') {
   const rawInterests = Array.isArray(input.interests) ? input.interests : [];
   const interests = [...new Set(rawInterests.map(i => String(i).trim().toLowerCase()))].sort();
   
-  const budget = input.budget ? Math.max(0, Number(input.budget)) : '';
+  const budget = input.budget === null ? 'null' : (input.budget ? Math.max(0, Number(input.budget)) : '');
   const prompt = String(input.prompt || input.userPrompt || '').trim().toLowerCase();
   
   const providerName = (process.env.AI_PROVIDER || 'ollama').toLowerCase();
@@ -82,7 +82,7 @@ async function generateItineraryDraft(input, userId = '') {
     travelers: input.travelers ? Math.max(1, Number(input.travelers)) : undefined,
     travelStyle: input.travelStyle ? String(input.travelStyle).trim() : 'balanced',
     interests: Array.isArray(input.interests) ? input.interests.map(i => String(i).trim()) : [],
-    budget: input.budget ? Math.max(0, Number(input.budget)) : undefined,
+    budget: input.budget === null ? null : (input.budget ? Math.max(0, Number(input.budget)) : undefined),
     destinationAttractions: Array.isArray(input.destinationAttractions) ? input.destinationAttractions : undefined
   };
 
@@ -683,7 +683,7 @@ function mergePatch(original, patch, scope, operation) {
     title: itinerary.title,
     destination: itinerary.destination,
     duration: durationVal,
-    budget: itinerary.budget || 0,
+    budget: itinerary.budget === undefined ? null : itinerary.budget,
     description: itinerary.description || '',
     dailyPlan: (itinerary.dailyPlan || []).map(d => ({
       day: d.day,

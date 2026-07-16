@@ -70,6 +70,12 @@ ${input.destinationAttractions.map(a => `- ${a.name}: ${a.description}`).join('\
 Do NOT blindly include all of them. Only select and prioritize the ones that match the user's specific context (e.g. arts vs relaxation, budget, etc.).
 `;
     }
+    let budgetString = 'Not specified';
+    if (input.budget === null) {
+      budgetString = 'The traveler has no fixed budget. Recommend the best suitable accommodation, transport and activities. Do not attempt to minimize cost.';
+    } else if (input.budget !== undefined) {
+      budgetString = input.budget;
+    }
 
     const prompt = `
 You are a highly capable travel planning assistant. Your task is to generate a structured itinerary draft.
@@ -79,7 +85,7 @@ Output JSON Schema:
 {
   "destination": "string (the full destination name)",
   "duration": "number (the exact number of days requested)",
-  "summary": "string (a concise trip overview)",
+  "summary": "string (a useful overall description)",
   "days": [
     {
       "day": "number (e.g., 1)",
@@ -96,26 +102,30 @@ Output JSON Schema:
       ]
     }
   ],
-  "recommendations": ["string"],
+  "recommendations": ["string (include local recommendations and practical travel advice)"],
   "packingTips": ["string"]
 }
 
 Input Parameters:
-- Destination: ${input.destination}
+- Destination: ${input.destination} (Do NOT hardcode destinations; adapt to this destination)
 - Duration: ${input.duration} days
 - Travelers: ${input.travelers || 'Not specified'}
 - Travel Style: ${input.travelStyle || 'balanced'}
 - Interests: ${input.interests && input.interests.length > 0 ? input.interests.join(', ') : 'general'}
-- Budget: ${input.budget ? input.budget : 'Not specified'}
+- Budget: ${budgetString}
 ${attractionsPrompt}
-Generation Rules:
-- You must generate EXACTLY ${input.duration} days.
-- Each day must have a meaningful theme.
-- Include destination-relevant places. Do not use generic placeholders like just "Sightseeing" or "Museum".
-- Vary activities across the days.
-- Do NOT repeat the same stop across multiple days unless repetition is logically justified.
-- Consider the interests, travel style, and budget (if provided) when recommending stops and pacing.
-- The daily activity count should be realistic and well-sequenced within a day.
+Generation Rules to Maximize Trip Intelligence Metrics:
+1. Completeness: Every single day must be planned up to ${input.duration} days. Provide meaningful themes, detailed descriptions, and highlight-worthy stops.
+2. Feasibility: Ensure a realistic travel sequence. Avoid impossible schedules or excessive travel times between stops.
+3. Pace: Keep a balanced number of activities per day. Avoid overloaded days and avoid empty days.
+4. Budget: Suggest realistic accommodation, transport, meals, and attraction costs that fit the Budget parameter (including contingency).
+5. Sustainability: Prefer nearby attractions to reduce unnecessary transport, and encourage walking or public transport when appropriate.
+
+Additional Guidelines:
+- Avoid repeating the same structure every day; make every day feel unique.
+- Do NOT repeat the same stop across multiple days unless logically justified.
+- Include practical travel advice and local recommendations.
+- Produce a useful overall description.
 - Do NOT include live hotel availability, live flight/ticket prices, or live route conditions.
 - Do NOT wrap your response in \`\`\`json or \`\`\`. Start directly with {.
 `;
