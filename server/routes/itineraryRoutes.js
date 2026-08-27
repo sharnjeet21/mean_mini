@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const Itinerary = require('../models/Itinerary');
-const { authenticate, authorize } = require('../middleware/auth');
+const { authenticate, authorize, optionalAuth } = require('../middleware/auth');
 const { analyzeTrip } = require('../utils/tripAnalyzer');
 
 const router = express.Router();
@@ -334,6 +334,55 @@ router.get('/', authenticate, async (req, res) => {
     return res.json(itineraries.map((item) => presentItinerary(item, req.user._id)));
   } catch (error) {
     console.error('Fetch itineraries error:', error.message);
+    return res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Public shareable itinerary — no authentication required.
+// Returns only fields appropriate for public exposure (no bookings, no favorites list).
+router.get('/:id/public', optionalAuth, ensureValidId, async (req, res) => {
+  try {
+    const itinerary = await Itinerary.findById(req.params.id)
+      .populate('createdBy', 'name')
+      .lean();
+
+    if (!itinerary || !itinerary.isActive || (itinerary.status && itinerary.status !== 'published')) {
+      return res.status(404).json({ message: 'Itinerary not found or not publicly available.' });
+    }
+
+    const reviews = itinerary.reviews || [];
+    const ratingCount = reviews.length;
+    const averageRating = ratingCount
+      ? Number((reviews.reduce((s, r) => s + Number(r.rating || 0), 0) / ratingCount).toFixed(1))
+      : 0;
+
+    const publicData = {
+      _id: itinerary._id,
+      title: itinerary.title,
+      destination: itinerary.destination,
+      duration: itinerary.duration,
+      budget: itinerary.budget,
+      travelerCount: itinerary.travelerCount,
+      travelStyle: itinerary.travelStyle,
+      transportMode: itinerary.transportMode,
+      category: itinerary.category,
+      description: itinerary.description,
+      imageUrl: itinerary.imageUrl,
+      dailyPlan: itinerary.dailyPlan,
+      tripSummary: itinerary.tripSummary,
+      createdBy: itinerary.createdBy,
+      createdAt: itinerary.createdAt,
+      engagement: {
+        ratingCount,
+        averageRating,
+        favoriteCount: (itinerary.favorites || []).length,
+        bookingCount: (itinerary.bookings || []).filter((b) => b.status !== 'cancelled').length,
+      },
+    };
+
+    return res.json(publicData);
+  } catch (error) {
+    console.error('Public itinerary error:', error.message);
     return res.status(500).json({ message: 'Server error.' });
   }
 });

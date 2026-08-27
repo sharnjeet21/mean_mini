@@ -181,6 +181,46 @@ class OllamaProvider {
     }
   }
 
+  async estimateBudget({ destination, duration, travelerCount, travelStyle, userBudget }) {
+    const BUDGET_SCHEMA = {
+      type: 'object',
+      properties: {
+        totalEstimated: { type: 'number' },
+        costLevel: { type: 'string', enum: ['budget', 'moderate', 'expensive'] },
+        breakdown: {
+          type: 'object',
+          properties: {
+            transport: { type: 'number' },
+            accommodation: { type: 'number' },
+            food: { type: 'number' },
+            activities: { type: 'number' },
+            miscellaneous: { type: 'number' },
+          },
+        },
+        tips: { type: 'array', items: { type: 'string' } },
+      },
+      required: ['totalEstimated', 'costLevel', 'breakdown', 'tips'],
+    };
+
+    const prompt = `Estimate total trip cost in USD for: destination=${destination}, duration=${duration} days, travelers=${travelerCount || 1}, style=${travelStyle || 'balanced'}. Return JSON only.`;
+    const payload = {
+      model: this.model,
+      prompt,
+      stream: false,
+      format: BUDGET_SCHEMA,
+      options: { temperature: 0.1 },
+    };
+
+    const response = await this._callOllama(payload);
+    const parsed = JSON.parse(response);
+    return {
+      totalEstimated: Number(parsed.totalEstimated) || 0,
+      costLevel: parsed.costLevel || 'moderate',
+      breakdown: parsed.breakdown || {},
+      tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+    };
+  }
+
   async generateItineraryDraft(input) {
     const prompt = this._buildPrompt(input);
     const payload = {

@@ -24,16 +24,24 @@ router.post('/register', async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Password must be between 8 and 128 characters.' });
     }
 
-    const result = await registerUser({ name: cleanName, email: cleanEmail, password });
-    const user = await User.findById(result.id).select('-passwordHash');
+    // registerUser returns a raw JWT string
+    const token = await registerUser({ name: cleanName, email: cleanEmail, password });
+    const user = await User.findOne({ email: cleanEmail }).select('-password');
+
+    if (!user) {
+      return res.status(500).json({ success: false, message: 'Registration succeeded but user record could not be retrieved.' });
+    }
 
     return res.status(201).json({
       success: true,
       message: 'User registered successfully',
-      token: result.token,
+      token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role },
     });
   } catch (error) {
+    if (error.message === 'Email already registered') {
+      return res.status(409).json({ success: false, message: 'An account with this email already exists.' });
+    }
     next(error);
   }
 });

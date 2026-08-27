@@ -24,6 +24,23 @@ function createApp() {
   process.env.UNSPLASH_ACCESS_KEY = 'test-unsplash-key';
   process.env.GEMINI_API_KEY = 'test-gemini-key';
   process.env.AI_PROVIDER = 'gemini';
+
+  const resolver = require('../services/aiProviderResolver');
+  const GeminiProvider = require('../services/providers/geminiProvider');
+  const gemini = new GeminiProvider({ apiKey: 'test-gemini-key' });
+  resolver.getAiProvider = () => ({
+    generateStructuredTravelSearch: (q) => gemini.generateStructuredTravelSearch(q),
+    generateTrendingDestinations: () => gemini.generateTrendingDestinations(),
+    generateItinerarySuggestions: (d) => gemini.generateItinerarySuggestions(d),
+    generateAutocompleteSuggestions: (q) => gemini.generateAutocompleteSuggestions(q),
+    getMetadata: () => ({
+      currentProvider: 'Gemini',
+      availableProviders: ['Gemini'],
+      providerHealth: { Gemini: 'healthy' },
+      lastInitializationResult: 'Mocked for testing'
+    })
+  });
+
   const routePath = require.resolve('../routes/aiRoutes');
   const cachePath = require.resolve('../utils/inMemoryCache');
   const ratePath  = require.resolve('../middleware/rateLimiter');

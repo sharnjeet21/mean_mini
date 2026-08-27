@@ -60,6 +60,48 @@ class GeminiProvider {
     return text.replace(/```(?:json)?\n?/gi, '').trim();
   }
 
+  async estimateBudget({ destination, duration, travelerCount, travelStyle, userBudget }) {
+    const prompt = `
+You are a travel budget analyst. Estimate the total trip cost in USD.
+Return ONLY valid JSON, no markdown.
+
+Output schema:
+{
+  "totalEstimated": number,
+  "costLevel": "budget" | "moderate" | "expensive",
+  "breakdown": {
+    "transport": number,
+    "accommodation": number,
+    "food": number,
+    "activities": number,
+    "miscellaneous": number
+  },
+  "tips": ["string"]
+}
+
+Trip parameters:
+- Destination: ${destination}
+- Duration: ${duration} days
+- Travelers: ${travelerCount || 1}
+- Travel style: ${travelStyle || 'balanced'}
+- User budget (USD): ${userBudget || 'not specified'}
+
+Rules:
+- totalEstimated is the realistic total for ALL travelers combined.
+- Use USD. Be realistic for the destination cost level.
+- Do NOT wrap in \`\`\`json. Start directly with {.
+`;
+    const text = await this._callGemini(prompt);
+    const cleaned = this._cleanJson(text);
+    const parsed = JSON.parse(cleaned);
+    return {
+      totalEstimated: Number(parsed.totalEstimated) || 0,
+      costLevel: parsed.costLevel || 'moderate',
+      breakdown: parsed.breakdown || {},
+      tips: Array.isArray(parsed.tips) ? parsed.tips : [],
+    };
+  }
+
   async generateItineraryDraft(input) {
     let attractionsPrompt = '';
     if (input.destinationAttractions && input.destinationAttractions.length > 0) {

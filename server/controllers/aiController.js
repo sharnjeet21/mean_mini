@@ -52,15 +52,15 @@ async function handleHotels(req, res, next) {
 
 async function handleBudgetEstimate(req, res, next) {
   try {
-    const { destination, duration, travelerCount, travelStyle } = req.body;
-    const data = {
-      totalEstimated: duration * travelerCount * 120,
-      perPerson: duration * 120,
-      currency: "USD",
-      costLevel: "moderate",
-      breakdown: { transport: 200, accommodation: 350, food: 180, activities: 150, miscellaneous: 80 },
-      tips: ["Book flights early", "Use city travel cards"],
-    };
+    const { destination, duration, travelerCount, travelStyle, userBudget } = req.body;
+    const { estimateCost } = require('../services/costEstimationService');
+    const data = await estimateCost({
+      destination,
+      duration: Number(duration),
+      travelerCount: Number(travelerCount) || 1,
+      travelStyle: travelStyle || 'balanced',
+      userBudget: userBudget || undefined,
+    });
     res.json({ estimate: data });
   } catch (err) {
     next(err);

@@ -230,4 +230,40 @@ export class ApiService {
   getPlatformItineraries(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/itinerary/platform`);
   }
+
+  // Public (no-auth) itinerary endpoint for shareable proposals
+  getPublicItinerary(id: string): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/itinerary/${id}/public`);
+  }
+
+  // Agency analytics endpoint (trip-manager / admin / superadmin)
+  getAgencyAnalytics(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/dashboard/agency-analytics`);
+  }
+
+  // Affiliate analytics (admin / superadmin)
+  getAffiliateAnalytics(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/affiliates/analytics`);
+  }
+
+  // Build a tracked affiliate redirect URL
+  buildAffiliateUrl(params: {
+    provider: string;
+    type: string;
+    url: string;
+    id?: string;
+    name?: string;
+    dest?: string;
+  }): string {
+    const base = `${this.baseUrl}/affiliates/redirect`;
+    const q = new URLSearchParams({
+      provider: params.provider,
+      type: params.type,
+      url: params.url,
+      ...(params.id   ? { id: params.id }     : {}),
+      ...(params.name ? { name: params.name } : {}),
+      ...(params.dest ? { dest: params.dest } : {}),
+    });
+    return `${base}?${q.toString()}`;
+  }
 }

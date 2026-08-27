@@ -339,6 +339,42 @@ export class AiService {
     );
   }
 
+  /**
+   * Geocode a place name to lat/lng coordinates.
+   * Uses Nominatim (OpenStreetMap) — free, no key required.
+   */
+  geocode(place: string): Observable<{ lat: number; lng: number }> {
+    const key = `geocode:${place.toLowerCase()}`;
+    const cached = this.lsGet<{ lat: number; lng: number }>(key);
+    if (cached) return of(cached);
+
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`;
+    return this.http.get<any[]>(url, {
+      headers: { 'Accept-Language': 'en' },
+    }).pipe(
+      map(results => {
+        if (!results || results.length === 0) throw new Error(`No geocode result for: ${place}`);
+        const r = { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
+        this.lsSet(key, r, TTL_IMAGES);
+        return r;
+      }),
+      catchError(() => of({ lat: 0, lng: 0 }))
+    );
+  }
+
+  /**
+   * Get a simple straight-line route segment between two coordinates.
+   * Returns an array of [lat, lng] waypoints (just the two endpoints for now).
+   * A real routing API (OSRM, Mapbox) can replace this without changing callers.
+   */
+  getRouteDirections(
+    from: { lat: number; lng: number },
+    to: { lat: number; lng: number },
+    _mode: string = 'driving'
+  ): Observable<Array<[number, number]>> {
+    return of([[from.lat, from.lng], [to.lat, to.lng]]);
+  }
+
   private handleError(err: any): Observable<never> {
     if (err?.status === 429) {
       return throwError(() => new Error('Too many requests — please wait a moment before trying again.'));
