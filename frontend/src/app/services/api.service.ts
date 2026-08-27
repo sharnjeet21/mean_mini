@@ -241,6 +241,11 @@ export class ApiService {
     return this.http.get<any>(`${this.baseUrl}/dashboard/agency-analytics`);
   }
 
+  // Itinerary analytics for admin operations panel
+  getItineraryAnalytics(): Observable<any> {
+    return this.http.get<any>(`${this.baseUrl}/admin/analytics`);
+  }
+
   // Affiliate analytics (admin / superadmin)
   getAffiliateAnalytics(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/affiliates/analytics`);
