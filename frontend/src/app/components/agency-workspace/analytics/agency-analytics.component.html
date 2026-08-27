@@ -1,0 +1,125 @@
+<div class="space-y-8 page-entrance">
+  <!-- Header Banner -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Metrics Console</p>
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">Agency Analytics</h1>
+        <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+          Analyze trip budgets, currency conversions, top destinations, and community engagement details.
+        </p>
+      </div>
+
+      <!-- Currency Switcher -->
+      <div class="glass-panel px-4 py-2 border border-white/10 rounded-xl bg-white/5 flex items-center gap-2.5">
+        <span class="material-symbols-outlined text-sm text-[#8fa6b1]">payments</span>
+        <label for="currency-select" class="text-xs text-[#8fa6b1] font-semibold">Currency:</label>
+        <select id="currency-select"
+                [ngModel]="currencyService.currentCurrency$ | async"
+                (ngModelChange)="currencyService.setCurrency($event)"
+                class="bg-transparent border-none text-xs text-white outline-none font-bold cursor-pointer">
+          <option value="USD">USD ($)</option>
+          <option value="EUR">EUR (€)</option>
+          <option value="GBP">GBP (£)</option>
+          <option value="INR">INR (₹)</option>
+          <option value="JPY">JPY (¥)</option>
+        </select>
+      </div>
+    </div>
+  </section>
+
+  <!-- Loader -->
+  <div *ngIf="loading" class="flex items-center justify-center py-20 text-[#8ea5b0] glass-panel rounded-[24px]">
+    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-[#7ae0c3] mr-3"></div>
+    Analyzing metrics database…
+  </div>
+
+  <div *ngIf="errorMessage && !loading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Analytics Panels -->
+  <div *ngIf="!loading && !errorMessage && analyticsData" class="space-y-8">
+    <!-- Row 1: KPI Bento -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="glass-panel p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+        <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Total Curation Value</p>
+        <p class="text-2xl font-extrabold text-white">{{ formatValue(analyticsData.totalBudgetSum || 0) }}</p>
+        <span class="text-[9px] text-slate-400">Sum of all budgets managed</span>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+        <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Average Trip Budget</p>
+        <p class="text-2xl font-extrabold text-[#7ae0c3]">{{ formatValue(analyticsData.averageBudget || 0) }}</p>
+        <span class="text-[9px] text-[#7ae0c3]/70">Mean budget per itinerary</span>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+        <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Curation Count</p>
+        <p class="text-2xl font-extrabold text-white">{{ analyticsData.totalTrips || 0 }} itineraries</p>
+        <span class="text-[9px] text-slate-400">Total plans drafted</span>
+      </div>
+      <div class="glass-panel p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+        <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Community Saves</p>
+        <p class="text-2xl font-extrabold text-[#ffd996]">{{ analyticsData.totalSaves || 0 }} favorites</p>
+        <span class="text-[9px] text-[#ffd996]/70">Itineraries wishlisted</span>
+      </div>
+    </div>
+
+    <!-- Row 2: Charts and lists -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <!-- Top Destinations (2/3 width) -->
+      <div class="lg:col-span-2 glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-[#7ae0c3]">explore</span>
+          Top Curator Destinations
+        </h2>
+        
+        <div *ngIf="!analyticsData.topDestinations?.length" class="text-center py-8 text-xs text-[#8ea5b0]">
+          Not enough trip data to aggregate destinations.
+        </div>
+
+        <div *ngIf="analyticsData.topDestinations?.length" class="space-y-4">
+          <div *ngFor="let dest of analyticsData.topDestinations" class="space-y-1">
+            <div class="flex justify-between text-xs font-semibold">
+              <span class="text-white">{{ dest._id }}</span>
+              <span class="text-[#7ae0c3]">{{ dest.count }} itineraries</span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-[#7ae0c3] to-[#86ebd2] rounded-full"
+                   [style.width.%]="(dest.count / analyticsData.totalTrips) * 100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- General Health status summary (1/3 width) -->
+      <div class="glass-panel p-6 rounded-2xl border border-white/10 space-y-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <span class="material-symbols-outlined text-purple-300">analytics</span>
+          Budget Distributions
+        </h2>
+        <div class="space-y-3 text-xs">
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-[#8ea5b0]">Maximum Budget:</span>
+            <span class="font-bold text-white">{{ formatValue(analyticsData.maxBudget || 0) }}</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-[#8ea5b0]">Minimum Budget:</span>
+            <span class="font-bold text-white">{{ formatValue(analyticsData.minBudget || 0) }}</span>
+          </div>
+          <div class="flex justify-between border-b border-white/5 pb-2">
+            <span class="text-[#8ea5b0]">Average Traveler Count:</span>
+            <span class="font-bold text-white">{{ analyticsData.avgTravelerCount || 1 | number:'1.0-1' }} travelers</span>
+          </div>
+          <div class="flex justify-between pb-1">
+            <span class="text-[#8ea5b0]">Active Proposals Share:</span>
+            <span class="font-bold text-[#7ae0c3]">
+              {{ ((analyticsData.activeProposals || 0) / (analyticsData.totalTrips || 1) * 100) | number:'1.0-1' }}%
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

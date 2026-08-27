@@ -1,0 +1,85 @@
+<div class="space-y-8 page-entrance">
+  <!-- Header Banner -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Customer CRM</p>
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">Client Directory</h1>
+      <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+        Browse traveler profiles, inspect account registration details, and review active client settings.
+      </p>
+    </div>
+  </section>
+
+  <!-- Access Check -->
+  <ng-container *ngIf="!hasAccess">
+    <div class="glass-panel rounded-2xl p-8 border border-white/10 text-center space-y-4 max-w-lg mx-auto bg-white/[0.01]">
+      <span class="grid h-14 w-14 place-items-center rounded-2xl bg-amber-500/10 text-amber-300 mx-auto border border-amber-500/10">
+        <span class="material-symbols-outlined text-2xl">lock</span>
+      </span>
+      <h2 class="text-lg font-bold text-white">Access Restricted</h2>
+      <p class="text-xs leading-relaxed text-[#8fa6b1]">
+        Access to the global client database is restricted to administrators and operations managers. If you require traveler contact details or directory permissions, please contact your Superadmin.
+      </p>
+    </div>
+  </ng-container>
+
+  <ng-container *ngIf="hasAccess">
+    <!-- Clients List -->
+    <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 shadow-sm bg-white/[0.01]">
+      <!-- Toolbar -->
+      <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.02] p-4 md:flex-row">
+        <div class="relative flex-grow max-w-md">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
+          <input [(ngModel)]="searchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
+                 placeholder="Search clients by name or email...">
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="p-6">
+        <div *ngIf="loading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+          Loading client database…
+        </div>
+
+        <div *ngIf="errorMessage && !loading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+          {{ errorMessage }}
+        </div>
+
+        <div *ngIf="!loading && !errorMessage && filteredClients.length === 0" class="py-12 text-center text-[#8ea5b0]">
+          <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">group</span>
+          <p class="text-sm">No client profiles found.</p>
+        </div>
+
+        <div *ngIf="!loading && !errorMessage && filteredClients.length > 0" class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-[#b0c3cf]">
+            <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02] border-b border-white/10">
+              <tr>
+                <th class="px-5 py-3.5">Name</th>
+                <th class="px-5 py-3.5">Email</th>
+                <th class="px-5 py-3.5">Registration</th>
+                <th class="px-5 py-3.5">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let c of filteredClients" class="border-b border-white/5 hover:bg-white/[0.01] transition">
+                <td class="px-5 py-4 font-semibold text-white truncate max-w-[200px]">{{ c.name }}</td>
+                <td class="px-5 py-4 text-slate-300 truncate max-w-[220px]">{{ c.email }}</td>
+                <td class="px-5 py-4 text-xs text-[#8ea5b0]">
+                  {{ c.createdAt | date:'mediumDate' }}
+                </td>
+                <td class="px-5 py-4">
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                        [ngClass]="c.isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-rose-500/20 text-rose-300'">
+                    {{ c.isActive ? 'Active' : 'Deactivated' }}
+                  </span>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </ng-container>
+</div>

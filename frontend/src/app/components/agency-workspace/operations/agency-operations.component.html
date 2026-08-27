@@ -1,0 +1,258 @@
+<div class="space-y-8 page-entrance">
+  <!-- Header Banner -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Agency Administration</p>
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">Operations Console</h1>
+      <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+        Manage the global itinerary directory, review access elevation requests, and audit affiliate partnership stats.
+      </p>
+    </div>
+  </section>
+
+  <!-- Operations Section Switcher Tabs -->
+  <div class="flex items-center gap-2 border-b border-white/10 pb-1 overflow-x-auto hide-scrollbar">
+    <button (click)="setSection('itineraries')"
+            [class]="activeSection === 'itineraries' ? 'px-5 py-2.5 rounded-xl bg-[#7ae0c3] text-[#05201f] text-xs font-bold transition' : 'px-5 py-2.5 rounded-xl text-[#8fa6b1] hover:text-white text-xs font-bold transition'">
+      Global Itineraries
+    </button>
+    <button (click)="setSection('requests')"
+            [class]="activeSection === 'requests' ? 'px-5 py-2.5 rounded-xl bg-[#7ae0c3] text-[#05201f] text-xs font-bold transition' : 'px-5 py-2.5 rounded-xl text-[#8fa6b1] hover:text-white text-xs font-bold transition'">
+      Access Elevation Requests
+    </button>
+    <button (click)="setSection('affiliates')"
+            [class]="activeSection === 'affiliates' ? 'px-5 py-2.5 rounded-xl bg-[#7ae0c3] text-[#05201f] text-xs font-bold transition' : 'px-5 py-2.5 rounded-xl text-[#8fa6b1] hover:text-white text-xs font-bold transition'">
+      Affiliate Analytics
+    </button>
+  </div>
+
+  <!-- Section 1: Global Itineraries -->
+  <div *ngIf="activeSection === 'itineraries'" class="space-y-8">
+    <!-- Bento Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div *ngFor="let s of stats" class="glass-panel p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+        <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">{{ s.label }}</p>
+        <p class="text-2xl font-extrabold text-white">{{ s.value }}</p>
+        <span class="text-[9px] text-[#8ea5b0]/80">{{ s.detail }}</span>
+      </div>
+    </div>
+
+    <!-- Demand Chart -->
+    <div *ngIf="analytics.topDestinations?.length" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="lg:col-span-2 glass-panel rounded-2xl border border-white/10 p-6">
+        <h2 class="text-base font-bold text-white mb-4">Destination Demand</h2>
+        <div class="space-y-4">
+          <div *ngFor="let dest of analytics.topDestinations; let i = index" class="space-y-1.5">
+            <div class="flex justify-between text-xs font-semibold">
+              <span class="text-white">{{ i + 1 }}. {{ dest.destination }}</span>
+              <span class="text-[#7ae0c3]">{{ dest.engagement }} interactions</span>
+            </div>
+            <div class="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+              <div class="h-full bg-gradient-to-r from-[#7ae0c3] to-[#86ebd2] rounded-full"
+                   [style.width.%]="(dest.engagement / (analytics.topDestinations[0].engagement || 1)) * 100"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="glass-panel rounded-2xl border border-white/10 p-6 flex flex-col justify-between">
+        <div>
+          <span class="material-symbols-outlined text-3xl text-sky-400">query_stats</span>
+          <h2 class="text-base font-bold text-white mt-4">Portfolio pulse</h2>
+          <p class="text-xs text-[#8ea5b0] leading-relaxed mt-2">
+            The platform currently tracks {{ analytics.summary.totalItineraries || 0 }} travel plans and {{ (analytics.summary.totalBookings || 0) + (analytics.summary.totalFavorites || 0) + (analytics.summary.totalReviews || 0) }} client interaction checkpoints.
+          </p>
+        </div>
+        <div class="text-[10px] text-[#6f8996] border-t border-white/5 pt-3">
+          Live MongoDB pipeline telemetry
+        </div>
+      </div>
+    </div>
+
+    <!-- Portfolio Table -->
+    <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 shadow-sm bg-white/[0.01]">
+      <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.02] p-4 md:flex-row">
+        <div class="relative flex-grow max-w-md">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
+          <input [(ngModel)]="searchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
+                 placeholder="Search global itineraries by title or author...">
+        </div>
+        <div class="flex items-center gap-1 rounded-lg bg-white/5 p-1 self-start md:self-auto">
+          <button *ngFor="let tab of tabs" (click)="activeTab = tab"
+                  [class]="activeTab === tab ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">
+            {{ tab }}
+          </button>
+        </div>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="loading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+          Loading portfolio directory…
+        </div>
+
+        <div *ngIf="!loading && filteredItineraries.length === 0" class="py-12 text-center text-[#8ea5b0]">
+          <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">map</span>
+          <p class="text-sm">No itineraries found matching current criteria.</p>
+        </div>
+
+        <div *ngIf="!loading && filteredItineraries.length > 0" class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-[#b0c3cf]">
+            <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02] border-b border-white/10">
+              <tr>
+                <th class="px-5 py-3.5">Itinerary</th>
+                <th class="px-5 py-3.5">Destination</th>
+                <th class="px-5 py-3.5">Curator</th>
+                <th class="px-5 py-3.5">Active</th>
+                <th class="px-5 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let it of filteredItineraries" class="border-b border-white/5 hover:bg-white/[0.01] transition">
+                <td class="px-5 py-4 font-semibold text-white truncate max-w-[200px]">{{ it.title }}</td>
+                <td class="px-5 py-4 text-[#a6ebd7] truncate max-w-[140px]">{{ it.destination }}</td>
+                <td class="px-5 py-4 text-xs">{{ it.createdBy?.name || 'Community' }}</td>
+                <td class="px-5 py-4">
+                  <button (click)="toggleActive(it)" class="bg-transparent border-none cursor-pointer">
+                    <span class="px-2.5 py-0.5 rounded-full text-[9px] font-bold"
+                          [ngClass]="it.isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-500/20 text-slate-300'">
+                      {{ it.isActive ? 'Active' : 'Hidden' }}
+                    </span>
+                  </button>
+                </td>
+                <td class="px-5 py-4 text-right">
+                  <button (click)="delete(it._id)" class="text-rose-400 hover:text-rose-300 text-xs font-semibold px-2 py-1 rounded bg-white/5 hover:bg-white/10">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Role upgrade requests -->
+  <div *ngIf="activeSection === 'requests'" class="space-y-6">
+    <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.01]">
+      <div class="border-b border-white/10 bg-white/[0.02] p-5">
+        <h2 class="text-base font-bold text-white">Pending access requests</h2>
+        <p class="text-xs text-[#8ea5b0] mt-1">Review traveler upgrade requests to Trip Manager accounts</p>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="requestsLoading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+          Auditing requests list…
+        </div>
+
+        <div *ngIf="requestsErrorMessage && !requestsLoading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+          {{ requestsErrorMessage }}
+        </div>
+
+        <div *ngIf="!requestsLoading && roleRequests.length === 0" class="py-12 text-center text-[#8ea5b0]">
+          <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">admin_panel_settings</span>
+          <p class="text-sm">Zero pending access upgrade requests found.</p>
+        </div>
+
+        <div *ngIf="!requestsLoading && roleRequests.length > 0" class="space-y-4">
+          <div *ngFor="let req of roleRequests" class="glass-panel p-5 border border-white/10 rounded-2xl bg-white/[0.01] flex flex-col justify-between gap-4 md:flex-row md:items-center">
+            <div>
+              <div class="flex items-center gap-2.5">
+                <p class="text-sm font-bold text-white">{{ req.user?.name }}</p>
+                <span class="text-[9px] uppercase tracking-wider bg-white/5 border border-white/10 rounded px-1.5 py-0.5 text-[#8ea5b0]">{{ req.user?.email }}</span>
+              </div>
+              <p class="text-xs text-[#b0c3cf] mt-2 italic leading-relaxed">"{{ req.reason || 'No reason provided.' }}"</p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button (click)="reviewRequest(req, 'rejected', 'Declined by Administrator')"
+                      class="rounded-xl px-4 py-2 text-xs font-bold bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 border border-rose-500/10 transition cursor-pointer">
+                Reject
+              </button>
+              <button (click)="reviewRequest(req, 'approved', 'Authorized by Administrator')"
+                      class="rounded-xl px-4 py-2 text-xs font-bold bg-[#7ae0c3] text-[#05201f] hover:bg-[#86ebd2] transition cursor-pointer">
+                Approve Upgrade
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Affiliate Analytics -->
+  <div *ngIf="activeSection === 'affiliates'" class="space-y-6">
+    <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.01]">
+      <div class="border-b border-white/10 bg-white/[0.02] p-5">
+        <h2 class="text-base font-bold text-white">Affiliate Redirect Telemetry</h2>
+        <p class="text-xs text-[#8ea5b0] mt-1">Audit external clicks, generated bookings, and commission payouts</p>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="affiliateLoading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+          Auditing affiliate databases…
+        </div>
+
+        <div *ngIf="affiliateError && !affiliateLoading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+          {{ affiliateError }}
+        </div>
+
+        <div *ngIf="!affiliateLoading && (!affiliateData || !affiliateData.redirects?.length)" class="py-12 text-center text-[#8ea5b0]">
+          <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">shopping_cart</span>
+          <p class="text-sm">No affiliate redirect activity tracked yet.</p>
+        </div>
+
+        <div *ngIf="!affiliateLoading && affiliateData && affiliateData.redirects?.length" class="space-y-6">
+          <!-- Affiliate Summary KPI Bento -->
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+              <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Total Affiliate Clicks</p>
+              <p class="text-xl font-extrabold text-white">{{ affiliateData.summary?.totalClicks || 0 }} redirects</p>
+            </div>
+            <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+              <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Converted Bookings</p>
+              <p class="text-xl font-extrabold text-[#7ae0c3]">{{ affiliateData.summary?.totalBookings || 0 }} sales</p>
+            </div>
+            <div class="bg-white/[0.02] border border-white/5 rounded-2xl p-5">
+              <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Estimated Payouts</p>
+              <p class="text-xl font-extrabold text-[#ffd996]">${{ (affiliateData.summary?.totalCommission || 0) | number:'1.2-2' }}</p>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-[#b0c3cf]">
+              <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02] border-b border-white/10">
+                <tr>
+                  <th class="px-5 py-3.5">Provider / Link</th>
+                  <th class="px-5 py-3.5">Clicks</th>
+                  <th class="px-5 py-3.5">Conversions</th>
+                  <th class="px-5 py-3.5">Payout Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let red of affiliateData.redirects" class="border-b border-white/5 hover:bg-white/[0.01] transition">
+                  <td class="px-5 py-4">
+                    <p class="font-bold text-white">{{ red.partnerName }}</p>
+                    <p class="text-[10px] text-[#7f98a6] truncate max-w-sm">{{ red.targetUrl }}</p>
+                  </td>
+                  <td class="px-5 py-4 font-semibold text-white">{{ red.clickCount }} clicks</td>
+                  <td class="px-5 py-4 font-semibold text-[#7ae0c3]">{{ red.bookingCount }} sales</td>
+                  <td class="px-5 py-4">
+                    <span class="px-2 py-0.5 rounded-full text-[9px] font-bold"
+                          [ngClass]="red.clickCount > 0 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-500/20 text-slate-300'">
+                      {{ red.clickCount > 0 ? 'Active' : 'Pending' }}
+                    </span>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

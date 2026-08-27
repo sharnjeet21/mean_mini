@@ -1,0 +1,190 @@
+<div class="space-y-8 page-entrance">
+  <!-- Header Banner -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Platform Console</p>
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">System Workspace</h1>
+      <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+        Manage accounts globally, monitor multi-provider AI routing fallback health, and audit system performance indicators.
+      </p>
+    </div>
+  </section>
+
+  <!-- Section Switcher Tabs -->
+  <div class="flex items-center gap-2 border-b border-white/10 pb-1 overflow-x-auto hide-scrollbar">
+    <button (click)="activeSection = 'users'"
+            [class]="activeSection === 'users' ? 'px-5 py-2.5 rounded-xl bg-[#7ae0c3] text-[#05201f] text-xs font-bold transition' : 'px-5 py-2.5 rounded-xl text-[#8fa6b1] hover:text-white text-xs font-bold transition'">
+      User Accounts
+    </button>
+    <button (click)="activeSection = 'ai-runtime'"
+            [class]="activeSection === 'ai-runtime' ? 'px-5 py-2.5 rounded-xl bg-[#7ae0c3] text-[#05201f] text-xs font-bold transition' : 'px-5 py-2.5 rounded-xl text-[#8fa6b1] hover:text-white text-xs font-bold transition'">
+      AI Provider Telemetry
+    </button>
+    <button (click)="activeSection = 'health'"
+            [class]="activeSection === 'health' ? 'px-5 py-2.5 rounded-xl bg-[#7ae0c3] text-[#05201f] text-xs font-bold transition' : 'px-5 py-2.5 rounded-xl text-[#8fa6b1] hover:text-white text-xs font-bold transition'">
+      System Diagnostics
+    </button>
+  </div>
+
+  <!-- Section 1: Users Directory -->
+  <div *ngIf="activeSection === 'users'" class="space-y-6">
+    <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 shadow-sm bg-white/[0.01]">
+      <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.02] p-4 md:flex-row">
+        <div class="relative flex-grow max-w-md">
+          <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
+          <input [(ngModel)]="userSearchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
+                 placeholder="Search user accounts by name, email or role...">
+        </div>
+      </div>
+
+      <div class="p-6">
+        <div *ngIf="userLoading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+          Loading account directory…
+        </div>
+
+        <div *ngIf="userErrorMessage && !userLoading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+          {{ userErrorMessage }}
+        </div>
+
+        <div *ngIf="!userLoading && !userErrorMessage && filteredUsers.length === 0" class="py-12 text-center text-[#8ea5b0]">
+          <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">group</span>
+          <p class="text-sm">No accounts found matching search.</p>
+        </div>
+
+        <div *ngIf="!userLoading && !userErrorMessage && filteredUsers.length > 0" class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-[#b0c3cf]">
+            <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02] border-b border-white/10">
+              <tr>
+                <th class="px-5 py-3.5">User</th>
+                <th class="px-5 py-3.5">Email</th>
+                <th class="px-5 py-3.5">Role</th>
+                <th class="px-5 py-3.5">Status</th>
+                <th class="px-5 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let u of filteredUsers" class="border-b border-white/5 hover:bg-white/[0.01] transition">
+                <td class="px-5 py-4">
+                  <div class="flex items-center gap-3">
+                    <span class="grid h-9 w-9 place-items-center rounded-xl bg-[#7ae0c3]/15 text-sm font-bold text-[#7ae0c3]">{{ u.name ? u.name[0].toUpperCase() : 'U' }}</span>
+                    <span class="font-semibold text-white">{{ u.name }}</span>
+                  </div>
+                </td>
+                <td class="px-5 py-4 text-slate-300">{{ u.email }}</td>
+                <td class="px-5 py-4">
+                  <select *ngIf="u._id !== auth.currentUser()?.id"
+                          [ngModel]="u.role" (ngModelChange)="changeUserRole(u, $event)"
+                          class="rounded-xl border border-white/10 bg-[#102733] px-3 py-1.5 text-xs text-white outline-none">
+                    <option value="user">Traveler</option>
+                    <option value="trip-manager">Trip Manager</option>
+                    <option value="admin">Administrator</option>
+                    <option value="superadmin">Superadministrator</option>
+                  </select>
+                  <span *ngIf="u._id === auth.currentUser()?.id" class="text-xs font-semibold px-2.5 py-1.5 rounded-full bg-white/5 text-[#b2c2ca]">
+                    Superadministrator
+                  </span>
+                </td>
+                <td class="px-5 py-4">
+                  <button *ngIf="u._id !== auth.currentUser()?.id"
+                          (click)="toggleUserStatus(u)"
+                          [class]="u.isActive ? 'inline-flex items-center rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300 border-0 cursor-pointer' : 'inline-flex items-center rounded-full bg-white/5 px-2.5 py-0.5 text-xs font-bold text-[#9fb0ba] border-0 cursor-pointer'">
+                    {{ u.isActive ? 'Active' : 'Inactive' }}
+                  </button>
+                  <span *ngIf="u._id === auth.currentUser()?.id" class="inline-flex items-center rounded-full bg-emerald-500/20 px-2.5 py-0.5 text-xs font-bold text-emerald-300">
+                    Active
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-right">
+                  <button *ngIf="u._id !== auth.currentUser()?.id"
+                          (click)="deleteUserAccount(u._id)"
+                          class="rounded-lg p-2 text-rose-400 transition-all hover:bg-rose-500/10 hover:text-rose-300 bg-transparent border-0 cursor-pointer">
+                    <span class="material-symbols-outlined text-base">delete</span>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: AI Runtime -->
+  <div *ngIf="activeSection === 'ai-runtime'" class="space-y-6">
+    <div class="glass-panel p-8 rounded-2xl border border-white/10 space-y-6 bg-white/[0.01]">
+      <div class="flex items-center justify-between border-b border-white/5 pb-4">
+        <div>
+          <h3 class="font-bold text-white text-lg">Multi-Provider AI Routing</h3>
+          <p class="text-xs text-[#8ea5b0] mt-1">Configured priority sequence: NVIDIA NIM &gt; Ollama Local &gt; Gemini API</p>
+        </div>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-3">
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6]">NVIDIA NIM</h4>
+          <p class="text-sm font-semibold text-[#7ae0c3]">Priority Level #1</p>
+          <p class="text-xs text-[#8ea5b0] leading-relaxed">NVIDIA NIM leverages low-latency hosted model endpoints for high-throughput intent extraction and revisions.</p>
+        </div>
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6]">Ollama Local</h4>
+          <p class="text-sm font-semibold text-[#ffc96b]">Priority Level #2</p>
+          <p class="text-xs text-[#8ea5b0] leading-relaxed">Local llama3/gemma3 instances running at localhost:11434. Ideal for offline work and testing.</p>
+        </div>
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 space-y-2">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6]">Gemini API</h4>
+          <p class="text-sm font-semibold text-[#ff9f87]">Priority Level #3</p>
+          <p class="text-xs text-[#8ea5b0] leading-relaxed">Google Gemini API provides comprehensive model generation capabilities as the final fail-safe resource.</p>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-[#7ae0c3]/20 bg-[#7ae0c3]/5 p-5">
+        <h4 class="text-sm font-bold text-white mb-2 flex items-center gap-2">
+          <span class="material-symbols-outlined text-base">health_and_safety</span> Auto-Failover Logic Active
+        </h4>
+        <p class="text-xs text-[#8ea5b0] leading-relaxed">
+          If an active provider returns a timeout or rate limit error, the proxy runtime automatically retries the operation once on the same provider. If it fails again, the provider is temporarily quarantined as "unhealthy" for 60 seconds, and request routing cascades to the next available fallback.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 3: Diagnostics -->
+  <div *ngIf="activeSection === 'health'" class="space-y-6">
+    <div class="glass-panel p-8 rounded-2xl border border-white/10 space-y-6 bg-white/[0.01]">
+      <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+        <span class="grid h-12 w-12 place-items-center rounded-2xl bg-teal-500/10 text-teal-300">
+          <span class="material-symbols-outlined">health_and_safety</span>
+        </span>
+        <div>
+          <h3 class="font-bold text-white text-lg">System Metrics & Services</h3>
+          <p class="text-xs text-[#8ea5b0]">Platform Health Telemetry</p>
+        </div>
+      </div>
+
+      <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 text-center">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">Database</h4>
+          <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">CONNECTED</span>
+          <p class="text-[10px] text-[#6f8996] mt-4">MongoDB Atlas Cluster</p>
+        </div>
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 text-center">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">API Server</h4>
+          <span class="rounded-full bg-emerald-500/20 px-3 py-1 text-xs font-bold text-emerald-300">READY</span>
+          <p class="text-[10px] text-[#6f8996] mt-4">NodeJS v18 Express Backend</p>
+        </div>
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 text-center">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">System Uptime</h4>
+          <p class="text-lg font-bold text-white">99.98%</p>
+          <p class="text-[10px] text-[#6f8996] mt-3">High Availability Config</p>
+        </div>
+        <div class="rounded-xl bg-white/[0.02] p-5 border border-white/5 text-center">
+          <h4 class="text-xs font-bold uppercase tracking-wider text-[#7f98a6] mb-3">Memory Allocation</h4>
+          <p class="text-lg font-bold text-white">124 MB / 512 MB</p>
+          <p class="text-[10px] text-[#6f8996] mt-3">Memory allocation healthy</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

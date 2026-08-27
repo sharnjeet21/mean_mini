@@ -1,0 +1,134 @@
+<div class="space-y-8 page-entrance">
+  <!-- Welcome Banner -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Agency Workspace</p>
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">Welcome, {{ auth.currentUser()?.name || 'Agent' }}</h1>
+        <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+          Manage itineraries, draft customized proposals, and track client metrics in your centralized hub.
+        </p>
+      </div>
+      <a routerLink="../trips" [queryParams]="{create: '1'}"
+         class="self-start md:self-auto rounded-xl bg-[#7ae0c3] px-5 py-3 text-sm font-bold text-[#05201f] hover:bg-[#8eedce] transition shadow-lg flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg">auto_awesome</span>
+        Plan with AI
+      </a>
+    </div>
+  </section>
+
+  <!-- Quick metrics cards -->
+  <div *ngIf="analyticsData" class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="glass-panel rounded-2xl p-5 border border-white/5 bg-white/[0.01]">
+      <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Total Managed</p>
+      <p class="text-2xl font-extrabold text-white">{{ analyticsData.totalTrips || 0 }} trips</p>
+    </div>
+    <div class="glass-panel rounded-2xl p-5 border border-white/5 bg-white/[0.01]">
+      <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Live Proposals</p>
+      <p class="text-2xl font-extrabold text-[#7ae0c3]">{{ analyticsData.activeProposals || 0 }} live</p>
+    </div>
+    <div class="glass-panel rounded-2xl p-5 border border-white/5 bg-white/[0.01]">
+      <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Clients Saved</p>
+      <p class="text-2xl font-extrabold text-[#ffd996]">{{ analyticsData.totalClients || 0 }} clients</p>
+    </div>
+    <div class="glass-panel rounded-2xl p-5 border border-white/5 bg-white/[0.01]">
+      <p class="text-[10px] text-[#8ea5b0] uppercase tracking-wider mb-2 font-semibold">Total Bookings</p>
+      <p class="text-2xl font-extrabold text-white">{{ analyticsData.totalBookings || 0 }} bookings</p>
+    </div>
+  </div>
+
+  <!-- Main section: recent proposals + quick actions -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Recent proposals (2/3 width) -->
+    <div class="lg:col-span-2 space-y-4">
+      <div class="flex items-center justify-between">
+        <h2 class="text-lg font-bold text-white">Recent Proposals</h2>
+        <a routerLink="../proposals" class="text-xs font-semibold text-[#7ae0c3] hover:underline">View all</a>
+      </div>
+
+      <div class="glass-panel rounded-2xl overflow-hidden border border-white/10">
+        <div *ngIf="loadingProposals" class="flex items-center justify-center py-12 text-[#8ea5b0]">
+          <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+          Loading proposals…
+        </div>
+
+        <div *ngIf="!loadingProposals && recentProposals.length === 0" class="py-12 text-center text-[#8ea5b0]">
+          <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">folder_open</span>
+          <p class="text-sm">No itineraries found. Create one to get started.</p>
+        </div>
+
+        <div *ngIf="!loadingProposals && recentProposals.length > 0" class="overflow-x-auto">
+          <table class="w-full text-left text-sm text-[#b0c3cf]">
+            <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02] border-b border-white/10">
+              <tr>
+                <th class="px-5 py-3.5">Name</th>
+                <th class="px-5 py-3.5">Destination</th>
+                <th class="px-5 py-3.5">Status</th>
+                <th class="px-5 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let p of recentProposals" class="border-b border-white/5 hover:bg-white/[0.01] transition">
+                <td class="px-5 py-4 font-semibold text-white truncate max-w-[180px]">{{ p.title }}</td>
+                <td class="px-5 py-4 text-[#a6ebd7] truncate max-w-[140px]">{{ p.destination }}</td>
+                <td class="px-5 py-4">
+                  <span class="px-2 py-0.5 rounded-full text-[9px] font-bold" [ngClass]="statusClass(p.status)">
+                    {{ statusLabel(p.status) }}
+                  </span>
+                </td>
+                <td class="px-5 py-4 text-right flex items-center justify-end gap-3">
+                  <button (click)="openProposal(p.id)" class="text-[#a6ebd7] hover:text-white transition text-xs font-semibold">
+                    Edit
+                  </button>
+                  <button *ngIf="p.status === 'published'" (click)="openPublicProposal(p.id)" class="text-[#7ae0c3] hover:text-white transition text-xs font-semibold">
+                    View Link
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions panel (1/3 width) -->
+    <div class="space-y-4">
+      <h2 class="text-lg font-bold text-white">Quick Actions</h2>
+      <div class="grid grid-cols-1 gap-3">
+        <a routerLink="../trips" [queryParams]="{create: '1'}"
+           class="glass-panel p-4 rounded-xl border border-white/15 hover:bg-white/[0.04] transition flex items-center gap-4 text-left group">
+          <span class="grid h-10 w-10 place-items-center rounded-lg bg-[#7ae0c3]/10 text-[#7ae0c3] group-hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined">auto_awesome</span>
+          </span>
+          <div>
+            <p class="text-sm font-bold text-white">Plan with AI Assistant</p>
+            <p class="text-xs text-[#8ea5b0] mt-1">Generate a structured trip from a prompt</p>
+          </div>
+        </a>
+
+        <a routerLink="../clients"
+           class="glass-panel p-4 rounded-xl border border-white/15 hover:bg-white/[0.04] transition flex items-center gap-4 text-left group">
+          <span class="grid h-10 w-10 place-items-center rounded-lg bg-[#ffd996]/10 text-[#ffd996] group-hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined">person_add</span>
+          </span>
+          <div>
+            <p class="text-sm font-bold text-white">Client Directory</p>
+            <p class="text-xs text-[#8ea5b0] mt-1">Manage traveler accounts and profiles</p>
+          </div>
+        </a>
+
+        <a routerLink="../analytics"
+           class="glass-panel p-4 rounded-xl border border-white/15 hover:bg-white/[0.04] transition flex items-center gap-4 text-left group">
+          <span class="grid h-10 w-10 place-items-center rounded-lg bg-purple-500/10 text-purple-300 group-hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined">monitoring</span>
+          </span>
+          <div>
+            <p class="text-sm font-bold text-white">Agency Analytics</p>
+            <p class="text-xs text-[#8ea5b0] mt-1">Analyze budget trends and top spots</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>

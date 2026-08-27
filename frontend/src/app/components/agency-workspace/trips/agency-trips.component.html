@@ -1,0 +1,469 @@
+<div class="space-y-8 page-entrance">
+  <!-- Header / Action bar -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10 flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Trip Curation</p>
+        <h1 class="text-3xl font-extrabold text-white tracking-tight">Curation Board</h1>
+        <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+          Edit drafts, publish routes for travelers to save/book, and use our AI generator to shape trip concepts.
+        </p>
+      </div>
+      <button (click)="openModal()"
+              class="self-start md:self-auto rounded-xl bg-[#7ae0c3] px-5 py-3 text-sm font-bold text-[#05201f] hover:bg-[#8eedce] transition shadow-lg flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg">add</span>
+        Plan with AI
+      </button>
+    </div>
+  </section>
+
+  <!-- Stats Bento Row -->
+  <section class="grid grid-cols-1 gap-4 sm:grid-cols-3">
+    <article *ngFor="let stat of managerStats; let i = index"
+             class="glass-panel rounded-2xl p-5 border border-white/5 bg-white/[0.01]">
+      <div class="flex items-center justify-between">
+        <span class="grid h-9 w-9 place-items-center rounded-xl"
+              [class]="i === 0 ? 'bg-[#ffc96b]/15 text-[#ffc96b]' : i === 1 ? 'bg-[#7ae0c3]/15 text-[#7ae0c3]' : 'bg-[#8cbcff]/15 text-[#9fc5ff]'">
+          <span class="material-symbols-outlined text-lg">{{ stat.icon === 'draft' ? 'drafts' : (stat.icon === 'publish' ? 'publish' : 'folder') }}</span>
+        </span>
+        <span class="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#6f8996]">{{ stat.badge }}</span>
+      </div>
+      <p class="mt-4 font-headline text-2xl font-extrabold text-white sm:text-3xl">{{ stat.value }}</p>
+      <p class="mt-1 text-xs font-semibold text-[#839aa6]">{{ stat.label }}</p>
+    </article>
+  </section>
+
+  <!-- Itinerary List Section -->
+  <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 shadow-sm bg-white/[0.01]">
+    <!-- Toolbar -->
+    <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.02] p-4 md:flex-row">
+      <div class="relative flex-grow max-w-md">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
+        <input [(ngModel)]="managerSearchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
+               placeholder="Search owned itineraries...">
+      </div>
+      <div class="flex items-center gap-1 rounded-lg bg-white/5 p-1 self-start md:self-auto">
+        <button (click)="managerActiveTab = 'all'" [class]="managerActiveTab === 'all' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">All</button>
+        <button (click)="managerActiveTab = 'draft'" [class]="managerActiveTab === 'draft' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">Drafts</button>
+        <button (click)="managerActiveTab = 'published'" [class]="managerActiveTab === 'published' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">Published</button>
+      </div>
+    </div>
+
+    <!-- Owned itineraries list -->
+    <div class="p-6">
+      <div *ngIf="loading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+        Loading itineraries…
+      </div>
+
+      <div *ngIf="errorMessage && !loading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="!loading && !errorMessage && filteredOwnedItineraries.length === 0" class="flex flex-col items-center justify-center py-12 px-6 text-center">
+        <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
+          <span class="material-symbols-outlined text-3xl">{{ managerActiveTab === 'draft' ? 'drafts' : (managerActiveTab === 'published' ? 'publish' : 'folder_open') }}</span>
+        </span>
+        <h3 class="text-lg font-bold text-white mb-2">
+          {{ managerActiveTab === 'draft' ? 'No draft itineraries' : (managerActiveTab === 'published' ? 'No published routes' : 'Your board is empty') }}
+        </h3>
+        <p class="text-xs text-[#8ea5b0] max-w-sm mb-6 leading-relaxed">
+          {{ managerActiveTab === 'draft' ? 'Describe your dream trip to our AI planning assistant, or shape one manually.' : (managerActiveTab === 'published' ? 'Draft itineraries can be published instantly to travelers.' : 'Get started by creating a manual route or planning with AI.') }}
+        </p>
+        <div class="flex gap-3 justify-center">
+          <button (click)="openModal()"
+                  class="px-5 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
+            Plan with AI
+          </button>
+        </div>
+      </div>
+      
+      <div *ngIf="!loading && !errorMessage && filteredOwnedItineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+        <article *ngFor="let item of filteredOwnedItineraries"
+                 class="group glass-panel flex flex-col justify-between overflow-hidden rounded-[24px] border border-white/10 card-interactive cursor-pointer">
+          <div [routerLink]="['/itinerary', item._id]" class="relative h-40 overflow-hidden">
+            <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-102">
+            <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
+            <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
+              <span class="rounded-full border border-white/15 bg-black/25 px-2.5 py-1 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-md">{{ item.status === 'draft' ? 'Draft' : 'Published' }}</span>
+              <span class="rounded-full bg-[#7ae0c3] px-2.5 py-1 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
+            </div>
+            <div class="absolute bottom-4 left-5 right-5">
+              <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#a3eed9]">{{ item.destination }}</p>
+              <h3 class="mt-1 text-lg font-extrabold tracking-tight text-white truncate">{{ item.title }}</h3>
+            </div>
+          </div>
+          
+          <div class="p-4 flex-grow flex flex-col justify-between">
+            <div class="grid grid-cols-2 gap-2 text-center text-xs mb-3">
+              <div class="rounded-xl bg-white/[0.03] p-2 text-[#b2c2ca] text-[11px]">
+                <span class="material-symbols-outlined text-sm text-[#7ae0c3] align-middle">calendar_month</span> {{ item.duration }}
+              </div>
+              <div class="rounded-xl bg-white/[0.03] p-2 text-[#b2c2ca] text-[11px]">
+                <span class="material-symbols-outlined text-sm text-[#ffc96b] align-middle">star</span> {{ item.engagement?.averageRating || 0 }} rating
+              </div>
+            </div>
+            
+            <div class="border-t border-white/5 pt-3.5 flex items-center justify-between gap-2">
+              <button mat-stroked-button class="ghost-action !text-[11px] !px-2.5 btn-interactive flex items-center gap-1"
+                      (click)="updateItineraryStatus(item, item.status === 'published' ? 'draft' : 'published')">
+                <span class="material-symbols-outlined text-sm">{{ item.status === 'published' ? 'archive' : 'publish' }}</span>
+                {{ item.status === 'published' ? 'Archive' : 'Publish' }}
+              </button>
+              <button (click)="deleteItinerary(item._id)" class="text-rose-400 hover:text-rose-300 text-xs font-semibold px-2">
+                Delete
+              </button>
+              <a [routerLink]="['/itinerary', item._id]" class="rounded-xl bg-[#7ae0c3] text-[#05201f] text-[11px] font-bold px-3 py-2 hover:bg-[#86ebd2] transition flex items-center gap-0.5">
+                Edit <span class="material-symbols-outlined text-sm">edit_note</span>
+              </a>
+            </div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Plan with AI Modal Dialog -->
+<div *ngIf="showModal"
+     [@overlayFade]
+     class="fixed inset-0 z-[70] flex items-end justify-center bg-[#020a0f]/80 p-0 backdrop-blur-xl md:items-center md:p-6"
+     (click)="closeModal()">
+  <section [@modalFadeScale]
+           class="glass-panel flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[30px] md:max-w-3xl md:rounded-[30px] bg-[#071721]/95 text-white"
+           (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <header class="border-b border-white/10 bg-[#0a1d29]/90 p-6 backdrop-blur-xl">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <!-- AI Loading Header -->
+          <ng-container *ngIf="creationMode === 'ai' && aiLoading">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-1">AI planning engine</p>
+            <h2 class="text-2xl font-extrabold text-white">Planning your route...</h2>
+          </ng-container>
+
+          <!-- AI Entry Header -->
+          <ng-container *ngIf="creationMode === 'ai' && !aiLoading">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-1">AI planner</p>
+            <h2 class="text-2xl font-extrabold text-white">Plan your trip with AI</h2>
+          </ng-container>
+
+          <!-- Manual Form Header -->
+          <ng-container *ngIf="creationMode === 'manual'">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-1">Manual Creator</p>
+            <h2 class="text-2xl font-extrabold text-white">
+              Create route (Step {{ currentStep }} of {{ TOTAL_STEPS }})
+            </h2>
+            <p class="text-xs text-[#819ca9] mt-1">{{ stepLabels[currentStep - 1] }} details</p>
+          </ng-container>
+
+          <!-- Clarification Mode Header -->
+          <ng-container *ngIf="creationMode === 'clarify'">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#ffc96b] mb-1">Clarification Required</p>
+            <h2 class="text-2xl font-extrabold text-white">Refine trip parameters</h2>
+          </ng-container>
+
+          <!-- Preview Mode Header -->
+          <ng-container *ngIf="creationMode === 'preview'">
+            <p class="text-xs font-bold uppercase tracking-[0.2em] text-emerald-300 mb-1">Preview</p>
+            <h2 class="text-2xl font-extrabold text-white">Your AI trip is ready</h2>
+          </ng-container>
+        </div>
+
+        <button (click)="closeModal()" class="grid h-9 w-9 place-items-center rounded-full bg-white/5 hover:bg-white/10 transition border border-white/5 cursor-pointer">
+          <span class="material-symbols-outlined text-xl">close</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content area -->
+    <div class="flex-grow overflow-y-auto p-6 md:p-8">
+      <div *ngIf="formError"
+           class="mb-6 rounded-2xl border border-rose-500/20 bg-rose-500/10 p-4 text-sm text-rose-200 flex items-center gap-2">
+        <span class="material-symbols-outlined text-lg">error</span> {{ formError }}
+      </div>
+
+      <!-- 1. AI LOADING CONTAINER -->
+      <div *ngIf="creationMode === 'ai' && aiLoading" class="flex flex-col items-center justify-center py-16 text-center">
+        <div class="relative mb-6">
+          <div class="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#7ae0c3]"></div>
+          <span class="material-symbols-outlined absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-2xl text-[#7ae0c3] animate-pulse">auto_awesome</span>
+        </div>
+        <p class="text-lg font-bold text-white mb-2">{{ aiLoadingText }}</p>
+        <p class="text-xs text-[#819ca9] max-w-sm">We are invoking our LLM backend and structuring the response to guarantee complete feasibility.</p>
+      </div>
+
+      <!-- 2. AI INPUT PROMPT VIEW -->
+      <div *ngIf="creationMode === 'ai' && !aiLoading" class="space-y-6">
+        <div class="rounded-2xl bg-white/[0.02] border border-white/5 p-4 flex gap-3.5">
+          <span class="material-symbols-outlined text-2xl text-[#7ae0c3]">info</span>
+          <p class="text-xs leading-relaxed text-[#819ca9]">
+            Describe your trip in natural language (e.g. <em>"Plan a 5-day adventure to Tokyo with foodie stops and temples"</em>). The model will extract target parameters, find local attractions, and construct a complete day-by-day plan.
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">What is your trip goal?</label>
+          <textarea [(ngModel)]="aiPromptText"
+                    rows="4"
+                    class="w-full rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-white outline-none focus:border-[#7ae0c3]/70 focus:ring-0 placeholder:text-white/20 resize-none"
+                    placeholder="Describe destination, duration, budget, pace, or custom interests..."></textarea>
+        </div>
+
+        <div class="flex items-center gap-3 pt-2">
+          <button (click)="generateAiItinerary()"
+                  class="flex-1 rounded-xl bg-[#7ae0c3] py-3 text-sm font-bold text-[#05201f] hover:bg-[#8eedce] transition flex items-center justify-center gap-2">
+            Generate with AI <span class="material-symbols-outlined text-lg">auto_awesome</span>
+          </button>
+          <button (click)="creationMode = 'manual'"
+                  class="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-sm font-semibold text-white hover:bg-white/10 transition">
+            Manual Creator
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. CLARIFICATION MODE -->
+      <div *ngIf="creationMode === 'clarify'" class="space-y-6">
+        <div *ngIf="durationConflictMessage" class="rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-4 text-sm text-[#ffd996] flex items-center gap-2 mb-4">
+          <span class="material-symbols-outlined text-lg">warning</span> {{ durationConflictMessage }}
+        </div>
+        <p class="text-sm text-[#819ca9]">We need to refine a couple of details before running the AI planner:</p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="space-y-2 relative">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Destination</label>
+            <input [(ngModel)]="clarificationForm.destination"
+                   (input)="onDestinationInputChange(clarificationForm.destination)"
+                   class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70"
+                   placeholder="e.g. Kyoto, Japan">
+            <!-- Autocomplete suggestions dropdown -->
+            <ul *ngIf="showManualSuggestions && manualSuggestions.length > 0"
+                class="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-[#081822] p-1 shadow-2xl">
+              <li *ngFor="let sug of manualSuggestions"
+                  (click)="selectManualSuggestion(sug)"
+                  class="cursor-pointer rounded-lg px-4 py-2 text-xs text-white hover:bg-white/5">
+                {{ sug }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Duration (Days)</label>
+            <input type="number"
+                   [(ngModel)]="clarificationForm.duration"
+                   class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70"
+                   min="1" max="30">
+          </div>
+        </div>
+
+        <button (click)="submitClarification()"
+                class="w-full rounded-xl bg-[#7ae0c3] py-3 text-sm font-bold text-[#05201f] hover:bg-[#8eedce] transition mt-4 flex items-center justify-center gap-2">
+          Generate Itinerary <span class="material-symbols-outlined text-lg">auto_awesome</span>
+        </button>
+      </div>
+
+      <!-- 4. AI PREVIEW AND LINK -->
+      <div *ngIf="creationMode === 'preview'" class="space-y-6 py-6 text-center">
+        <span class="grid h-16 w-16 place-items-center rounded-full bg-emerald-500/10 text-emerald-400 mx-auto mb-4 border border-emerald-500/10">
+          <span class="material-symbols-outlined text-3xl">check_circle</span>
+        </span>
+        <h3 class="text-2xl font-extrabold text-white">Itinerary generated successfully!</h3>
+        <p class="text-sm text-[#819ca9] max-w-md mx-auto leading-relaxed">
+          The AI has crafted the complete structure for <strong>{{ generatedDraft?.title }}</strong>. It is saved as a private draft.
+        </p>
+
+        <div class="border border-white/10 rounded-2xl bg-white/[0.02] p-5 max-w-md mx-auto text-left space-y-3">
+          <div class="flex justify-between">
+            <span class="text-xs text-[#819ca9]">Destination:</span>
+            <span class="text-xs font-bold text-white">{{ generatedDraft?.destination }}</span>
+          </div>
+          <div class="flex justify-between">
+            <span class="text-xs text-[#819ca9]">Duration:</span>
+            <span class="text-xs font-bold text-white">{{ generatedDraft?.duration }}</span>
+          </div>
+          <div *ngIf="generatedDraft?.budget" class="flex justify-between">
+            <span class="text-xs text-[#819ca9]">Budget Managed:</span>
+            <span class="text-xs font-bold text-[#7ae0c3]">${{ generatedDraft?.budget | number }}</span>
+          </div>
+        </div>
+
+        <div class="flex gap-3 justify-center max-w-md mx-auto pt-4">
+          <a [routerLink]="['/itinerary', generatedDraft?._id]" (click)="closeModal()"
+             class="flex-1 rounded-xl bg-[#7ae0c3] py-3 text-xs font-bold text-[#05201f] hover:bg-[#8eedce] transition flex items-center justify-center gap-1.5 shadow-md">
+            Go to Trip Planner <span class="material-symbols-outlined text-lg">edit_note</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- 5. MANUAL CREATION STEPS -->
+      <form *ngIf="creationMode === 'manual'" class="space-y-6">
+        <!-- STEP 1: BASICS -->
+        <div *ngIf="currentStep === 1" class="space-y-4">
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Itinerary Title</label>
+            <input name="title" [(ngModel)]="form.title" class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70"
+                   placeholder="e.g. Summer Getaway in Bali">
+          </div>
+          <div class="space-y-2 relative">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Destination</label>
+            <input name="destination" [(ngModel)]="form.destination" (input)="onDestinationInputChange(form.destination)"
+                   class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70"
+                   placeholder="e.g. Kyoto, Japan">
+            <!-- Autocomplete suggestions dropdown -->
+            <ul *ngIf="showManualSuggestions && manualSuggestions.length > 0"
+                class="absolute left-0 right-0 z-50 mt-1 max-h-48 overflow-y-auto rounded-xl border border-white/10 bg-[#081822] p-1 shadow-2xl">
+              <li *ngFor="let sug of manualSuggestions"
+                  (click)="selectManualSuggestion(sug)"
+                  class="cursor-pointer rounded-lg px-4 py-2 text-xs text-white hover:bg-white/5">
+                {{ sug }}
+              </li>
+            </ul>
+          </div>
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Trip Description</label>
+            <textarea name="description" [(ngModel)]="form.description" rows="3" class="w-full rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white outline-none focus:border-[#7ae0c3]/70 resize-none"
+                      placeholder="Brief overview of the curation intent..."></textarea>
+          </div>
+        </div>
+
+        <!-- STEP 2: DATES -->
+        <div *ngIf="currentStep === 2" class="space-y-4">
+          <div class="grid grid-cols-2 gap-4">
+            <div class="space-y-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Start Date</label>
+              <input type="date" name="startDate" [(ngModel)]="form.startDate" (change)="updateDuration()"
+                     class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70">
+            </div>
+            <div class="space-y-2">
+              <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">End Date</label>
+              <input type="date" name="endDate" [(ngModel)]="form.endDate" (change)="updateDuration()"
+                     class="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70">
+            </div>
+          </div>
+          <div class="rounded-2xl bg-white/[0.02] border border-white/5 p-5 text-center" *ngIf="calculatedDuration">
+            <p class="text-xs text-[#819ca9] uppercase tracking-wider mb-1">Calculated Duration</p>
+            <p class="text-xl font-bold text-white">{{ calculatedDuration }}</p>
+          </div>
+        </div>
+
+        <!-- STEP 3: BUDGET -->
+        <div *ngIf="currentStep === 3" class="space-y-5">
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Total Budget (USD)</label>
+            <div class="relative">
+              <span class="absolute left-4 top-1/2 -translate-y-1/2 text-sm text-[#819ca9] font-bold">$</span>
+              <input type="number" name="budget" [(ngModel)]="form.budget" (input)="allocateBudget()"
+                     class="w-full rounded-xl border border-white/10 bg-white/5 pl-8 pr-4 py-2.5 text-sm text-white outline-none focus:border-[#7ae0c3]/70"
+                     placeholder="e.g. 3000">
+            </div>
+          </div>
+
+          <div *ngIf="form.budget && form.budget > 0" class="space-y-3.5 border-t border-white/5 pt-4">
+            <p class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Auto Budget Breakdown Allocations</p>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              <div class="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                <span class="text-[9px] text-[#819ca9] block mb-1">Transport</span>
+                <span class="text-sm font-bold text-white">${{ form.budgetBreakdown.transport }}</span>
+              </div>
+              <div class="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                <span class="text-[9px] text-[#819ca9] block mb-1">Hotel</span>
+                <span class="text-sm font-bold text-white">${{ form.budgetBreakdown.accommodation }}</span>
+              </div>
+              <div class="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                <span class="text-[9px] text-[#819ca9] block mb-1">Food</span>
+                <span class="text-sm font-bold text-white">${{ form.budgetBreakdown.food }}</span>
+              </div>
+              <div class="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                <span class="text-[9px] text-[#819ca9] block mb-1">Activities</span>
+                <span class="text-sm font-bold text-white">${{ form.budgetBreakdown.activities }}</span>
+              </div>
+              <div class="bg-white/[0.02] border border-white/5 p-3 rounded-xl">
+                <span class="text-[9px] text-[#819ca9] block mb-1">Contingency</span>
+                <span class="text-sm font-bold text-white">${{ form.budgetBreakdown.contingency }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 4: STOPS -->
+        <div *ngIf="currentStep === 4" class="space-y-4">
+          <div class="flex items-center justify-between mb-2">
+            <label class="text-xs font-bold uppercase tracking-wider text-[#819ca9]">Curation stops / checkpoints</label>
+            <button type="button" (click)="addStop()"
+                    class="rounded-lg bg-white/5 border border-white/10 px-3 py-1 text-xs font-semibold hover:bg-white/10 transition flex items-center gap-1 cursor-pointer">
+              <span class="material-symbols-outlined text-sm">add</span> Add stop
+            </button>
+          </div>
+
+          <div *ngIf="form.stops.length === 0" class="py-8 text-center text-xs text-[#819ca9] bg-white/[0.01] border border-dashed border-white/10 rounded-xl">
+            No custom stops added. You can also build stops dynamically in the editor canvas later.
+          </div>
+
+          <div *ngIf="form.stops.length > 0" class="space-y-3 max-h-60 overflow-y-auto pr-1">
+            <div *ngFor="let stop of form.stops; let i = index; trackBy: trackByIndex"
+                 class="flex gap-3 items-start bg-white/[0.01] border border-white/5 p-3 rounded-xl">
+              <span class="bg-[#7ae0c3]/15 text-[#7ae0c3] rounded-lg text-[10px] font-bold p-1 px-2.5 mt-1">{{ i + 1 }}</span>
+              <div class="flex-grow grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input [name]="'stopName' + i" [(ngModel)]="stop.name"
+                       class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-[#7ae0c3]/70"
+                       placeholder="Stop name (e.g. Golden Pavilion)">
+                <input [name]="'stopNotes' + i" [(ngModel)]="stop.notes"
+                       class="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-white outline-none focus:border-[#7ae0c3]/70"
+                       placeholder="Notes/logistics (e.g. opening times)">
+              </div>
+              <button type="button" (click)="removeStop(i)" class="text-rose-400 hover:text-rose-300 transition-colors mt-2">
+                <span class="material-symbols-outlined text-base">delete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- Footer -->
+    <footer class="border-t border-white/10 bg-[#0a1d29]/95 p-6 flex gap-3 backdrop-blur-xl">
+      <!-- AI ENTRY FOOTER -->
+      <ng-container *ngIf="creationMode === 'ai' && !aiLoading">
+        <div class="flex-grow"></div>
+      </ng-container>
+
+      <!-- CLARIFICATION MODE FOOTER -->
+      <ng-container *ngIf="creationMode === 'clarify'">
+        <button (click)="creationMode = 'ai'" class="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer">Back</button>
+        <div class="flex-grow"></div>
+        <button (click)="submitClarification()" [disabled]="aiLoading"
+                class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-xs font-bold text-[#05201f] hover:bg-[#8eedce] transition shadow-md flex items-center gap-1 cursor-pointer">
+          Generate Draft <span class="material-symbols-outlined text-base">auto_awesome</span>
+        </button>
+      </ng-container>
+
+      <!-- PREVIEW MODE FOOTER -->
+      <ng-container *ngIf="creationMode === 'preview'">
+        <button (click)="creationMode = 'ai'; generatedDraft = null;" class="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer">Start over</button>
+        <div class="flex-grow"></div>
+        <button (click)="closeModal()" class="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-[#7ae0c3] hover:bg-white/10 transition cursor-pointer">Close preview</button>
+        <a [routerLink]="['/itinerary', generatedDraft?._id]" (click)="closeModal()"
+           class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-xs font-bold text-[#05201f] hover:bg-[#8eedce] transition shadow-md flex items-center gap-1">
+          Go to Trip Planner <span class="material-symbols-outlined text-base">edit_note</span>
+        </a>
+      </ng-container>
+
+      <!-- MANUAL MODE FOOTER -->
+      <ng-container *ngIf="creationMode === 'manual'">
+        <button *ngIf="currentStep > 1" (click)="prevStep()" class="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer">Back</button>
+        <button *ngIf="currentStep === 1" (click)="creationMode = 'ai'" class="rounded-xl border border-white/15 bg-white/5 px-5 py-2.5 text-xs font-semibold text-white hover:bg-white/10 transition cursor-pointer">Back to AI</button>
+        <div class="flex-grow"></div>
+        <button *ngIf="currentStep < TOTAL_STEPS" (click)="nextStep()"
+                class="rounded-xl bg-[#7ae0c3] px-5 py-2.5 text-xs font-bold text-[#05201f] hover:bg-[#8eedce] transition shadow-md flex items-center gap-1 cursor-pointer">
+          Continue <span class="material-symbols-outlined text-base">arrow_forward</span>
+        </button>
+        <button *ngIf="currentStep === TOTAL_STEPS" (click)="submitCreate()" [disabled]="saving"
+                class="rounded-xl bg-[#7ae0c3] px-6 py-2.5 text-xs font-bold text-[#05201f] hover:bg-[#8eedce] transition shadow-md cursor-pointer">
+          {{ saving ? 'Creating Route…' : 'Create Itinerary' }}
+        </button>
+      </ng-container>
+    </footer>
+  </section>
+</div>

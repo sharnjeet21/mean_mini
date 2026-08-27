@@ -1,0 +1,99 @@
+<div class="space-y-8 page-entrance">
+  <!-- Header Banner -->
+  <section class="glass-panel relative overflow-hidden rounded-[30px] p-8 sm:p-10">
+    <div class="absolute -right-16 -top-20 h-64 w-64 rounded-full border-[48px] border-[#7ae0c3]/5"></div>
+    <div class="relative z-10">
+      <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#7ae0c3] mb-2">Proposal Hub</p>
+      <h1 class="text-3xl font-extrabold text-white tracking-tight">Client Proposals</h1>
+      <p class="text-sm text-[#8fa6b1] mt-2 max-w-xl">
+        Share links with clients to view their travel options, and review client feedback stats in real-time.
+      </p>
+    </div>
+  </section>
+
+  <!-- Proposals Directory -->
+  <div class="glass-panel overflow-hidden rounded-[24px] border border-white/10 shadow-sm bg-white/[0.01]">
+    <!-- Toolbar -->
+    <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.02] p-4 md:flex-row">
+      <div class="relative flex-grow max-w-md">
+        <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
+        <input [(ngModel)]="searchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
+               placeholder="Search proposals...">
+      </div>
+      <div class="flex items-center gap-1 rounded-lg bg-white/5 p-1 self-start md:self-auto">
+        <button (click)="activeTab = 'all'" [class]="activeTab === 'all' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">All</button>
+        <button (click)="activeTab = 'draft'" [class]="activeTab === 'draft' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">Draft</button>
+        <button (click)="activeTab = 'published'" [class]="activeTab === 'published' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">Published</button>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="p-6">
+      <div *ngIf="loading" class="flex items-center justify-center py-16 text-[#8ea5b0]">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-[#7ae0c3] mr-3"></div>
+        Loading proposals…
+      </div>
+
+      <div *ngIf="errorMessage && !loading" class="rounded-xl bg-rose-500/10 border border-rose-400/20 px-5 py-4 text-sm text-rose-200">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="!loading && !errorMessage && filteredProposals.length === 0" class="py-12 text-center text-[#8ea5b0]">
+        <span class="material-symbols-outlined block text-3xl mb-2 opacity-40">folder_open</span>
+        <p class="text-sm">No proposals found matching criteria.</p>
+      </div>
+
+      <div *ngIf="!loading && !errorMessage && filteredProposals.length > 0" class="overflow-x-auto">
+        <table class="w-full text-left text-sm text-[#b0c3cf]">
+          <thead class="text-xs uppercase text-[#8ea5b0] bg-white/[0.02] border-b border-white/10">
+            <tr>
+              <th class="px-5 py-3.5">Name</th>
+              <th class="px-5 py-3.5">Destination</th>
+              <th class="px-5 py-3.5">Status</th>
+              <th class="px-5 py-3.5">Budget</th>
+              <th class="px-5 py-3.5">Engagement</th>
+              <th class="px-5 py-3.5 text-right">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let p of filteredProposals" class="border-b border-white/5 hover:bg-white/[0.01] transition">
+              <td class="px-5 py-4 font-semibold text-white truncate max-w-[200px]">{{ p.title }}</td>
+              <td class="px-5 py-4 text-[#a6ebd7] truncate max-w-[150px]">{{ p.destination }}</td>
+              <td class="px-5 py-4">
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-bold" [ngClass]="statusClass(p.status)">
+                  {{ statusLabel(p.status) }}
+                </span>
+              </td>
+              <td class="px-5 py-4 font-semibold text-[#7ae0c3]">
+                ${{ (p.budget || 0) | number }}
+              </td>
+              <td class="px-5 py-4 text-xs">
+                <div class="flex items-center gap-4 text-[#8ea5b0]">
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">bookmark</span> {{ p.engagement?.favoriteCount || 0 }}
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-sm">comment</span> {{ p.engagement?.reviewsCount || 0 }}
+                  </span>
+                </div>
+              </td>
+              <td class="px-5 py-4 text-right flex items-center justify-end gap-3">
+                <button (click)="openProposal(p.id)" class="text-[#a6ebd7] hover:text-white transition text-xs font-semibold px-2 py-1 rounded bg-white/5 hover:bg-white/10">
+                  Edit
+                </button>
+                <ng-container *ngIf="p.status === 'published'">
+                  <button (click)="openPublicProposal(p.id)" class="text-[#7ae0c3] hover:text-white transition text-xs font-semibold px-2 py-1 rounded bg-white/5 hover:bg-white/10">
+                    View
+                  </button>
+                  <button (click)="copyPublicLink(p.id)" class="text-sky-300 hover:text-white transition text-xs font-semibold px-2 py-1 rounded bg-white/5 hover:bg-white/10 flex items-center gap-0.5">
+                    <span class="material-symbols-outlined text-sm">content_copy</span> Copy Link
+                  </button>
+                </ng-container>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
