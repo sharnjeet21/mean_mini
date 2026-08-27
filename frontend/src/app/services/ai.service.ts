@@ -341,38 +341,43 @@ export class AiService {
 
   /**
    * Geocode a place name to lat/lng coordinates.
-   * Uses Nominatim (OpenStreetMap) — free, no key required.
+   * Routes through the backend, which handles Mapbox → Nominatim → AI fallback.
    */
   geocode(place: string): Observable<{ lat: number; lng: number }> {
     const key = `geocode:${place.toLowerCase()}`;
     const cached = this.lsGet<{ lat: number; lng: number }>(key);
     if (cached) return of(cached);
 
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(place)}&format=json&limit=1`;
-    return this.http.get<any[]>(url, {
-      headers: { 'Accept-Language': 'en' },
-    }).pipe(
-      map(results => {
-        if (!results || results.length === 0) throw new Error(`No geocode result for: ${place}`);
-        const r = { lat: parseFloat(results[0].lat), lng: parseFloat(results[0].lon) };
-        this.lsSet(key, r, TTL_IMAGES);
-        return r;
-      }),
+    const params = new HttpParams().set('place', place);
+    return this.http.get<{ lat: number; lng: number }>(
+      `${this.baseUrl}/geocode`, { params }
+    ).pipe(
+      tap(r => this.lsSet(key, r, TTL_IMAGES)),
       catchError(() => of({ lat: 0, lng: 0 }))
     );
   }
 
   /**
-   * Get a simple straight-line route segment between two coordinates.
-   * Returns an array of [lat, lng] waypoints (just the two endpoints for now).
-   * A real routing API (OSRM, Mapbox) can replace this without changing callers.
+   * Get route directions between two coordinates.
+   * Routes through the backend, which handles Mapbox → OSRM → straight-line fallback.
    */
   getRouteDirections(
     from: { lat: number; lng: number },
     to: { lat: number; lng: number },
-    _mode: string = 'driving'
+    mode: string = 'driving'
   ): Observable<Array<[number, number]>> {
-    return of([[from.lat, from.lng], [to.lat, to.lng]]);
+    return this.http.post<{ geometry?: { coordinates: number[][] } }>(
+      `${this.baseUrl}/directions`,
+      { from, to, mode }
+    ).pipe(
+      map(res => {
+        if (res?.geometry?.coordinates?.length) {
+          return res.geometry.coordinates.map(c => [c[1], c[0]] as [number, number]);
+        }
+        return [[from.lat, from.lng], [to.lat, to.lng]] as Array<[number, number]>;
+      }),
+      catchError(() => of([[from.lat, from.lng], [to.lat, to.lng]] as Array<[number, number]>))
+    );
   }
 
   private handleError(err: any): Observable<never> {

@@ -136,6 +136,37 @@ async function handleExtractIntent(req, res, next) {
   }
 }
 
+async function handleGeocode(req, res, next) {
+  try {
+    const { place } = req.query;
+    if (!place || !place.trim()) {
+      return res.status(400).json({ error: 'place query parameter is required' });
+    }
+    const mapboxAdapter = require('../adapters/mapboxAdapter');
+    const result = await mapboxAdapter.geocode(place.trim());
+    if (!result) {
+      return res.status(404).json({ error: `Could not geocode: ${place}`, lat: 0, lng: 0 });
+    }
+    res.json({ lat: result.lat, lng: result.lng, name: result.name, bbox: result.bbox });
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function handleDirections(req, res, next) {
+  try {
+    const { from, to, mode = 'driving' } = req.body;
+    if (!from || !to || typeof from.lat !== 'number' || typeof to.lat !== 'number') {
+      return res.status(400).json({ error: 'from and to with lat/lng are required' });
+    }
+    const mapboxAdapter = require('../adapters/mapboxAdapter');
+    const result = await mapboxAdapter.getDirections(from, to, mode);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   handleSuggestions,
   handleRoutePlan,
@@ -145,4 +176,6 @@ module.exports = {
   handleSmartPlan,
   handleItineraryDraft,
   handleExtractIntent,
+  handleGeocode,
+  handleDirections,
 };

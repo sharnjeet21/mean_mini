@@ -641,4 +641,15 @@ router.post("/itinerary-revision", authenticate, rateLimiter, async (req, res, n
   }
 });
 
+
+// ── GET /geocode — reverse geocode a place name to lat/lng ───────────────────
+router.get('/geocode', rateLimiter, (req, res, next) => {
+  aiController.handleGeocode(req, res, next);
+});
+
+// ── POST /directions — get route between two lat/lng points ──────────────────
+router.post('/directions', rateLimiter, (req, res, next) => {
+  aiController.handleDirections(req, res, next);
+});
+
 module.exports = router;
