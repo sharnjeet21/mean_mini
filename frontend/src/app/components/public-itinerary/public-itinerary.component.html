@@ -1,0 +1,178 @@
+<!-- Loading -->
+<div *ngIf="loading"
+     class="min-h-screen flex items-center justify-center text-[#8ea5b0]">
+  <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+</div>
+
+<!-- Error -->
+<div *ngIf="error && !loading"
+     class="min-h-screen flex items-center justify-center p-6">
+  <div class="glass-panel p-8 rounded-2xl max-w-md w-full text-center">
+    <span class="material-symbols-outlined text-4xl text-rose-400 mb-4 block">error</span>
+    <h2 class="text-2xl font-bold text-white mb-2">Proposal Not Found</h2>
+    <p class="text-[#8ea5b0] mb-6">{{ error }}</p>
+    <a routerLink="/" class="inline-block rounded-xl bg-[#7ae0c3] px-6 py-2.5 text-sm font-bold text-[#05201f]">
+      Go Home
+    </a>
+  </div>
+</div>
+
+<!-- Main content -->
+<div *ngIf="itinerary && !loading" class="min-h-screen text-[#f5fbff]">
+
+  <!-- Hero -->
+  <section class="relative min-h-[440px] w-full overflow-hidden">
+    <img *ngIf="imageUrl" [src]="imageUrl" [alt]="itinerary.destination"
+         class="absolute inset-0 w-full h-full object-cover">
+    <div class="absolute inset-0 bg-gradient-to-t from-[#06131d]/95 via-[#06131d]/60 to-[#06131d]/20"></div>
+
+    <div class="relative z-10 flex flex-col justify-end min-h-[440px] max-w-7xl mx-auto px-6 lg:px-12 pb-12">
+
+      <!-- Creator + currency -->
+      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">
+          Prepared by {{ itinerary.createdBy?.name || 'Travel Intelligence' }}
+        </p>
+        <select
+          [ngModel]="currencyService.currentCurrency$ | async"
+          (ngModelChange)="currencyService.setCurrency($event)"
+          class="rounded-full border border-white/20 bg-white/5 px-3 py-1.5 text-xs font-bold text-white outline-none cursor-pointer appearance-none backdrop-blur-md">
+          <option *ngFor="let cur of currencyService.supportedCurrencies"
+                  [value]="cur" class="bg-[#071721] text-white">
+            {{ cur }} {{ currencyService.getSymbol(cur) }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Meta chips -->
+      <div class="flex flex-wrap items-center gap-2 mb-4">
+        <span *ngIf="itinerary.duration"
+              class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">
+          {{ itinerary.duration }}
+        </span>
+        <span *ngIf="itinerary.budget"
+              class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15">
+          {{ currencyService.convert(itinerary.budget).symbol }}{{ currencyService.convert(itinerary.budget).amount | number }} total
+        </span>
+        <span *ngIf="itinerary.travelStyle"
+              class="bg-white/10 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-sm font-semibold border border-white/15 capitalize">
+          {{ itinerary.travelStyle }}
+        </span>
+      </div>
+
+      <h1 class="mb-3 text-4xl lg:text-6xl font-bold tracking-tight text-white">{{ itinerary.title }}</h1>
+
+      <div class="flex flex-wrap items-center gap-5 text-white/75">
+        <span class="flex items-center gap-1.5 text-sm">
+          <span class="material-symbols-outlined text-base">location_on</span>
+          {{ itinerary.destination }}
+        </span>
+        <span *ngIf="itinerary.travelerCount" class="flex items-center gap-1.5 text-sm">
+          <span class="material-symbols-outlined text-base">group</span>
+          {{ itinerary.travelerCount }} traveler{{ itinerary.travelerCount !== 1 ? 's' : '' }}
+        </span>
+        <span *ngIf="itinerary.engagement?.averageRating > 0"
+              class="flex items-center gap-1.5 text-sm">
+          <span class="material-symbols-outlined text-base text-amber-300">star</span>
+          {{ itinerary.engagement.averageRating }} ({{ itinerary.engagement.ratingCount }})
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <main class="max-w-7xl mx-auto px-6 lg:px-12 py-12">
+
+    <!-- Overview -->
+    <section class="mb-14 max-w-3xl">
+      <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Trip brief</p>
+      <h2 class="text-3xl font-bold text-white mb-4">Itinerary overview</h2>
+      <p class="leading-8 text-[#b0c3cf]">
+        {{ itinerary.description || 'Explore the best of ' + itinerary.destination + '.' }}
+      </p>
+    </section>
+
+    <!-- Map -->
+    <section class="mb-14">
+      <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Route</p>
+      <h2 class="text-2xl font-bold text-white mb-4">Map View</h2>
+      <div class="h-[400px] w-full rounded-3xl overflow-hidden glass-panel relative">
+        <app-map-canvas
+          *ngIf="mapLat && mapLng"
+          [lat]="mapLat" [lng]="mapLng"
+          [pins]="mapPins"
+          [routeSegments]="mapRouteSegments">
+        </app-map-canvas>
+        <div *ngIf="!mapLat || !mapLng"
+             class="absolute inset-0 flex flex-col items-center justify-center text-[#8ea5b0] bg-white/5">
+          <span class="material-symbols-outlined text-4xl mb-3 opacity-40">map</span>
+          <p class="text-sm">Loading map…</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Daily Plan -->
+    <section class="mb-14" *ngIf="itinerary.dailyPlan?.length">
+      <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Schedule</p>
+      <h2 class="text-3xl font-bold text-white mb-6">Daily Plan</h2>
+
+      <div class="space-y-6">
+        <div *ngFor="let day of itinerary.dailyPlan"
+             class="glass-panel rounded-2xl p-6 lg:p-8 relative overflow-hidden">
+          <div class="absolute top-0 left-0 w-1.5 h-full bg-[#7ae0c3] rounded-l-2xl"></div>
+          <h3 class="mb-1 text-xl font-bold text-white">
+            Day {{ day.day }}
+            <span class="text-[#8ea5b0] font-normal"> · {{ day.title }}</span>
+          </h3>
+          <p *ngIf="day.theme" class="mb-5 text-sm text-[#b0c3cf] max-w-2xl">{{ day.theme }}</p>
+
+          <div class="space-y-5 mt-4">
+            <div *ngFor="let act of day.activities"
+                 class="relative pl-6 before:absolute before:left-2 before:top-2 before:h-full before:w-px before:-translate-x-1/2 before:bg-white/10 last:before:hidden">
+              <div class="absolute left-2 top-2.5 h-2 w-2 -translate-x-1/2 rounded-full bg-[#7ae0c3]"></div>
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <p class="font-bold text-white text-sm">
+                    {{ act.time ? act.time + ' · ' : '' }}{{ act.activity }}
+                  </p>
+                  <p *ngIf="act.location" class="mt-0.5 text-xs text-[#8ea5b0]">
+                    <span class="material-symbols-outlined text-xs align-middle">location_on</span>
+                    {{ act.location }}
+                  </p>
+                </div>
+                <span *ngIf="act.category"
+                      class="flex-shrink-0 rounded-full bg-white/5 px-2 py-0.5 text-[10px] uppercase text-[#b0c3cf]">
+                  {{ act.category }}
+                </span>
+              </div>
+              <p *ngIf="act.description" class="mt-1.5 text-sm text-[#b0c3cf]">{{ act.description }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Highlights -->
+    <section class="mb-14"
+             *ngIf="itinerary.tripSummary?.highlights?.length">
+      <p class="mb-2 text-xs font-bold uppercase tracking-[0.2em] text-[#a6ebd7]">Highlights</p>
+      <h2 class="text-2xl font-bold text-white mb-4">What makes this trip special</h2>
+      <ul class="grid sm:grid-cols-2 gap-3">
+        <li *ngFor="let h of itinerary.tripSummary.highlights"
+            class="flex items-start gap-2 bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3">
+          <span class="material-symbols-outlined text-[#7ae0c3] text-base mt-0.5">star</span>
+          <span class="text-sm text-[#b0c3cf]">{{ h }}</span>
+        </li>
+      </ul>
+    </section>
+
+    <!-- CTA -->
+    <div class="text-center py-10 border-t border-white/10">
+      <p class="text-[#8ea5b0] mb-4 text-sm">Want to book this trip or customise it for your group?</p>
+      <a routerLink="/register"
+         class="inline-block signature-gradient rounded-xl px-7 py-3.5 font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95">
+        Get Started — It's Free
+      </a>
+    </div>
+
+  </main>
+</div>

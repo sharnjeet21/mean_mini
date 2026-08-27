@@ -1,11 +1,11 @@
-const jwt    = require('jsonwebtoken');
+﻿const jwt    = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User   = require('../models/User');
 
 const JWT_SECRET  = process.env.JWT_SECRET || 'travel_app_secret';
 const JWT_EXPIRES = '7d';
 
-// ── Register ──────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Register ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 async function registerUser({ name, email, password }) {
   const existing = await User.findOne({ email });
   if (existing) throw new Error('Email already registered');
@@ -16,7 +16,7 @@ async function registerUser({ name, email, password }) {
   return signToken(user);
 }
 
-// ── Login ─────────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Login ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 async function loginUser({ email, password }) {
   const user = await User.findOne({ email });
   if (!user || !user.isActive) throw new Error('Invalid email or password');
@@ -28,7 +28,7 @@ async function loginUser({ email, password }) {
   return signToken(user);
 }
 
-// ── Token helpers ─────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Token helpers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function signToken(user) {
   return jwt.sign(
     { id: user._id, role: user.role, email: user.email },
@@ -37,7 +37,7 @@ function signToken(user) {
   );
 }
 
-// ── JWT middleware ────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ JWT middleware ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function authMiddleware(req, res, next) {
   const header = req.headers.authorization || '';
   const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
@@ -56,7 +56,7 @@ function authMiddleware(req, res, next) {
   }
 }
 
-// ── Role guard ────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Role guard ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function requireRole(role) {
   return (req, res, next) => {
     if (!req.user || req.user.role !== role) {
@@ -66,32 +66,12 @@ function requireRole(role) {
   };
 }
 
-// ── Optional auth (for public pages that benefit from user context) ───────────
-function optionalAuth(req, res, next) {
-  const header = req.headers.authorization || '';
-  const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
-  if (!token) return next(); // Guest — continue without req.user
-
-  try {
-    const verified = jwt.verify(token, JWT_SECRET);
-    req.user = {
-      ...verified,
-      id: verified.id || verified._id,
-      _id: verified.id || verified._id,
-    };
-  } catch {
-    // Invalid token — treat as guest
-  }
-  next();
-}
-
-// ── Exports ───────────────────────────────────────────────────────────────────
+// ΓöÇΓöÇ Exports ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 module.exports = {
   registerUser,
   loginUser,
   authMiddleware,
   requireRole,
-  optionalAuth,
   // Aliases used by existing routes
   authenticate: authMiddleware,
   authorize: (...roles) => (req, res, next) => {
