@@ -14,9 +14,9 @@
       <a mat-button routerLink="/home" routerLinkActive="!bg-white/10 !text-white"
          [routerLinkActiveOptions]="{exact:true}" class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Home</a>
       
-      <!-- Everyone sees Trips -->
+      <!-- Everyone sees Explore -->
       <a mat-button routerLink="/dashboard" routerLinkActive="!bg-white/10 !text-white"
-         [routerLinkActiveOptions]="{exact:true}" class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Trips</a>
+         [routerLinkActiveOptions]="{exact:true}" class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Explore</a>
          
       <!-- Traveler Saved / Bookings -->
       <ng-container *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'user'">
@@ -26,22 +26,10 @@
            class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Bookings</a>
       </ng-container>
 
-      <!-- Trip Manager, Admin, Superadmin see Workspace -->
+      <!-- Staff sees Agency Workspace -->
       <ng-container *ngIf="auth.isLoggedIn && ['trip-manager', 'admin', 'superadmin'].includes(auth.currentUser()?.role || '')">
-        <a mat-button routerLink="/workspace" routerLinkActive="!bg-white/10 !text-white"
-           class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Workspace</a>
-      </ng-container>
-
-      <!-- Admin and Superadmin see Operations -->
-      <ng-container *ngIf="auth.isLoggedIn && ['admin', 'superadmin'].includes(auth.currentUser()?.role || '')">
-        <a mat-button routerLink="/operations" routerLinkActive="!bg-white/10 !text-white"
-           class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Operations</a>
-      </ng-container>
-
-      <!-- Superadmin sees Platform -->
-      <ng-container *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'superadmin'">
-        <a mat-button routerLink="/platform" routerLinkActive="!bg-white/10 !text-white"
-           class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Platform</a>
+        <a mat-button routerLink="/agency" routerLinkActive="!bg-white/10 !text-white"
+           class="!rounded-full !px-4 !text-xs !font-semibold !text-[#9fb0ba]">Agency</a>
       </ng-container>
 
       <a mat-button routerLink="/about" routerLinkActive="!bg-white/10 !text-white"
@@ -104,39 +92,11 @@
               </button>
             </ng-container>
 
-            <!-- Trip Manager items -->
-            <ng-container *ngIf="auth.currentUser()?.role === 'trip-manager'">
+            <!-- Agency Staff items (Trip Manager, Admin, Superadmin) -->
+            <ng-container *ngIf="auth.currentUser()?.role && auth.currentUser()?.role !== 'user'">
               <button class="profile-dropdown-item" role="menuitem"
-                      (click)="navigateTo('/workspace')" aria-label="Go to Workspace">
-                <span class="material-symbols-outlined">dashboard</span>Workspace
-              </button>
-            </ng-container>
-
-            <!-- Admin items -->
-            <ng-container *ngIf="auth.currentUser()?.role === 'admin'">
-              <button class="profile-dropdown-item" role="menuitem"
-                      (click)="navigateTo('/workspace')" aria-label="Go to Workspace">
-                <span class="material-symbols-outlined">dashboard</span>Workspace
-              </button>
-              <button class="profile-dropdown-item" role="menuitem"
-                      (click)="navigateTo('/operations')" aria-label="Go to Operations">
-                <span class="material-symbols-outlined">admin_panel_settings</span>Operations
-              </button>
-            </ng-container>
-
-            <!-- Superadmin items -->
-            <ng-container *ngIf="auth.currentUser()?.role === 'superadmin'">
-              <button class="profile-dropdown-item" role="menuitem"
-                      (click)="navigateTo('/workspace')" aria-label="Go to Workspace">
-                <span class="material-symbols-outlined">dashboard</span>Workspace
-              </button>
-              <button class="profile-dropdown-item" role="menuitem"
-                      (click)="navigateTo('/operations')" aria-label="Go to Operations">
-                <span class="material-symbols-outlined">admin_panel_settings</span>Operations
-              </button>
-              <button class="profile-dropdown-item" role="menuitem"
-                      (click)="navigateTo('/platform')" aria-label="Go to Platform">
-                <span class="material-symbols-outlined">monitoring</span>Platform
+                      (click)="navigateTo('/agency')" aria-label="Go to Agency Workspace">
+                <span class="material-symbols-outlined">business_center</span>Agency Workspace
               </button>
             </ng-container>
 
@@ -159,7 +119,7 @@
   <div *ngIf="mobileOpen" class="glass-panel mx-auto mt-2 max-w-7xl rounded-[22px] p-3 md:hidden">
     <a mat-button routerLink="/home" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Home</a>
     
-    <a mat-button routerLink="/dashboard" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Trips</a>
+    <a mat-button routerLink="/dashboard" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Explore</a>
     
     <!-- Traveler mobile additional links -->
     <ng-container *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'user'">
@@ -167,17 +127,9 @@
       <a mat-button routerLink="/dashboard" [queryParams]="{view: 'bookings'}" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Bookings</a>
     </ng-container>
 
-    <!-- Workspace for Trip Manager, Admin, Superadmin -->
+    <!-- Agency for Staff roles -->
     <a *ngIf="auth.isLoggedIn && ['trip-manager', 'admin', 'superadmin'].includes(auth.currentUser()?.role || '')"
-       mat-button routerLink="/workspace" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Workspace</a>
-
-    <!-- Operations for Admin, Superadmin -->
-    <a *ngIf="auth.isLoggedIn && ['admin', 'superadmin'].includes(auth.currentUser()?.role || '')"
-       mat-button routerLink="/operations" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Operations</a>
-
-    <!-- Platform for Superadmin -->
-    <a *ngIf="auth.isLoggedIn && auth.currentUser()?.role === 'superadmin'"
-       mat-button routerLink="/platform" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Platform</a>
+       mat-button routerLink="/agency" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">Agency</a>
 
     <a mat-button routerLink="/about" (click)="closeMobile()" class="!w-full !justify-start !rounded-xl !text-[#dfeef3]">About</a>
     

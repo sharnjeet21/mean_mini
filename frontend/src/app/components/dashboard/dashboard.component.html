@@ -1,638 +1,173 @@
 <main class="min-h-screen px-5 pb-20 pt-28 sm:px-8 lg:px-12 page-entrance">
   <div class="mx-auto max-w-7xl">
     <!-- ── EXPLORER DASHBOARD (everyone) ────────────────────────────────────── -->
-    <ng-container *ngIf="!isWorkspaceMode">
-      <section class="glass-panel relative mb-8 overflow-hidden rounded-[34px] p-7 sm:p-10">
-        <div class="absolute -right-20 -top-28 h-80 w-80 rounded-full border-[58px] border-[#7ae0c3]/5"></div>
-        <div class="absolute bottom-0 right-[18%] h-40 w-40 rotate-12 rounded-[35%] bg-[#ff8d70]/5"></div>
-        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p class="eyebrow">Your travel room</p>
-            <h1 class="mt-4 max-w-3xl text-4xl font-extrabold tracking-[-0.045em] text-white sm:text-5xl">
-              Good to see you, {{ auth.currentUser()?.name || 'Explorer' }}.
-            </h1>
-            <p class="mt-4 max-w-xl text-sm leading-7 text-[#8fa6b1]">
-              Plan your next trip with AI, explore signature routes, or save your favorite plans.
-            </p>
-          </div>
-          <button *ngIf="auth.isLoggedIn && auth.currentUser()?.role !== 'user'" mat-flat-button class="primary-action !self-start lg:!self-auto" (click)="openModal()">
-            <span class="material-symbols-outlined mr-2 text-lg">add</span>
-            Plan with AI
-          </button>
-        </div>
-      </section>
-
-      <section class="glass-panel mb-10 overflow-hidden rounded-[30px]">
-        <div class="grid lg:grid-cols-[minmax(0,.78fr)_minmax(0,1.22fr)]">
-          <div class="relative min-h-[280px] min-w-0 overflow-hidden p-7 sm:p-9">
-            <img src="/images/santorini.jpg" alt="Santorini coast" class="absolute inset-0 h-full w-full object-cover opacity-55">
-            <div class="absolute inset-0 bg-gradient-to-r from-[#071721]/95 via-[#071721]/80 to-[#071721]/20"></div>
-            <div class="relative">
-              <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#7ae0c3] text-[#05201f]">
-                <span class="material-symbols-outlined">auto_awesome</span>
-              </span>
-              <p class="eyebrow mt-6">Destination spark</p>
-              <h2 class="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-white">Where are you curious about?</h2>
-              <p class="mt-3 max-w-sm text-sm leading-6 text-white/60">
-                Search a place and let the assistant surface a visual preview, suggestions, and signature stops.
-              </p>
-            </div>
-          </div>
-          <div class="min-w-0 bg-[#071721]/45 p-6 sm:p-9">
-            <div *ngIf="rateLimitMessage"
-                 class="mb-4 flex items-center gap-2 rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-3 text-sm text-[#ffd996]">
-              <span class="material-symbols-outlined text-lg">warning</span>{{ rateLimitMessage }}
-            </div>
-            <div *ngIf="destinationToast"
-                 class="mb-4 flex items-center gap-2 rounded-2xl border border-[#7ae0c3]/20 bg-[#7ae0c3]/10 p-3 text-sm text-[#baf4e3]">
-              <span class="material-symbols-outlined text-lg">check_circle</span>{{ destinationToast }}
-            </div>
-            <app-destination-search (destinationSelected)="onDestinationSelected($event)"></app-destination-search>
-            <div class="mt-8 border-t border-white/10 pt-6">
-              <app-trending-cards (destinationSelected)="onDestinationSelected($event)"></app-trending-cards>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <section class="glass-panel relative mb-8 overflow-hidden rounded-[34px] p-7 sm:p-10">
+      <div class="absolute -right-20 -top-28 h-80 w-80 rounded-full border-[58px] border-[#7ae0c3]/5"></div>
+      <div class="absolute bottom-0 right-[18%] h-40 w-40 rotate-12 rounded-[35%] bg-[#ff8d70]/5"></div>
+      <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p class="eyebrow">Your collection</p>
-          <h2 class="mt-2 text-3xl font-extrabold tracking-[-0.035em] text-white">
-            {{ activeView === 'saved' ? 'Saved for later' : activeView === 'bookings' ? 'Booked journeys' : 'Explore live itineraries' }}
-          </h2>
-        </div>
-        <div class="flex flex-wrap gap-2">
-          <button mat-button (click)="setView('explore')" [class]="activeView === 'explore' ? '!rounded-full !bg-[#7ae0c3] !text-[#05201f]' : '!rounded-full !bg-white/5 !text-[#93a9b4]'">Explore</button>
-          <button mat-button (click)="setView('saved')" [class]="activeView === 'saved' ? '!rounded-full !bg-[#7ae0c3] !text-[#05201f]' : '!rounded-full !bg-white/5 !text-[#93a9b4]'">Saved</button>
-          <button mat-button (click)="setView('bookings')" [class]="activeView === 'bookings' ? '!rounded-full !bg-[#7ae0c3] !text-[#05201f]' : '!rounded-full !bg-white/5 !text-[#93a9b4]'">Bookings</button>
-        </div>
-      </section>
-
-      <div class="mb-6 flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-        <span class="mr-1 flex-none text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Sort by</span>
-        <button *ngFor="let filter of filters" mat-button (click)="activeFilter = filter"
-                [class]="filter === activeFilter ? '!min-h-8 !rounded-full !bg-white/15 !px-4 !text-xs !text-white' : '!min-h-8 !rounded-full !px-4 !text-xs !text-[#78919d]'">
-          {{ filter }}
-        </button>
-      </div>
-
-      <!-- Shimmer loading grid -->
-      <div *ngIf="loading" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <div *ngFor="let card of [1,2,3]" class="glass-panel overflow-hidden rounded-[28px] border border-white/5 bg-[#081822]/40 shadow-sm shimmer-wrapper">
-          <div class="h-52 bg-white/[0.02]"></div>
-          <div class="p-5 space-y-4">
-            <div class="h-3 w-1/4 rounded bg-white/[0.04]"></div>
-            <div class="h-6 w-3/4 rounded bg-white/[0.04]"></div>
-            <div class="grid grid-cols-3 gap-2 pt-2">
-              <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
-              <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
-              <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
-            </div>
-            <div class="flex justify-between items-center pt-3">
-              <div class="h-6 w-1/3 rounded bg-white/[0.03]"></div>
-              <div class="h-8 w-20 rounded-full bg-white/[0.04]"></div>
-            </div>
-          </div>
+          <p class="eyebrow">Your travel room</p>
+          <h1 class="mt-4 max-w-3xl text-4xl font-extrabold tracking-[-0.045em] text-white sm:text-5xl">
+            Good to see you, {{ auth.currentUser()?.name || 'Explorer' }}.
+          </h1>
+          <p class="mt-4 max-w-xl text-sm leading-7 text-[#8fa6b1]">
+            Explore signature routes or manage your saved plans.
+          </p>
         </div>
       </div>
+    </section>
 
-      <div *ngIf="!loading && loadError"
-           class="glass-panel flex min-h-72 flex-col items-center justify-center rounded-[30px] px-6 text-center">
-        <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-[#ff8d70]/10 text-[#ff9f87]">
-          <span class="material-symbols-outlined text-3xl">cloud_off</span>
-        </span>
-        <h3 class="mt-5 text-xl font-bold text-white">The routes missed their connection.</h3>
-        <p class="mt-2 max-w-md text-sm leading-6 text-[#8199a5]">{{ loadError }}</p>
-        <button mat-flat-button class="primary-action !mt-6" (click)="loadItineraries()">
-          <span class="material-symbols-outlined mr-2 text-lg">refresh</span>Try again
-        </button>
-      </div>
-
-      <div *ngIf="!loading && !loadError && itineraries.length === 0"
-           class="glass-panel flex min-h-80 flex-col items-center justify-center rounded-[30px] px-6 py-10 text-center">
-        <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
-          <span class="material-symbols-outlined text-3xl">
-            {{ activeView === 'saved' ? 'bookmark' : (activeView === 'bookings' ? 'confirmation_number' : 'explore') }}
-          </span>
-        </span>
-        <h3 class="text-xl font-bold text-white mb-2">
-          {{ activeView === 'saved' ? 'Nothing saved just yet' : (activeView === 'bookings' ? 'No bookings on the horizon' : 'No published routes yet') }}
-        </h3>
-        <p class="mt-1 max-w-sm text-xs leading-relaxed text-[#8199a5] mb-6">
-          {{ activeView === 'saved' ? 'Explore our curated routes and save your favorites to plan your next getaway.' : (activeView === 'bookings' ? 'Find a featured itinerary and book your travel logistics to get started.' : 'A trip manager can publish routes for travelers to save and book.') }}
-        </p>
-        <div class="flex gap-3 justify-center">
-          <button *ngIf="activeView !== 'explore'" (click)="setView('explore')"
-                  class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
-            Explore live routes
-          </button>
-          <button *ngIf="activeView === 'explore' && auth.isLoggedIn && auth.currentUser()?.role !== 'user'" (click)="openModal()"
-                  class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
-            Plan custom trip with AI
-          </button>
-        </div>
-      </div>
-
-      <section *ngIf="!loading && !loadError && itineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <article *ngFor="let item of sortedItineraries"
-                 [routerLink]="['/itinerary', item._id]"
-                 class="group glass-panel overflow-hidden rounded-[28px] card-interactive cursor-pointer">
-          <div class="relative h-52 overflow-hidden">
-            <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]">
-            <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
-            <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
-              <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">{{ item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused') }}</span>
-              <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
-            </div>
-            <div class="absolute bottom-4 left-5 right-5">
-              <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#a3eed9]">{{ item.destination }}</p>
-              <h3 class="mt-1 text-2xl font-extrabold tracking-[-0.03em] text-white">{{ item.title }}</h3>
-              <p *ngIf="item.stops?.length" class="mt-2 text-xs text-white/65">+ {{ item.stops.length }} additional stop{{ item.stops.length === 1 ? '' : 's' }}</p>
-            </div>
-          </div>
-          <div class="p-5">
-            <div class="grid grid-cols-3 gap-2">
-              <div class="rounded-2xl bg-white/[0.035] p-3">
-                <span class="material-symbols-outlined text-lg text-[#7ae0c3]">calendar_month</span>
-                <p class="mt-2 truncate text-xs font-bold text-white">{{ item.duration }}</p>
-              </div>
-              <div class="rounded-2xl bg-white/[0.035] p-3">
-                <span class="material-symbols-outlined text-lg text-[#ffc96b]">star</span>
-                <p class="mt-2 text-xs font-bold text-white">{{ item.engagement?.averageRating || 0 }} rating</p>
-              </div>
-              <div class="rounded-2xl bg-white/[0.035] p-3">
-                <span class="material-symbols-outlined text-lg text-[#ff9d83]">bookmark</span>
-                <p class="mt-2 text-xs font-bold text-white">{{ item.engagement?.favoriteCount || 0 }} saves</p>
-              </div>
-            </div>
-            <div class="mt-5 flex items-center justify-between">
-              <div>
-                <p class="text-[9px] font-bold uppercase tracking-[0.16em] text-[#637d8a]">Curated by</p>
-                <p class="mt-1 text-xs font-semibold text-[#a9bac2]">{{ item.createdBy?.name || 'Navigator community' }}</p>
-              </div>
-              <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-white/5 !text-[#a8ead7] btn-interactive">
-                Open <span class="material-symbols-outlined ml-1 text-lg">arrow_outward</span>
-              </a>
-            </div>
-          </div>
-        </article>
-      </section>
-    </ng-container>
-
-    <!-- ── trip-manager / CREATOR WORKSPACE ─────────────────────────────────── -->
-    <ng-container *ngIf="isWorkspaceMode && ['trip-manager', 'admin', 'superadmin'].includes(auth.currentUser()?.role || '')">
-      <!-- Banner/Header -->
-      <section class="glass-panel relative mb-8 overflow-hidden rounded-[34px] p-7 sm:p-10">
-        <div class="absolute -right-20 -top-28 h-80 w-80 rounded-full border-[58px] border-[#7ae0c3]/5"></div>
-        <div class="absolute bottom-0 right-[18%] h-40 w-40 rotate-12 rounded-[35%] bg-[#ff8d70]/5"></div>
-        <div class="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p class="eyebrow">Trip Manager Workspace</p>
-            <h1 class="mt-4 max-w-3xl text-4xl font-extrabold tracking-[-0.045em] text-white sm:text-5xl">
-              Curation Board
-            </h1>
-            <p class="mt-4 max-w-xl text-sm leading-7 text-[#8fa6b1]">
-              Generate trips with AI, edit drafts, publish routes, and search all your curated itineraries.
-            </p>
-          </div>
-          <button mat-flat-button class="primary-action !self-start lg:!self-auto" (click)="openModal()">
-            <span class="material-symbols-outlined mr-2 text-lg">add</span>
-            Plan with AI
-          </button>
-        </div>
-      </section>
-
-      <!-- Stats bento grid for Manager -->
-      <section class="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <article *ngFor="let stat of managerStats; let i = index"
-                 class="glass-panel rounded-[24px] p-5 transition duration-300 hover:-translate-y-1">
-          <div class="flex items-center justify-between">
-            <span class="grid h-10 w-10 place-items-center rounded-2xl"
-                  [class]="i === 0 ? 'bg-[#ffc96b]/15 text-[#ffc96b]' : i === 1 ? 'bg-[#7ae0c3]/15 text-[#7ae0c3]' : 'bg-[#8cbcff]/15 text-[#9fc5ff]'">
-              <span class="material-symbols-outlined text-xl">{{ stat.icon === 'draft' ? 'drafts' : (stat.icon === 'publish' ? 'publish' : 'folder') }}</span>
+    <section class="glass-panel mb-10 overflow-hidden rounded-[30px]">
+      <div class="grid lg:grid-cols-[minmax(0,.78fr)_minmax(0,1.22fr)]">
+        <div class="relative min-h-[280px] min-w-0 overflow-hidden p-7 sm:p-9">
+          <img src="/images/santorini.jpg" alt="Santorini coast" class="absolute inset-0 h-full w-full object-cover opacity-55">
+          <div class="absolute inset-0 bg-gradient-to-r from-[#071721]/95 via-[#071721]/80 to-[#071721]/20"></div>
+          <div class="relative">
+            <span class="grid h-11 w-11 place-items-center rounded-2xl bg-[#7ae0c3] text-[#05201f]">
+              <span class="material-symbols-outlined">auto_awesome</span>
             </span>
-            <span class="text-[9px] font-extrabold uppercase tracking-[0.16em] text-[#6f8996]">{{ stat.badge }}</span>
-          </div>
-          <p class="mt-5 font-headline text-2xl font-extrabold text-white sm:text-3xl">{{ stat.value }}</p>
-          <p class="mt-1 text-xs font-semibold text-[#839aa6]">{{ stat.label }}</p>
-        </article>
-      </section>
-
-      <!-- Itinerary List Section -->
-      <div class="glass-panel mb-10 overflow-hidden rounded-[30px] border border-white/10 shadow-sm">
-        <!-- Toolbar -->
-        <div class="flex flex-col justify-between gap-4 border-b border-white/10 bg-white/[0.03] p-4 md:flex-row">
-          <div class="relative flex-grow max-w-md">
-            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-[#7f98a6]">search</span>
-            <input [(ngModel)]="managerSearchTerm" class="w-full border-0 border-b border-white/15 bg-transparent py-2 pl-10 pr-4 text-sm text-white outline-none transition-all placeholder:text-[#6f8996] focus:border-[#7ae0c3]/70 focus:ring-0"
-                   placeholder="Search owned itineraries...">
-          </div>
-          <div class="flex items-center gap-1 rounded-lg bg-white/5 p-1 self-start md:self-auto">
-            <button (click)="managerActiveTab = 'all'" [class]="managerActiveTab === 'all' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">All</button>
-            <button (click)="managerActiveTab = 'draft'" [class]="managerActiveTab === 'draft' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">Drafts</button>
-            <button (click)="managerActiveTab = 'published'" [class]="managerActiveTab === 'published' ? 'px-4 py-1.5 text-xs font-semibold bg-[#7ae0c3] text-[#05201f] rounded-md shadow-sm' : 'px-4 py-1.5 text-xs font-semibold text-[#9fb0ba] hover:text-white transition-colors'">Published</button>
-          </div>
-        </div>
-
-        <!-- Owned itineraries list -->
-        <div class="p-6">
-          <!-- Shimmer loading grid -->
-          <div *ngIf="loading" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            <div *ngFor="let card of [1,2,3]" class="glass-panel overflow-hidden rounded-[28px] border border-white/5 bg-[#081822]/40 shadow-sm shimmer-wrapper">
-              <div class="h-44 bg-white/[0.02]"></div>
-              <div class="p-5 space-y-4">
-                <div class="h-3 w-1/4 rounded bg-white/[0.04]"></div>
-                <div class="h-6 w-3/4 rounded bg-white/[0.04]"></div>
-                <div class="grid grid-cols-2 gap-2 pt-2">
-                  <div class="h-8 rounded-xl bg-white/[0.03]"></div>
-                  <div class="h-8 rounded-xl bg-white/[0.03]"></div>
-                </div>
-                <div class="flex justify-between items-center pt-3 border-t border-white/5">
-                  <div class="h-8 w-20 rounded bg-white/[0.03]"></div>
-                  <div class="h-8 w-24 rounded-full bg-white/[0.04]"></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div *ngIf="!loading && filteredOwnedItineraries.length === 0" class="flex flex-col items-center justify-center py-12 px-6 text-center">
-            <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
-              <span class="material-symbols-outlined text-3xl">{{ managerActiveTab === 'draft' ? 'drafts' : (managerActiveTab === 'published' ? 'publish' : 'folder_open') }}</span>
-            </span>
-            <h3 class="text-lg font-bold text-white mb-2">
-              {{ managerActiveTab === 'draft' ? 'No draft itineraries' : (managerActiveTab === 'published' ? 'No published routes' : 'Your board is empty') }}
-            </h3>
-            <p class="text-xs text-[#8ea5b0] max-w-sm mb-6 leading-relaxed">
-              {{ managerActiveTab === 'draft' ? 'Describe your dream trip to our AI planning assistant, or shape one manually.' : (managerActiveTab === 'published' ? 'Draft itineraries can be published instantly to travelers.' : 'Get started by creating a manual route or planning with AI.') }}
+            <p class="eyebrow mt-6">Destination spark</p>
+            <h2 class="mt-3 text-3xl font-extrabold tracking-[-0.035em] text-white">Where are you curious about?</h2>
+            <p class="mt-3 max-w-sm text-sm leading-6 text-white/60">
+              Search a place and let the assistant surface a visual preview, suggestions, and signature stops.
             </p>
-            <div class="flex gap-3 justify-center">
-              <button *ngIf="managerActiveTab === 'published' && ownedItineraries.length > 0" (click)="managerActiveTab = 'draft'"
-                      class="px-5 py-2.5 rounded-full border border-white/10 bg-white/5 text-xs font-semibold text-[#b2c2ca] hover:bg-white/10 transition-all cursor-pointer">
-                View Drafts
-              </button>
-              <button (click)="openModal()"
-                      class="px-5 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
-                Plan with AI
-              </button>
-            </div>
           </div>
-          
-          <div *ngIf="!loading && filteredOwnedItineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-            <article *ngFor="let item of filteredOwnedItineraries"
-                     [routerLink]="['/itinerary', item._id]"
-                     class="group glass-panel flex flex-col justify-between overflow-hidden rounded-[28px] border border-white/10 card-interactive cursor-pointer">
-              <div class="relative h-44 overflow-hidden">
-                <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-105">
-                <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
-                <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
-                  <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">{{ item.status === 'draft' ? 'Draft' : 'Published' }}</span>
-                  <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
-                </div>
-                <div class="absolute bottom-4 left-5 right-5">
-                  <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#a3eed9]">{{ item.destination }}</p>
-                  <h3 class="mt-1 text-xl font-extrabold tracking-[-0.03em] text-white truncate">{{ item.title }}</h3>
-                </div>
-              </div>
-              
-              <div class="p-5 flex-grow flex flex-col justify-between">
-                <div class="grid grid-cols-2 gap-2 text-center text-xs mb-4">
-                  <div class="rounded-xl bg-white/[0.03] p-2 text-[#b2c2ca]">
-                    <span class="material-symbols-outlined text-sm text-[#7ae0c3] align-middle">calendar_month</span> {{ item.duration }}
-                  </div>
-                  <div class="rounded-xl bg-white/[0.03] p-2 text-[#b2c2ca]">
-                    <span class="material-symbols-outlined text-sm text-[#ffc96b] align-middle">star</span> {{ item.engagement?.averageRating || 0 }} rating
-                  </div>
-                </div>
-                
-                <div class="border-t border-white/5 pt-4 flex items-center justify-between gap-2">
-                  <!-- Publish/Archive actions -->
-                  <button mat-stroked-button class="ghost-action !text-xs !px-3 btn-interactive"
-                          (click)="updateItineraryStatus(item, item.status === 'published' ? 'draft' : 'published')">
-                    <span class="material-symbols-outlined text-sm mr-1">{{ item.status === 'published' ? 'archive' : 'publish' }}</span>
-                    {{ item.status === 'published' ? 'Archive' : 'Publish' }}
-                  </button>
-                  <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-[#7ae0c3] !text-[#05201f] !text-xs !px-4 hover:!bg-[#86ebd2] btn-interactive">
-                    Edit & Plan <span class="material-symbols-outlined text-sm ml-0.5">edit_note</span>
-                  </a>
-                </div>
-              </div>
-            </article>
+        </div>
+        <div class="min-w-0 bg-[#071721]/45 p-6 sm:p-9">
+          <div *ngIf="rateLimitMessage"
+               class="mb-4 flex items-center gap-2 rounded-2xl border border-[#ffc96b]/20 bg-[#ffc96b]/10 p-3 text-sm text-[#ffd996]">
+            <span class="material-symbols-outlined text-lg">warning</span>{{ rateLimitMessage }}
+          </div>
+          <div *ngIf="destinationToast"
+               class="mb-4 flex items-center gap-2 rounded-2xl border border-[#7ae0c3]/20 bg-[#7ae0c3]/10 p-3 text-sm text-[#baf4e3]">
+            <span class="material-symbols-outlined text-lg">check_circle</span>{{ destinationToast }}
+          </div>
+          <app-destination-search (destinationSelected)="onDestinationSelected($event)"></app-destination-search>
+          <div class="mt-8 border-t border-white/10 pt-6">
+            <app-trending-cards (destinationSelected)="onDestinationSelected($event)"></app-trending-cards>
           </div>
         </div>
       </div>
-    </ng-container>
-  </div>
-</main>
+    </section>
 
-<div *ngIf="showModal"
-     [@overlayFade]
-     class="fixed inset-0 z-[70] flex items-end justify-center bg-[#020a0f]/80 p-0 backdrop-blur-xl md:items-center md:p-6"
-     (click)="closeModal()">
-  <section [@modalFadeScale]
-           class="glass-panel flex max-h-[94vh] w-full flex-col overflow-hidden rounded-t-[30px] md:max-w-3xl md:rounded-[30px]"
-           (click)="$event.stopPropagation()">
-    
-    <!-- ── Header ────────────────────────────────────────────────────────────── -->
-    <header class="border-b border-white/10 bg-[#0a1d29]/90 p-6 backdrop-blur-xl">
-      <div class="flex items-start justify-between gap-4">
-        <div>
-          <!-- AI Loading Header -->
-          <ng-container *ngIf="creationMode === 'ai' && aiLoading">
-            <p class="eyebrow">AI planning engine</p>
-            <h2 class="mt-2 text-2xl font-extrabold text-white">Planning your route...</h2>
-          </ng-container>
-
-          <!-- AI Entry Header -->
-          <ng-container *ngIf="creationMode === 'ai' && !aiLoading">
-            <p class="eyebrow">AI planner</p>
-            <h2 class="mt-2 text-2xl font-extrabold text-white">Plan your trip with AI</h2>
-          </ng-container>
-
-          <!-- Clarification Header -->
-          <ng-container *ngIf="creationMode === 'clarify'">
-            <p class="eyebrow">Clarify details</p>
-            <h2 class="mt-2 text-2xl font-extrabold text-white">Give the planner some details</h2>
-          </ng-container>
-
-          <!-- Preview Header -->
-          <ng-container *ngIf="creationMode === 'preview'">
-            <p class="eyebrow">Itinerary draft generated</p>
-            <h2 class="mt-2 text-2xl font-extrabold text-[#7ae0c3]">Review your AI draft</h2>
-          </ng-container>
-
-          <!-- Manual Header -->
-          <ng-container *ngIf="creationMode === 'manual'">
-            <p class="eyebrow">Step {{ currentStep }} of {{ TOTAL_STEPS }}</p>
-            <h2 class="mt-2 text-2xl font-extrabold text-white">
-              {{ currentStep === 1 ? 'Journey basics' : currentStep === 2 ? 'Dates and pace' : currentStep === 3 ? 'Budget and style' : 'Plan the stops' }}
-            </h2>
-          </ng-container>
-        </div>
-        <button type="button" mat-button class="!h-10 !min-w-10 !rounded-full !p-0 !text-white" (click)="closeModal()" aria-label="Close dialog">
-          <span class="material-symbols-outlined">close</span>
-        </button>
+    <section class="mb-7 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <p class="eyebrow">Your collection</p>
+        <h2 class="mt-2 text-3xl font-extrabold tracking-[-0.035em] text-white">
+          {{ activeView === 'saved' ? 'Saved for later' : activeView === 'bookings' ? 'Booked journeys' : 'Explore live itineraries' }}
+        </h2>
       </div>
-
-      <!-- Manual Step Indicators -->
-      <div *ngIf="creationMode === 'manual'" class="mt-5 grid grid-cols-4 gap-2">
-        <div *ngFor="let label of stepLabels; let i = index">
-          <div class="h-1.5 rounded-full" [class]="i < currentStep ? 'bg-[#7ae0c3]' : 'bg-white/10'"></div>
-          <p class="mt-2 text-center text-[9px] font-bold uppercase tracking-[0.14em]" [class]="i + 1 === currentStep ? 'text-[#a5ecd7]' : 'text-[#617b88]'">{{ label }}</p>
-        </div>
+      <div class="flex flex-wrap gap-2">
+        <button mat-button (click)="setView('explore')" [class]="activeView === 'explore' ? '!rounded-full !bg-[#7ae0c3] !text-[#05201f]' : '!rounded-full !bg-white/5 !text-[#93a9b4]'">Explore</button>
+        <button mat-button (click)="setView('saved')" [class]="activeView === 'saved' ? '!rounded-full !bg-[#7ae0c3] !text-[#05201f]' : '!rounded-full !bg-white/5 !text-[#93a9b4]'">Saved</button>
+        <button mat-button (click)="setView('bookings')" [class]="activeView === 'bookings' ? '!rounded-full !bg-[#7ae0c3] !text-[#05201f]' : '!rounded-full !bg-white/5 !text-[#93a9b4]'">Bookings</button>
       </div>
-    </header>
+    </section>
 
-    <!-- ── Content Body ──────────────────────────────────────────────────────── -->
-    <div class="flex-1 overflow-y-auto p-6 sm:p-8">
-      <div *ngIf="formError" class="mb-5 rounded-2xl border border-[#ff8d70]/25 bg-[#ff8d70]/10 p-3 text-sm text-[#ffb4a1]">{{ formError }}</div>
-
-      <!-- AI LOADING STATE -->
-      <div *ngIf="creationMode === 'ai' && aiLoading" class="flex min-h-64 flex-col items-center justify-center text-center">
-        <mat-spinner diameter="42"></mat-spinner>
-        <p [@fadeText]="aiLoadingText" class="mt-6 text-sm font-semibold text-white">{{ aiLoadingText }}</p>
-        <p class="mt-2 text-xs text-[#6fa9c3]">Running Gemma 3 locally... This may take up to 90 seconds.</p>
-      </div>
-
-      <!-- AI ENTRY STATE -->
-      <div *ngIf="creationMode === 'ai' && !aiLoading" class="space-y-5">
-        <label class="block text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Describe your trip
-          <textarea [(ngModel)]="aiPromptText" rows="5" 
-                    placeholder="e.g. I want a 4-day nature and adventure trip to Solan for 3 people under ₹30,000" 
-                    class="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none focus:border-[#7ae0c3]/50"></textarea>
-        </label>
-        <p class="text-xs text-[#8fa6b1] leading-5">Our AI planner will extract your destination, duration, travelers, travel style, budget, and interests to generate a structured draft in seconds.</p>
-      </div>
-
-      <!-- CLARIFICATION STATE -->
-      <div *ngIf="creationMode === 'clarify'" class="space-y-5">
-        <div *ngIf="durationConflictMessage" class="rounded-2xl border border-[#ff8d70]/25 bg-[#ff8d70]/10 p-4 text-sm text-[#ffb4a1] flex items-start gap-3">
-          <span class="material-symbols-outlined text-[#ff8d70] mt-0.5">warning</span>
-          <p class="leading-relaxed">{{ durationConflictMessage }}</p>
-        </div>
-        <p *ngIf="!durationConflictMessage" class="text-sm text-[#8fa6b1]">We couldn't capture a valid destination or duration. Let's add them manually to start generating:</p>
-        
-        <div class="relative w-full">
-          <label class="block text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Primary Destination *
-            <input [(ngModel)]="clarificationForm.destination" (ngModelChange)="onDestinationInputChange($event)" 
-                   type="text" placeholder="Kyoto, Santorini, Solan..." 
-                   class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none focus:border-[#7ae0c3]/50" autocomplete="off">
-          </label>
-          <!-- Auto-suggestions dropdown -->
-          <div *ngIf="showManualSuggestions && manualSuggestions.length > 0" 
-               class="glass-panel absolute z-50 mt-1 w-full overflow-hidden rounded-[20px] p-1 shadow-2xl bg-[#0a1d29]">
-            <button type="button" *ngFor="let sug of manualSuggestions" (click)="selectManualSuggestion(sug)" 
-                    class="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-sm text-[#b2c2ca] hover:bg-white/5">
-              <span class="material-symbols-outlined text-base text-[#7ae0c3]">location_on</span>
-              <span>{{ sug }}</span>
-            </button>
-          </div>
-        </div>
-
-        <label class="block text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Duration (days) *
-          <input [(ngModel)]="clarificationForm.duration" type="number" min="1" max="30" 
-                 class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none focus:border-[#7ae0c3]/50">
-        </label>
-      </div>
-
-      <!-- AI DRAFT PREVIEW STATE -->
-      <div *ngIf="creationMode === 'preview'" class="space-y-6">
-        <div class="rounded-[24px] border border-[#7ae0c3]/20 bg-[#7ae0c3]/10 p-5">
-          <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#8fddc7]">{{ generatedDraft?.destination }}</p>
-          <h3 class="mt-2 text-2xl font-extrabold text-white">{{ generatedDraft?.title }}</h3>
-          <p class="mt-3 text-sm leading-6 text-white/70">{{ generatedDraft?.description }}</p>
-        </div>
-
-        <div>
-          <p class="mb-2 text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6f8996]">AI suggested places for your trip</p>
-          <p class="mb-4 text-xs text-[#8fa6b1]">You can add, remove, or edit stops later while refining your itinerary.</p>
-          
-          <div class="space-y-4">
-            <div *ngFor="let day of generatedDraft?.dailyPlan" class="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <h4 class="text-sm font-bold text-[#7ae0c3]">Day {{ day.day }}: {{ day.title }}</h4>
-              <ul class="mt-3 space-y-2">
-                <li *ngFor="let act of day.activities" class="flex items-start gap-2 text-xs leading-5 text-[#b2c2ca]">
-                  <span class="material-symbols-outlined mt-0.5 text-xs text-[#7ae0c3]">circle</span>
-                  <div>
-                    <strong class="text-white">{{ act.activity }}</strong> ({{ act.time }} - {{ act.description }})
-                  </div>
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="generatedDraft?.tripSummary?.highlights?.length" class="space-y-2">
-          <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-[#6f8996]">Recommendations</p>
-          <ul class="list-disc pl-5 text-xs space-y-1 text-[#b2c2ca]">
-            <li *ngFor="let rec of generatedDraft.tripSummary.highlights">{{ rec }}</li>
-          </ul>
-        </div>
-      </div>
-
-      <!-- MANUAL CREATION MODE -->
-      <ng-container *ngIf="creationMode === 'manual'">
-        <!-- Step 1: Basics -->
-        <div *ngIf="currentStep === 1" class="grid gap-5 sm:grid-cols-2">
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Trip name *
-            <input [(ngModel)]="form.title" name="title" type="text" placeholder="A slow week in Kyoto" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none focus:border-[#7ae0c3]/50">
-          </label>
-          <div class="relative w-full">
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Primary destination *
-              <input [(ngModel)]="form.destination" (ngModelChange)="onDestinationInputChange($event)" name="destination" type="text" placeholder="Kyoto, Japan" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none focus:border-[#7ae0c3]/50" autocomplete="off">
-            </label>
-            <!-- Auto-suggestions dropdown -->
-            <div *ngIf="showManualSuggestions && manualSuggestions.length > 0" 
-                 class="glass-panel absolute z-50 mt-1 w-full overflow-hidden rounded-[20px] p-1 shadow-2xl bg-[#0a1d29]">
-              <button type="button" *ngFor="let sug of manualSuggestions" (click)="selectManualSuggestion(sug)" 
-                      class="flex w-full items-center gap-3 rounded-2xl px-4 py-2.5 text-left text-sm text-[#b2c2ca] hover:bg-white/5">
-                <span class="material-symbols-outlined text-base text-[#7ae0c3]">location_on</span>
-                <span>{{ sug }}</span>
-              </button>
-            </div>
-          </div>
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Travelers
-            <input [(ngModel)]="form.travelerCount" name="travelerCount" type="number" min="1" max="50" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal text-white outline-none">
-          </label>
-          <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Category
-            <select [(ngModel)]="form.category" name="category" class="mt-2 w-full rounded-2xl border border-white/10 bg-[#102733] px-4 py-3 text-sm font-normal text-white outline-none">
-              <option value="leisure">Leisure</option><option value="adventure">Adventure</option><option value="cultural">Cultural</option><option value="wellness">Wellness</option><option value="family">Family</option><option value="business">Business</option>
-            </select>
-          </label>
-        </div>
-
-        <!-- Step 2: Dates -->
-        <div *ngIf="currentStep === 2" class="space-y-5">
-          <div class="grid grid-cols-2 gap-4">
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Start date
-              <input [(ngModel)]="form.startDate" (ngModelChange)="updateDuration()" name="startDate" type="date" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm font-normal text-white outline-none">
-            </label>
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">End date
-              <input [(ngModel)]="form.endDate" (ngModelChange)="updateDuration()" name="endDate" type="date" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm font-normal text-white outline-none">
-            </label>
-          </div>
-          <div class="rounded-[24px] border border-[#7ae0c3]/20 bg-[#7ae0c3]/10 p-5">
-            <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#8fddc7]">Calculated duration</p>
-            <p class="mt-2 text-2xl font-extrabold text-white">{{ calculatedDuration || 'Select travel dates (optional)' }}</p>
-          </div>
-        </div>
-
-        <!-- Step 3: Budget -->
-        <div *ngIf="currentStep === 3" class="space-y-5">
-          <div class="grid gap-4 sm:grid-cols-4">
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Budget
-              <input [(ngModel)]="form.budget" (ngModelChange)="allocateBudget()" name="budget" type="number" min="1" placeholder="3500" class="mt-2 w-full rounded-2xl border border-white/10 bg-white/5 px-3 py-3 text-sm font-normal text-white outline-none">
-            </label>
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Style
-              <select [(ngModel)]="form.travelStyle" name="travelStyle" class="mt-2 w-full rounded-2xl border border-white/10 bg-[#102733] px-3 py-3 text-sm font-normal text-white outline-none">
-                <option value="budget">Budget</option><option value="balanced">Balanced</option><option value="premium">Premium</option>
-              </select>
-            </label>
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Transport
-              <select [(ngModel)]="form.transportMode" name="transportMode" class="mt-2 w-full rounded-2xl border border-white/10 bg-[#102733] px-3 py-3 text-sm font-normal text-white outline-none">
-                <option value="mixed">Mixed</option><option value="train">Train</option><option value="public_transport">Public transit</option><option value="car">Car</option><option value="flight">Flight</option><option value="bicycle">Bicycle</option>
-              </select>
-            </label>
-            <label class="text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Stay
-              <select [(ngModel)]="form.accommodationType" name="accommodationType" class="mt-2 w-full rounded-2xl border border-white/10 bg-[#102733] px-3 py-3 text-sm font-normal text-white outline-none">
-                <option value="hotel">Hotel</option><option value="homestay">Homestay</option><option value="hostel">Hostel</option><option value="eco_lodge">Eco lodge</option><option value="resort">Resort</option>
-              </select>
-            </label>
-          </div>
-          <div *ngIf="form.budget && form.budget > 0" class="rounded-[24px] border border-white/10 bg-white/[0.035] p-5">
-            <p class="font-bold text-white">Smart budget allocation</p>
-            <div class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-5">
-              <label class="text-[9px] font-bold uppercase tracking-[0.13em] text-[#6f8996]">Transport<input [(ngModel)]="form.budgetBreakdown.transport" name="budgetTransport" type="number" class="mt-2 w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2 text-sm font-normal text-white outline-none"></label>
-              <label class="text-[9px] font-bold uppercase tracking-[0.13em] text-[#6f8996]">Stay<input [(ngModel)]="form.budgetBreakdown.accommodation" name="budgetStay" type="number" class="mt-2 w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2 text-sm font-normal text-white outline-none"></label>
-              <label class="text-[9px] font-bold uppercase tracking-[0.13em] text-[#6f8996]">Food<input [(ngModel)]="form.budgetBreakdown.food" name="budgetFood" type="number" class="mt-2 w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2 text-sm font-normal text-white outline-none"></label>
-              <label class="text-[9px] font-bold uppercase tracking-[0.13em] text-[#6f8996]">Activities<input [(ngModel)]="form.budgetBreakdown.activities" name="budgetActivities" type="number" class="mt-2 w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2 text-sm font-normal text-white outline-none"></label>
-              <label class="text-[9px] font-bold uppercase tracking-[0.13em] text-[#6f8996]">Reserve<input [(ngModel)]="form.budgetBreakdown.contingency" name="budgetReserve" type="number" class="mt-2 w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2 text-sm font-normal text-white outline-none"></label>
-            </div>
-          </div>
-          <label class="block text-xs font-bold uppercase tracking-[0.14em] text-[#78919d]">Trip brief
-            <textarea [(ngModel)]="form.description" name="description" rows="4" placeholder="What should this journey feel like?" class="mt-2 w-full resize-none rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm font-normal normal-case leading-6 tracking-normal text-white outline-none"></textarea>
-          </label>
-        </div>
-
-        <!-- Step 4: Stops -->
-        <div *ngIf="currentStep === 4" class="space-y-4">
-          <div class="rounded-[24px] border border-[#7ae0c3]/20 bg-[#7ae0c3]/10 p-4">
-            <p class="text-[10px] font-extrabold uppercase tracking-[0.16em] text-[#8fddc7]">Primary destination</p>
-            <p class="mt-1 font-bold text-white">{{ form.destination }}</p>
-          </div>
-          <article *ngFor="let stop of form.stops; let i = index; trackBy: trackByIndex" class="rounded-[22px] border border-white/10 bg-white/[0.035] p-4">
-            <div class="flex gap-3">
-              <span class="grid h-9 w-9 flex-none place-items-center rounded-xl bg-white/5 text-xs font-bold text-[#a5ecd7]">{{ i + 2 }}</span>
-              <div class="flex-1 space-y-2">
-                <input [(ngModel)]="stop.name" [name]="'stopName' + i" type="text" placeholder="Next city or region" class="w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2.5 text-sm text-white outline-none">
-                <input [(ngModel)]="stop.notes" [name]="'stopNotes' + i" type="text" placeholder="Notes, nights, or highlights" class="w-full rounded-xl border border-white/10 bg-[#0a1c27] px-3 py-2.5 text-sm text-white outline-none">
-              </div>
-              <button type="button" (click)="removeStop(i)" class="grid h-9 w-9 place-items-center rounded-xl bg-[#ff8d70]/10 text-[#ff9f87]" aria-label="Remove stop">
-                <span class="material-symbols-outlined text-lg">delete</span>
-              </button>
-            </div>
-          </article>
-          <button type="button" (click)="addStop()" class="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-[#7ae0c3]/40 py-3 text-sm font-bold text-[#a5ecd7] hover:bg-[#7ae0c3]/5">
-            <span class="material-symbols-outlined">add_location_alt</span>Add another stop
-          </button>
-        </div>
-      </ng-container>
+    <div class="mb-6 flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
+      <span class="mr-1 flex-none text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Sort by</span>
+      <button *ngFor="let filter of filters" mat-button (click)="activeFilter = filter"
+              [class]="filter === activeFilter ? '!min-h-8 !rounded-full !bg-white/15 !px-4 !text-xs !text-white' : '!min-h-8 !rounded-full !px-4 !text-xs !text-[#78919d]'">
+        {{ filter }}
+      </button>
     </div>
 
-    <!-- ── Footer Actions ────────────────────────────────────────────────────── -->
-    <footer class="flex gap-3 border-t border-white/10 bg-[#0a1d29]/90 p-6">
-      
-      <!-- AI MODE FOOTER -->
-      <ng-container *ngIf="creationMode === 'ai'">
-        <ng-container *ngIf="!aiLoading">
-          <button mat-stroked-button class="ghost-action" type="button" (click)="closeModal()">Cancel</button>
-          <button mat-stroked-button class="ghost-action ml-2" type="button" (click)="creationMode = 'manual'">Create manually</button>
-          <div class="flex-grow"></div>
-          <button mat-flat-button class="primary-action !px-6" type="button" (click)="generateAiItinerary()">
-            Generate my itinerary <span class="material-symbols-outlined ml-2 text-lg">auto_awesome</span>
-          </button>
-        </ng-container>
-        <ng-container *ngIf="aiLoading">
-          <button mat-stroked-button class="ghost-action" type="button" (click)="closeModal()">Cancel</button>
-          <div class="flex-grow"></div>
-          <button mat-flat-button class="primary-action" type="button" disabled>
-            Planning trip...
-          </button>
-        </ng-container>
-      </ng-container>
+    <!-- Shimmer loading grid -->
+    <div *ngIf="loading" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div *ngFor="let card of [1,2,3]" class="glass-panel overflow-hidden rounded-[28px] border border-white/5 bg-[#081822]/40 shadow-sm shimmer-wrapper">
+        <div class="h-52 bg-white/[0.02]"></div>
+        <div class="p-5 space-y-4">
+          <div class="h-3 w-1/4 rounded bg-white/[0.04]"></div>
+          <div class="h-6 w-3/4 rounded bg-white/[0.04]"></div>
+          <div class="grid grid-cols-3 gap-2 pt-2">
+            <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
+            <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
+            <div class="h-12 rounded-2xl bg-white/[0.03]"></div>
+          </div>
+          <div class="flex justify-between items-center pt-3">
+            <div class="h-6 w-3/4 rounded bg-white/[0.03]"></div>
+            <div class="h-8 w-20 rounded-full bg-white/[0.04]"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <!-- CLARIFICATION MODE FOOTER -->
-      <ng-container *ngIf="creationMode === 'clarify'">
-        <button mat-stroked-button class="ghost-action" type="button" (click)="creationMode = 'ai'">Back</button>
-        <div class="flex-grow"></div>
-        <button mat-flat-button class="primary-action !px-6" type="button" (click)="submitClarification()" [disabled]="aiLoading">
-          Generate draft <span class="material-symbols-outlined ml-2 text-lg">auto_awesome</span>
+    <div *ngIf="!loading && loadError"
+         class="glass-panel flex min-h-72 flex-col items-center justify-center rounded-[30px] px-6 text-center">
+      <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-[#ff8d70]/10 text-[#ff9f87]">
+        <span class="material-symbols-outlined text-3xl">cloud_off</span>
+      </span>
+      <h3 class="mt-5 text-xl font-bold text-white">The routes missed their connection.</h3>
+      <p class="mt-2 max-w-md text-sm leading-6 text-[#8199a5]">{{ loadError }}</p>
+      <button mat-flat-button class="primary-action !mt-6" (click)="loadItineraries()">
+        <span class="material-symbols-outlined mr-2 text-lg">refresh</span>Try again
+      </button>
+    </div>
+
+    <div *ngIf="!loading && !loadError && itineraries.length === 0"
+         class="glass-panel flex min-h-80 flex-col items-center justify-center rounded-[30px] px-6 py-10 text-center">
+      <span class="grid h-16 w-16 place-items-center rounded-[24px] bg-white/5 text-[#7ae0c3] mb-4">
+        <span class="material-symbols-outlined text-3xl">
+          {{ activeView === 'saved' ? 'bookmark' : (activeView === 'bookings' ? 'confirmation_number' : 'explore') }}
+        </span>
+      </span>
+      <h3 class="text-xl font-bold text-white mb-2">
+        {{ activeView === 'saved' ? 'Nothing saved just yet' : (activeView === 'bookings' ? 'No bookings on the horizon' : 'No published routes yet') }}
+      </h3>
+      <p class="mt-1 max-w-sm text-xs leading-relaxed text-[#8199a5] mb-6">
+        {{ activeView === 'saved' ? 'Explore our curated routes and save your favorites to plan your next getaway.' : (activeView === 'bookings' ? 'Find a featured itinerary and book your travel logistics to get started.' : 'A trip manager can publish routes for travelers to save and book.') }}
+      </p>
+      <div class="flex gap-3 justify-center">
+        <button *ngIf="activeView !== 'explore'" (click)="setView('explore')"
+                class="px-6 py-2.5 rounded-full bg-[#7ae0c3] text-xs font-bold text-[#05201f] shadow-md hover:bg-[#86ebd2] transition-all cursor-pointer">
+          Explore live routes
         </button>
-      </ng-container>
+      </div>
+    </div>
 
-      <!-- PREVIEW MODE FOOTER -->
-      <ng-container *ngIf="creationMode === 'preview'">
-        <button mat-stroked-button class="ghost-action" type="button" (click)="creationMode = 'ai'; generatedDraft = null;">Start over</button>
-        <div class="flex-grow"></div>
-        <button mat-stroked-button class="ghost-action !text-[#7ae0c3]" type="button" (click)="closeModal()">Close preview</button>
-        <a [routerLink]="['/itinerary', generatedDraft?._id]" (click)="closeModal()" class="flex items-center justify-center gap-2 rounded-full bg-[#7ae0c3] px-6 py-2.5 text-sm font-extrabold text-[#05201f] hover:bg-[#86ebd2]">
-          Go to trip planner <span class="material-symbols-outlined text-lg">edit_note</span>
-        </a>
-      </ng-container>
-
-      <!-- MANUAL MODE FOOTER -->
-      <ng-container *ngIf="creationMode === 'manual'">
-        <button *ngIf="currentStep > 1" mat-stroked-button class="ghost-action" type="button" (click)="prevStep()">Back</button>
-        <button *ngIf="currentStep === 1" mat-stroked-button class="ghost-action" type="button" (click)="creationMode = 'ai'">Back to AI</button>
-        <div class="flex-grow"></div>
-        <button *ngIf="currentStep < TOTAL_STEPS" mat-flat-button class="primary-action flex-1" type="button" (click)="nextStep()">
-          Continue <span class="material-symbols-outlined ml-2 text-lg">arrow_forward</span>
-        </button>
-        <button *ngIf="currentStep === TOTAL_STEPS" mat-flat-button class="primary-action flex-1" type="button" (click)="submitCreate()" [disabled]="saving">
-          {{ saving ? 'Creating route…' : 'Create itinerary' }}
-        </button>
-      </ng-container>
-
-    </footer>
-  </section>
-</div>
+    <section *ngIf="!loading && !loadError && itineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <article *ngFor="let item of sortedItineraries"
+               [routerLink]="['/itinerary', item._id]"
+               class="group glass-panel overflow-hidden rounded-[28px] card-interactive cursor-pointer">
+        <div class="relative h-52 overflow-hidden">
+          <img [src]="getCardImage(item)" [alt]="item.destination" class="h-full w-full object-cover transition duration-700 group-hover:scale-[1.03]">
+          <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
+          <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
+            <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">{{ item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused') }}</span>
+            <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
+          </div>
+          <div class="absolute bottom-4 left-5 right-5">
+            <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#a3eed9]">{{ item.destination }}</p>
+            <h3 class="mt-1 text-2xl font-extrabold tracking-[-0.03em] text-white">{{ item.title }}</h3>
+            <p *ngIf="item.stops?.length" class="mt-2 text-xs text-white/65">+ {{ item.stops.length }} additional stop{{ item.stops.length === 1 ? '' : 's' }}</p>
+          </div>
+        </div>
+        <div class="p-5">
+          <div class="grid grid-cols-3 gap-2">
+            <div class="rounded-2xl bg-white/[0.035] p-3">
+              <span class="material-symbols-outlined text-lg text-[#7ae0c3]">calendar_month</span>
+              <p class="mt-2 truncate text-xs font-bold text-white">{{ item.duration }}</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.035] p-3">
+              <span class="material-symbols-outlined text-lg text-[#ffc96b]">star</span>
+              <p class="mt-2 text-xs font-bold text-white">{{ item.engagement?.averageRating || 0 }} rating</p>
+            </div>
+            <div class="rounded-2xl bg-white/[0.035] p-3">
+              <span class="material-symbols-outlined text-lg text-[#ff9d83]">bookmark</span>
+              <p class="mt-2 text-xs font-bold text-white">{{ item.engagement?.favoriteCount || 0 }} saves</p>
+            </div>
+          </div>
+          <div class="mt-5 flex items-center justify-between">
+            <div>
+              <p class="text-[9px] font-bold uppercase tracking-[0.16em] text-[#637d8a]">Curated by</p>
+              <p class="mt-1 text-xs font-semibold text-[#a9bac2]">{{ item.createdBy?.name || 'Navigator community' }}</p>
+            </div>
+            <a mat-button [routerLink]="['/itinerary', item._id]" class="!rounded-full !bg-white/5 !text-[#a8ead7] btn-interactive">
+              Open <span class="material-symbols-outlined ml-1 text-lg">arrow_outward</span>
+            </a>
+          </div>
+        </div>
+      </article>
+    </section>
+  </div>
+</main>
