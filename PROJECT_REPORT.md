@@ -1,12 +1,12 @@
-# TraVenture — Project Architecture & Branch Comparison Report
+# TraVenture — Project Architecture & Status Report
 
-This report documents the architectural design, user navigation workflows, system component structure, and a comparative analysis between the current development branch (`yuvraj-dev`) and the target production branch (`main`).
+This report documents the architectural design, user navigation workflows, system component structure, and the detailed implementation status of the TraVenture platform.
 
 ---
 
 ## 1. System Architecture
 
-Under the new **Agency-Centric Refactor**, the frontend application separates ordinary traveler experiences from staff workspace features. All administration, curation, and platform controls are consolidated under a single, unified, role-aware **Agency Workspace Shell** at `/agency`.
+Under the **Agency-Centric Refactor**, the frontend application separates ordinary traveler experiences from staff workspace features. All administration, curation, and platform controls are consolidated under a single, unified, role-aware **Agency Workspace Shell** at `/agency`.
 
 ### Component Topology (Agency-Centric Shell)
 
@@ -79,18 +79,36 @@ flowchart TD
 
 ---
 
-## 3. Branch Comparison Analysis
+## 3. Codebase Integration & Feature Status
 
-A comparative review reveals architectural differences, fallback systems, and features active between the two main repository branches.
+This section breaks down the entire codebase's components by status following our stabilization run.
 
-| Category / Component | Development Branch (`yuvraj-dev`) | Production Branch (`main`) | Architectural Rationale |
-| :--- | :--- | :--- | :--- |
-| **Workspace Shell** | **Unified Shell (`/agency`)**: Consolidates `/workspace`, `/operations`, and `/platform` into child tabs within a single sidebar controller. | **Segmented Dashboards**: Separate top-level routes (`/workspace`, `/operations`, `/platform`) managed by individual layout components. | The `/agency` shell reduces page fragmentation, streamlines authentication guards, and provides a cohesive experience for staff. |
-| **AI Integration** | **Multi-Provider Failover**: Dynamically falls back and quarantines unhealthy models across NVIDIA NIM, Ollama, and Gemini APIs. | **Single AI Provider**: Consolidated into `aiProvider.js` leveraging a single model endpoint without fallback telemetry. | Fallback telemetry guarantees maximum availability and resilience in offline development environments. |
-| **Billing & Costs** | **Standard Billing stub**: Basic affiliate clicking tracker model. | **Billing & Cost Estimation**: Active `costEstimationService.js` and `billingService.js` tracking organization quotas. | Supports multi-tenant enterprise pricing tiers and quota tracking in production. |
-| **Mapping Engine** | **Leaflet Integration**: Lightweight map canvas wrapper component. | **Mapbox Integration**: Maps rendering using `mapboxAdapter.js` and its corresponding unit tests. | Mapbox provides superior geospatial optimizations, route path geometries, and custom styling options. |
-| **Data Models** | `User`, `Itinerary`, `RoleRequest`. | `User`, `Itinerary`, `RoleRequest`, `AffiliateClick`, `Organization` (Multi-tenant structure). | Prepares database architectures for tenant isolation and detailed click telemetry. |
-| **Documentation** | Preserves detailed API documents (`docs/RAG.md`, `ARCHITECTURE.md`). | Cleaned up detailed documentation folders in favor of a consolidated `plan.md`. | Simplifies codebase updates and aggregates plans in a single location. |
+### IMPLEMENTED
+* **Unified Sidebar Workspace Shell (`/agency`)**: Lazy-loaded, role-aware parent container (`AgencyWorkspaceComponent`) containing sidebar controllers, layout transitions, and nested route components.
+* **Backend Geocoding & Directions Proxies**: Backend routes in [`aiRoutes.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/routes/aiRoutes.js) (`/geocode` and `/directions`) that delegate geocoding and route geometry calculations to [`mapboxAdapter.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/adapters/mapboxAdapter.js).
+* **Multi-Provider AI Fallback Resolver**: System class [`aiProviderResolver.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/services/aiProviderResolver.js) that selects, health-checks, and falls back across Gemini, NVIDIA NIM, and local Ollama instances.
+* **Detailed Admin Analytics Aggregation**: Direct database calculations in [`adminRoutes.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/routes/adminRoutes.js) fetching actual metrics (active/inactive count, reviews, saves, average budgets) to feed the Operations dashboard.
+* **Frontend Geolocation & Map Canvas**: The [`MapCanvasComponent`](file:///d:/1YUVRAJ/program/project/mean_mini/frontend/src/app/components/map-canvas/map-canvas.component.ts) renders Leaflet coordinate layers using backend proxy calls.
+* **Unsplash Destination Image Enrichment**: Handled by [`imageService.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/services/imageService.js), routing requests through `/api/image` and caching them local-first to prevent API exhaustion.
+
+### PARTIALLY IMPLEMENTED
+* **Trip Lifecycle State Machine**: Schema level support for `status: ['draft', 'published', 'archived']` is fully active on the backend. The frontend properly shows state badges, but route validation guarding actions on archived items is still pending integration.
+* **Affiliate Analytics & Tracker**: Redirect clicks model [`AffiliateClick.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/models/AffiliateClick.js) and tracking redirects are active, but the frontend views display static fallback structures when DB statistics are scarce.
+
+### BROKEN
+* *None. All backend tests pass, Angular client packages compile cleanly with leaflet typings, and standard route access restrictions are operational.*
+
+### MISSING
+* *None. All core capabilities defined in the integration target are present.*
+
+### DUMMY / MOCK
+* **Offline AI Response Model**: When third-party AI keys are unavailable, local failbacks supply predefined mock structures for autocomplete and trending widgets to ensure user experience does not fail.
+
+### MAIN-ONLY
+* **Mapbox CSS bundles**: The production branch features strict Mapbox GL styling sheets. This dev branch replaces this with a lightweight Leaflet mapping canvas to maintain fluid operations without heavy browser footprints.
+
+### DEV-ONLY (Removed from Branch)
+* **Legacy Admin Dashboard**: The old layout [`admin-dashboard`](file:///d:/1YUVRAJ/program/project/mean_mini/frontend/src/app/components/admin-dashboard) has been deleted to prevent route collisions and duplicate code paths.
 
 ---
 
@@ -127,7 +145,7 @@ The database utilizes MongoDB to model entities, transactions, and curation stat
 
 ## 5. Trip Intelligence Core Algorithm
 
-The analysis engine in [tripAnalyzer.js](file:///d:/1YUVRAJ/program/project/mean_mini/server/utils/tripAnalyzer.js) computes scores and warns of planning problems:
+The analysis engine in [`tripAnalyzer.js`](file:///d:/1YUVRAJ/program/project/mean_mini/server/utils/tripAnalyzer.js) computes scores and warns of planning problems:
 
 ### Metric Deductions
 * **Daily Budget**: Total budget divided by days.
