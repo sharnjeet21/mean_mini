@@ -4,14 +4,18 @@ A full-stack MEAN application for discovering, designing, evaluating, publishing
 
 ## Highlights
 
+- **Agency-Centric Workspace**: Unified role-aware shell at `/agency` for staff, keeping traveler views distinct.
+- **Advanced AI Fallback**: Multi-provider resolver dynamically cascades between Google Gemini, NVIDIA NIM, and local Ollama.
+- **Geospatial Integration**: Backend proxy geocoding and directions using Mapbox APIs, rendering on lightweight Leaflet canvases.
+- **Cost & Multi-Tenancy**: Built-in multi-tenant organization tracking and detailed itinerary cost estimation services.
 - Four-step itinerary wizard with automatic duration, budget allocation, and multi-stop planning.
 - Dashboard, detail, saved, and booking views backed by live MongoDB data.
 - Shared deterministic destination imagery so dashboard cards and detail heroes always match.
 - Destination autocomplete, trending places, attraction suggestions, and destination previews.
-- Graceful local fallbacks when Gemini, Unsplash, DNS, or an external MongoDB deployment is unavailable.
+- Graceful local fallbacks when AI APIs, Unsplash, DNS, or an external MongoDB deployment is unavailable.
 - Trip Intelligence scores for feasibility, completeness, pace, budget quality, and sustainability.
 - Risk register and explainable recommendations derived from itinerary data.
-- Wishlist, booking, cancellation, ratings, reviews, and administrator analytics.
+- Wishlist, booking, cancellation, ratings, reviews, and detailed administrator analytics.
 - JWT authentication, automatic expired-session cleanup, role authorization, rate limiting, and input validation.
 - Responsive Angular Material interface with glass surfaces, ambient shapes, and local optimized travel images.
 
@@ -21,15 +25,18 @@ A full-stack MEAN application for discovering, designing, evaluating, publishing
 flowchart LR
     U[Angular 21 SPA] -->|JWT + REST| E[Express API]
     E --> A[Authentication and RBAC]
-    E --> I[Itinerary and engagement domain]
-    E --> T[Trip Intelligence engine]
-    E --> X[AI integration layer]
+    E --> I[Itinerary & Multi-Tenant Domain]
+    E --> T[Trip Intelligence Engine]
+    E --> X[AI Provider Resolver]
+    E --> Y[Mapbox Geospatial Service]
     I --> M[(MongoDB)]
     A --> M
     T --> I
     X --> G[Google Gemini]
-    X --> P[Unsplash]
-    E --> C[TTL caches and deterministic fallbacks]
+    X --> N[NVIDIA NIM]
+    X --> O[Ollama Local]
+    X --> P[Unsplash Images]
+    E --> C[TTL caches & Deterministic Fallbacks]
 ```
 
 ## Technology
@@ -38,7 +45,7 @@ flowchart LR
 - Express.js and Node.js 24
 - Angular 21, Angular Material, TypeScript, RxJS, Tailwind CSS
 - JWT and bcryptjs
-- Google Gemini and Unsplash APIs
+- Google Gemini, Mapbox, and Unsplash APIs
 - Node test runner, fast-check, Vitest, Playwright, and Puppeteer
 
 ## Prerequisites
@@ -93,7 +100,7 @@ MAPBOX_TOKEN=
 Notes:
 
 - Leave `MONGO_URI` blank only if you intentionally want to test the development fallback path.
-- `MAPBOX_TOKEN` is included as a forward-looking placeholder for the map-driven roadmap work.
+- `MAPBOX_TOKEN` is used by the backend routing and geocoding services.
 - `RENDER_EXTERNAL_URL` is supplied by Render in production and does not need to be set locally.
 
 ## Run the app
@@ -197,10 +204,10 @@ Requirements:
 
 ## Roles
 
-- Traveler (User): Browse homepage, search destinations, explore/view itineraries, save to wishlist, book journeys, submit reviews, view Saved & Bookings, and request Trip Manager upgrade. Cannot create/edit/delete/publish itineraries.
-- Trip Manager: Create, edit (AI or manual), duplicate, publish, archive, and delete owned itineraries. Manage bookings on owned itineraries.
-- Admin: Moderates bookings & reviews, reviews Trip Manager role requests, views workspace analytics, and manages organization itineraries.
-- Superadmin: Global user directory, role governance, admin management, platform analytics, system health metrics, and raw AI runtime status.
+- **Traveler (User)**: Browse homepage, search destinations, explore/view itineraries, save to wishlist, book journeys, submit reviews, view Saved & Bookings via the Client Portal, and request Trip Manager upgrade. Cannot access the `/agency` workspace.
+- **Trip Manager**: Access the Agency Workspace (`/agency`). Manage Overview metrics, Trips board, AI Modal Planner, Proposals directory, and Currency analytics. Create, edit, duplicate, publish, archive, and delete owned itineraries. Manage bookings.
+- **Admin**: Access Staff Workspace + Admin Features. Moderate global itineraries via the Operations console, review upgrade requests, track affiliate click payouts, and manage the Clients CRM directory.
+- **Superadmin**: Global user directory governance, Platform diagnostics console, AI provider fallback telemetry, and raw system health metrics.
 
 ## API overview
 
@@ -218,6 +225,7 @@ Requirements:
 - `PUT /api/itinerary/:id`
 - `DELETE /api/itinerary/:id`
 - `GET /api/itinerary/:id/analysis`
+- `GET /api/itinerary/:id/public`
 
 ### Engagement
 
@@ -230,9 +238,10 @@ Requirements:
 
 ### Administration
 
-- `GET /api/itinerary/analytics/overview`
+- `GET /api/admin/analytics`
 - `PATCH /api/itinerary/:id/bookings/:bookingId/status`
-- `GET /api/users`
+- `GET /api/admin/users`
+- `DELETE /api/admin/users/:id`
 - `PUT /api/users/:id/role`
 - `PUT /api/users/:id/status`
 - `GET /api/role-requests`
@@ -244,6 +253,8 @@ Requirements:
 - `GET /api/suggestions?q=...`
 - `GET /api/trending`
 - `GET /api/itinerary-suggestions?place=...`
+- `GET /api/ai/geocode?place=...`
+- `POST /api/ai/directions`
 
 ## Deployment
 
@@ -257,7 +268,7 @@ Health Check Path: /api/health
 Node Version: 24.17.0
 ```
 
-See [docs/PROJECT_REPORT.md](docs/PROJECT_REPORT.md) for the data model, scoring method, security design, testing strategy, limitations, and viva-oriented notes.
+See [PROJECT_REPORT.md](PROJECT_REPORT.md) and [branch_comparison_report.md](branch_comparison_report.md) for the data model, scoring method, system architecture, integration state, and comparative analysis between branches.
 
 ## Authors
 
