@@ -159,7 +159,7 @@ ${attractionsPrompt}
 Generation Rules to Maximize Trip Intelligence Metrics:
 1. Completeness: Every single day must be planned up to ${input.duration} days. Provide meaningful themes, detailed descriptions, and highlight-worthy stops.
 2. Feasibility: Ensure a realistic travel sequence. Avoid impossible schedules or excessive travel times between stops.
-3. Pace: Keep a balanced number of activities per day. Avoid overloaded days and avoid empty days.
+3. Pace: Keep a balanced number of activities per day. You MUST include at least 2 activities for EVERY day. Avoid overloaded days and avoid empty days.
 4. Budget: Suggest realistic accommodation, transport, meals, and attraction costs that fit the Budget parameter (including contingency).
 5. Sustainability: Prefer nearby attractions to reduce unnecessary transport, and encourage walking or public transport when appropriate.
 

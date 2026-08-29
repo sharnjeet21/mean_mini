@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -107,8 +107,16 @@ export class ApiService {
   }
 
   // Itinerary endpoints
-  getItineraries(): Observable<Itinerary[]> {
-    return this.http.get<Itinerary[]>(`${this.baseUrl}/itinerary`);
+  getItineraries(filters?: any): Observable<any> {
+    let params = new HttpParams();
+    if (filters) {
+      Object.keys(filters).forEach(key => {
+        if (filters[key] !== undefined && filters[key] !== null && filters[key] !== '') {
+          params = params.set(key, filters[key]);
+        }
+      });
+    }
+    return this.http.get<any>(`${this.baseUrl}/itinerary`, { params });
   }
 
   getItinerary(id: string): Observable<Itinerary> {
@@ -155,7 +163,7 @@ export class ApiService {
     return this.http.post(`${this.baseUrl}/itinerary/${id}/reviews`, { rating, comment });
   }
 
-  getItineraryAnalytics(): Observable<any> {
+  getItineraryOverviewAnalytics(): Observable<any> {
     return this.http.get(`${this.baseUrl}/itinerary/analytics/overview`);
   }
 

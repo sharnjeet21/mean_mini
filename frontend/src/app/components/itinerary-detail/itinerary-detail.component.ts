@@ -9,12 +9,14 @@ import { AuthService } from '../../services/auth.service';
 import { fetchItineraryImage, getItineraryImage } from '../../utils/itinerary-image';
 import { ToastService } from '../../services/toast.service';
 import { ConfirmService } from '../../services/confirm.service';
+import { CurrencyService } from '../../services/currency.service';
 import { expandCollapse, fadeText } from '../../utils/animations';
+import { AppCurrencyPipe } from '../../pipes/app-currency.pipe';
 
 @Component({
   selector: 'app-itinerary-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterModule],
+  imports: [CommonModule, FormsModule, RouterModule, AppCurrencyPipe],
   templateUrl: './itinerary-detail.component.html',
   animations: [expandCollapse, fadeText],
 })
@@ -76,6 +78,7 @@ export class ItineraryDetailComponent implements OnInit {
     private router: Router,
     private api: ApiService,
     public auth: AuthService,
+    public currencyService: CurrencyService,
     private ai: AiService,
     private location: Location,
     private toastService: ToastService,
@@ -139,7 +142,11 @@ export class ItineraryDetailComponent implements OnInit {
       title: 'New Day',
       activities: []
     });
+    const oldDurationStr = this.editItinerary.duration;
     this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
+    if (this.editItinerary.description && oldDurationStr) {
+      this.editItinerary.description = this.editItinerary.description.replace(new RegExp(oldDurationStr, 'gi'), this.editItinerary.duration);
+    }
   }
 
   async removeDay(index: number) {
@@ -157,7 +164,11 @@ export class ItineraryDetailComponent implements OnInit {
       d.day = i + 1;
     });
     const nextDayNum = this.editItinerary.dailyPlan.length;
+    const oldDurationStr = this.editItinerary.duration;
     this.editItinerary.duration = `${nextDayNum} day` + (nextDayNum > 1 ? 's' : '');
+    if (this.editItinerary.description && oldDurationStr) {
+      this.editItinerary.description = this.editItinerary.description.replace(new RegExp(oldDurationStr, 'gi'), this.editItinerary.duration);
+    }
   }
 
   addActivity(dayIndex: number) {
@@ -229,13 +240,15 @@ export class ItineraryDetailComponent implements OnInit {
           this.toastService.warning(`Day ${day.day} must have a title.`);
           return;
         }
-        if (day.activities) {
-          for (let j = 0; j < day.activities.length; j++) {
-            const act = day.activities[j];
-            if (!act.activity || !act.activity.trim()) {
-              this.toastService.warning(`Activity ${j + 1} on Day ${day.day} must have a name.`);
-              return;
-            }
+        if (!day.activities || day.activities.length < 2) {
+          this.toastService.warning(`Day ${day.day} must have at least 2 activities.`);
+          return;
+        }
+        for (let j = 0; j < day.activities.length; j++) {
+          const act = day.activities[j];
+          if (!act.activity || !act.activity.trim()) {
+            this.toastService.warning(`Activity ${j + 1} on Day ${day.day} must have a name.`);
+            return;
           }
         }
       }
@@ -473,7 +486,9 @@ export class ItineraryDetailComponent implements OnInit {
   calculateChangeSummary(original: any, revised: any): string[] {
     const summary: string[] = [];
     if (Number(original.budget) !== Number(revised.budget)) {
-      summary.push(`Budget updated from $${original.budget} to $${revised.budget}`);
+      const origConv = this.currencyService.convert(Number(original.budget));
+      const revConv = this.currencyService.convert(Number(revised.budget));
+      summary.push(`Budget updated from ${origConv.symbol} ${origConv.amount} to ${revConv.symbol} ${revConv.amount}`);
     }
     if (original.travelerCount !== revised.travelerCount) {
       summary.push(`Traveler count updated from ${original.travelerCount} to ${revised.travelerCount}`);

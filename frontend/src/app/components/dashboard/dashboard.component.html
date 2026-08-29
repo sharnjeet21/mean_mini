@@ -64,12 +64,51 @@
       </div>
     </section>
 
-    <div class="mb-6 flex items-center gap-2 overflow-x-auto pb-1 hide-scrollbar">
-      <span class="mr-1 flex-none text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Sort by</span>
-      <button *ngFor="let filter of filters" mat-button (click)="activeFilter = filter"
-              [class]="filter === activeFilter ? '!min-h-8 !rounded-full !bg-white/15 !px-4 !text-xs !text-white' : '!min-h-8 !rounded-full !px-4 !text-xs !text-[#78919d]'">
-        {{ filter }}
-      </button>
+    <div *ngIf="activeView === 'explore'" class="mb-6 flex flex-col gap-4">
+      <div class="flex flex-wrap items-center gap-4">
+        <!-- Sort By -->
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Sort by</span>
+          <select [(ngModel)]="activeFilter" (change)="applyFilters()" class="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white outline-none border-none">
+            <option *ngFor="let filter of filters" [value]="filter.value" class="text-black">{{ filter.label }}</option>
+          </select>
+        </div>
+
+        <!-- Budget -->
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Budget</span>
+          <input type="number" [(ngModel)]="filterOptions.budgetMin" placeholder="Min" class="w-20 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white outline-none placeholder:text-white/40">
+          <span class="text-white/50">-</span>
+          <input type="number" [(ngModel)]="filterOptions.budgetMax" placeholder="Max" class="w-20 rounded-full bg-white/10 px-3 py-1.5 text-xs text-white outline-none placeholder:text-white/40">
+        </div>
+
+        <!-- Category -->
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Category</span>
+          <select [(ngModel)]="filterOptions.category" class="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white outline-none border-none">
+            <option value="" class="text-black">All</option>
+            <option value="adventure" class="text-black">Adventure</option>
+            <option value="cultural" class="text-black">Cultural</option>
+            <option value="leisure" class="text-black">Leisure</option>
+            <option value="family" class="text-black">Family</option>
+            <option value="wellness" class="text-black">Wellness</option>
+          </select>
+        </div>
+
+        <!-- Style -->
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold uppercase tracking-[0.18em] text-[#667f8c]">Style</span>
+          <select [(ngModel)]="filterOptions.style" class="rounded-full bg-white/10 px-3 py-1.5 text-xs text-white outline-none border-none">
+            <option value="" class="text-black">All</option>
+            <option value="budget" class="text-black">Budget</option>
+            <option value="balanced" class="text-black">Balanced</option>
+            <option value="premium" class="text-black">Premium</option>
+          </select>
+        </div>
+
+        <button mat-button (click)="applyFilters()" class="!rounded-full !bg-[#7ae0c3] !text-[#05201f] !px-4 !min-h-8 text-xs font-bold">Apply filters</button>
+        <button mat-button (click)="clearFilters()" class="!rounded-full !bg-white/10 !text-white !px-4 !min-h-8 text-xs font-bold">Clear</button>
+      </div>
     </div>
 
     <!-- Shimmer loading grid -->
@@ -127,6 +166,7 @@
 
     <section *ngIf="!loading && !loadError && itineraries.length > 0" class="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
       <article *ngFor="let item of sortedItineraries"
+               @fadeInUp
                [routerLink]="['/itinerary', item._id]"
                class="group glass-panel overflow-hidden rounded-[28px] card-interactive cursor-pointer">
         <div class="relative h-52 overflow-hidden">
@@ -134,7 +174,7 @@
           <div class="absolute inset-0 bg-gradient-to-t from-[#071721] via-[#071721]/20 to-transparent"></div>
           <div class="absolute left-4 right-4 top-4 flex items-center justify-between">
             <span class="rounded-full border border-white/15 bg-black/25 px-3 py-1.5 text-[9px] font-bold uppercase tracking-[0.16em] text-white backdrop-blur-xl">{{ item.status === 'draft' ? 'Draft' : (item.isActive ? 'Open route' : 'Paused') }}</span>
-            <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">${{ item.budget | number }}</span>
+            <span class="rounded-full bg-[#7ae0c3] px-3 py-1.5 text-[10px] font-extrabold text-[#05201f]">{{ item.budget | appCurrency }}</span>
           </div>
           <div class="absolute bottom-4 left-5 right-5">
             <p class="text-xs font-bold uppercase tracking-[0.16em] text-[#a3eed9]">{{ item.destination }}</p>
@@ -169,5 +209,13 @@
         </div>
       </article>
     </section>
+
+    <!-- Load More Button -->
+    <div *ngIf="!loading && !loadError && hasMore && activeView === 'explore'" class="mt-8 flex justify-center">
+      <button mat-flat-button class="!rounded-full !bg-[#7ae0c3] !text-[#05201f] !px-6 !py-2.5 font-bold transition shadow-md flex items-center gap-2" (click)="loadMore()">
+        <span class="material-symbols-outlined">expand_more</span>
+        Load More
+      </button>
+    </div>
   </div>
 </main>

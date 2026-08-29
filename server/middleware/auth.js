@@ -1,4 +1,4 @@
-﻿const jwt    = require('jsonwebtoken');
+const jwt    = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const User   = require('../models/User');
 
@@ -56,6 +56,25 @@ function authMiddleware(req, res, next) {
   }
 }
 
+// Optional JWT middleware
+function optionalAuth(req, res, next) {
+  const header = req.headers.authorization || '';
+  const token  = header.startsWith('Bearer ') ? header.slice(7) : null;
+  if (!token) return next();
+
+  try {
+    const verified = jwt.verify(token, JWT_SECRET);
+    req.user = {
+      ...verified,
+      id: verified.id || verified._id,
+      _id: verified.id || verified._id,
+    };
+  } catch (err) {
+    // Ignore verification errors for optional auth
+  }
+  next();
+}
+
 // ΓöÇΓöÇ Role guard ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 function requireRole(role) {
   return (req, res, next) => {
@@ -71,6 +90,7 @@ module.exports = {
   registerUser,
   loginUser,
   authMiddleware,
+  optionalAuth,
   requireRole,
   // Aliases used by existing routes
   authenticate: authMiddleware,

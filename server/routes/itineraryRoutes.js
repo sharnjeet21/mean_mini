@@ -59,6 +59,16 @@ function validateItinerary(payload, requireAll = false) {
     if (!Array.isArray(payload.dailyPlan)) {
       return 'Daily plan must be an array.';
     }
+
+    const daysCount = payload.dailyPlan.length;
+    if (daysCount > 0) {
+      const expectedDuration = `${daysCount} day${daysCount > 1 ? 's' : ''}`;
+      // Basic check, allows "21 Days" or "21 day"
+      if (payload.duration && parseInt(payload.duration, 10) !== daysCount) {
+        return `Duration must match the daily plan length (${daysCount} days).`;
+      }
+    }
+
     for (let i = 0; i < payload.dailyPlan.length; i++) {
       const day = payload.dailyPlan[i];
       if (day.day === undefined || day.day === null || !Number.isInteger(Number(day.day)) || Number(day.day) <= 0) {
@@ -71,6 +81,9 @@ function validateItinerary(payload, requireAll = false) {
         if (!Array.isArray(day.activities)) {
           return `Activities for Day ${day.day || (i + 1)} must be an array.`;
         }
+        if (day.activities.length < 2) {
+          return `Day ${day.day || (i + 1)} must have at least 2 activities.`;
+        }
         for (let j = 0; j < day.activities.length; j++) {
           const act = day.activities[j];
           if (!act || typeof act !== 'object') {
@@ -80,6 +93,8 @@ function validateItinerary(payload, requireAll = false) {
             return `Activity ${j + 1} on Day ${day.day || (i + 1)} must have a name.`;
           }
         }
+      } else {
+        return `Day ${day.day || (i + 1)} must have at least 2 activities.`;
       }
     }
   }
@@ -319,6 +334,8 @@ router.post('/', authenticate, async (req, res) => {
 // Browse public active itineraries (active and published only, or own drafts)
 router.get('/', authenticate, async (req, res) => {
   try {
+    const { budgetMin, budgetMax, duration, category, style, sort, destination, page, limit } = req.query;
+
     const query = {
       isActive: true,
       $or: [
@@ -327,11 +344,56 @@ router.get('/', authenticate, async (req, res) => {
         { status: 'draft', createdBy: req.user._id }
       ]
     };
-    const itineraries = await Itinerary.find(query)
-      .populate('createdBy', 'name email role')
-      .sort({ createdAt: -1 });
 
-    return res.json(itineraries.map((item) => presentItinerary(item, req.user._id)));
+    if (budgetMin !== undefined || budgetMax !== undefined) {
+      query.budget = {};
+      if (budgetMin !== undefined && budgetMin !== '') query.budget.$gte = Number(budgetMin);
+      if (budgetMax !== undefined && budgetMax !== '') query.budget.$lte = Number(budgetMax);
+      if (Object.keys(query.budget).length === 0) delete query.budget;
+    }
+
+    if (duration) query.duration = duration;
+    if (category) query.category = category;
+    if (style) query.travelStyle = style;
+    if (destination) query.destination = { $regex: destination, $options: 'i' };
+
+    let sortOption = { createdAt: -1 };
+    if (sort === 'budget_asc') sortOption = { budget: 1, createdAt: -1 };
+    if (sort === 'budget_desc') sortOption = { budget: -1, createdAt: -1 };
+    if (sort === 'duration_asc') sortOption = { duration: 1, createdAt: -1 };
+    if (sort === 'duration_desc') sortOption = { duration: -1, createdAt: -1 };
+
+    const pageNum = page ? parseInt(page, 10) : null;
+    const limitNum = limit ? parseInt(limit, 10) : null;
+
+    if (pageNum !== null || limitNum !== null) {
+      const p = pageNum || 1;
+      const l = limitNum || 6;
+      const skip = (p - 1) * l;
+
+      const total = await Itinerary.countDocuments(query);
+      const itineraries = await Itinerary.find(query)
+        .populate('createdBy', 'name email role')
+        .sort(sortOption)
+        .skip(skip)
+        .limit(l);
+
+      const data = itineraries.map((item) => presentItinerary(item, req.user._id));
+      const hasMore = total > (skip + data.length);
+
+      return res.json({
+        data,
+        total,
+        page: p,
+        limit: l,
+        hasMore
+      });
+    } else {
+      const itineraries = await Itinerary.find(query)
+        .populate('createdBy', 'name email role')
+        .sort(sortOption);
+      return res.json(itineraries.map((item) => presentItinerary(item, req.user._id)));
+    }
   } catch (error) {
     console.error('Fetch itineraries error:', error.message);
     return res.status(500).json({ message: 'Server error.' });
@@ -591,9 +653,19 @@ router.put('/:id', authenticate, ensureValidId, async (req, res) => {
     // Normal travelers & trip managers cannot edit other users' active state
     if (!isAdmin) {
       delete payload.isActive;
-      // Normal travelers cannot change status to anything other than draft
-      if (req.user.role === 'user' && payload.status && payload.status !== 'draft') {
-        return res.status(403).json({ message: 'Only trip managers can publish itineraries.' });
+    }
+
+    const currentStatus = itinerary.status || 'draft';
+    const newStatus = payload.status;
+    if (newStatus && newStatus !== currentStatus) {
+      if (req.user.role === 'user') {
+        return res.status(403).json({ message: 'Travelers cannot modify itinerary publish state.' });
+      }
+      if (currentStatus === 'archived' && newStatus !== 'published') {
+        return res.status(400).json({ message: 'Archived itineraries can only be republished.' });
+      }
+      if (currentStatus === 'draft' && newStatus === 'archived') {
+        return res.status(400).json({ message: 'Draft itineraries cannot be directly archived.' });
       }
     }
     
@@ -630,6 +702,10 @@ router.delete('/:id', authenticate, ensureValidId, async (req, res) => {
 
     if (!isSuperadmin && !isOwner) {
       return res.status(403).json({ message: 'Insufficient permissions. You can only delete your own itineraries.' });
+    }
+
+    if (itinerary.status === 'published' && !isSuperadmin) {
+      return res.status(400).json({ message: 'Published itineraries must be archived before deletion.' });
     }
 
     await itinerary.deleteOne();

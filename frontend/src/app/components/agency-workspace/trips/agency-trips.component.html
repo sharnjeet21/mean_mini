@@ -107,9 +107,9 @@
             
             <div class="border-t border-white/5 pt-3.5 flex items-center justify-between gap-2">
               <button mat-stroked-button class="ghost-action !text-[11px] !px-2.5 btn-interactive flex items-center gap-1"
-                      (click)="updateItineraryStatus(item, item.status === 'published' ? 'draft' : 'published')">
-                <span class="material-symbols-outlined text-sm">{{ item.status === 'published' ? 'archive' : 'publish' }}</span>
-                {{ item.status === 'published' ? 'Archive' : 'Publish' }}
+                      (click)="updateItineraryStatus(item, item.status === 'published' ? 'archived' : 'published')">
+                <span class="material-symbols-outlined text-sm">{{ item.status === 'published' ? 'archive' : (item.status === 'archived' ? 'unarchive' : 'publish') }}</span>
+                {{ item.status === 'published' ? 'Archive' : (item.status === 'archived' ? 'Republish' : 'Publish') }}
               </button>
               <button (click)="deleteItinerary(item._id)" class="text-rose-400 hover:text-rose-300 text-xs font-semibold px-2">
                 Delete

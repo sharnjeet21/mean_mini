@@ -13,18 +13,18 @@ export interface ConvertedAmount {
   amount: number;
 }
 
-// Static exchange rates (USD base). Update periodically or wire to a live API.
+// Static exchange rates (INR base). Update periodically or wire to a live API.
 const RATES: Record<string, number> = {
-  USD: 1.0,
-  EUR: 0.92,
-  GBP: 0.79,
-  INR: 83.5,
-  JPY: 149.0,
-  AUD: 1.52,
-  CAD: 1.36,
-  SGD: 1.34,
-  AED: 3.67,
-  CHF: 0.90,
+  INR: 1.0,
+  USD: 0.012, // 1 / 83.5
+  EUR: 0.011,
+  GBP: 0.0095,
+  JPY: 1.78,
+  AUD: 0.018,
+  CAD: 0.016,
+  SGD: 0.016,
+  AED: 0.044,
+  CHF: 0.011,
 };
 
 const SYMBOLS: Record<string, string> = {
@@ -44,7 +44,7 @@ const SYMBOLS: Record<string, string> = {
 export class CurrencyService {
   readonly supportedCurrencies = Object.keys(RATES);
 
-  private _currency$ = new BehaviorSubject<string>('USD');
+  private _currency$ = new BehaviorSubject<string>('INR');
   readonly currentCurrency$ = this._currency$.asObservable();
 
   get currentCurrency(): string {
@@ -59,13 +59,13 @@ export class CurrencyService {
     return SYMBOLS[code] || code;
   }
 
-  /** Convert a USD amount to the currently selected currency. */
-  convert(usdAmount: number): ConvertedAmount {
+  /** Convert a base INR amount to the currently selected currency. */
+  convert(baseAmount: number): ConvertedAmount {
     const code = this._currency$.value;
     const rate = RATES[code] || 1;
     return {
       symbol: this.getSymbol(code),
-      amount: Math.round(usdAmount * rate),
+      amount: Math.round(baseAmount * rate),
     };
   }
 
