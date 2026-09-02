@@ -53,7 +53,9 @@ screenshot_*.png
 docker-compose.override.yml
 
 # ── Planning & Docs ───────────────────────────────────────────────────────────
-docs/
 TASK_PROGRESS.md
 plan.md
 branch_comparison_report.md
+docs/branch_comparison_report.md
+docs/implementation_plan.md
+
